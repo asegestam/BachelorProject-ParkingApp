@@ -1,4 +1,4 @@
-package com.example.myapplication;
+package com.example.smspark;
 
 import android.content.Context;
 
