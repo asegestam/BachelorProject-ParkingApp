@@ -18,16 +18,19 @@ import com.mapbox.mapboxsdk.maps.Style;
 
 import java.util.List;
 
+import static com.mapbox.mapboxsdk.maps.Style.MAPBOX_STREETS;
+
 public class MainActivity extends AppCompatActivity implements PermissionsListener {
 
     private MapView mapView;
     private MapboxMap mapboxMap;
     private PermissionsManager permissionsManager;
+    private String access_token = getString(R.string.access_token);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Mapbox.getInstance(this, "pk.eyJ1IjoiYXNlZ2VzdGFtIiwiYSI6ImNqc214azFsbjA1c280M3BlZHk3emVwMmQifQ.-3503vKfLt3L0dhTSol2ew");
+        Mapbox.getInstance(this, access_token);
         setContentView(R.layout.activity_main);
         mapView = findViewById(R.id.mapView);
         mapView.onCreate(savedInstanceState);
@@ -35,7 +38,7 @@ public class MainActivity extends AppCompatActivity implements PermissionsListen
             @Override
             public void onMapReady(@NonNull MapboxMap mapboxMap) {
                 MainActivity.this.mapboxMap = mapboxMap;
-                mapboxMap.setStyle(new Style.Builder().fromUrl("mapbox://styles/mapbox/cjerxnqt3cgvp2rmyuxbeqme7"), new Style.OnStyleLoaded() {
+                mapboxMap.setStyle(new Style.Builder().fromUrl(MAPBOX_STREETS), new Style.OnStyleLoaded() {
                     @Override
                     public void onStyleLoaded(@NonNull Style style) {
                         enableLocationComponent(style);

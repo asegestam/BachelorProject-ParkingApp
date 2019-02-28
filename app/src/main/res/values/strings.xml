@@ -2,6 +2,7 @@
     <string name="app_name">My Application</string>
     <string name="title_activity_maps">Map</string>
     <string name="title_activity_main">MainActivity</string>
+    <string name="access_token">pk.eyJ1IjoiYXNlZ2VzdGFtIiwiYSI6ImNqc214azFsbjA1c280M3BlZHk3emVwMmQifQ.-3503vKfLt3L0dhTSol2ew</string>
     <string name="user_location_permission_not_granted">Location Permission Not Granted</string>
     <string name="user_location_permission_explanation">You need to give location permission</string>
 </resources>
