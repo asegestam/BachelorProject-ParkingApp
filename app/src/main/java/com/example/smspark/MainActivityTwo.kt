@@ -1,24 +1,38 @@
 package com.example.smspark
 
 import android.annotation.SuppressLint
+import android.app.Activity
+import android.content.Intent
+import android.graphics.Point
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.view.View
 import android.widget.Toast
 import androidx.core.content.ContextCompat
+import com.google.android.gms.maps.model.MarkerOptions
 import com.mapbox.android.core.permissions.PermissionsListener
 import com.mapbox.android.core.permissions.PermissionsManager
+import com.mapbox.api.geocoding.v5.models.CarmenFeature
 import com.mapbox.mapboxsdk.Mapbox
+import com.mapbox.mapboxsdk.annotations.Marker
+import com.mapbox.mapboxsdk.camera.CameraPosition
+import com.mapbox.mapboxsdk.camera.CameraUpdateFactory
+import com.mapbox.mapboxsdk.geometry.LatLng
 import com.mapbox.mapboxsdk.location.LocationComponentOptions
 import com.mapbox.mapboxsdk.location.modes.CameraMode
 import com.mapbox.mapboxsdk.location.modes.RenderMode
 import com.mapbox.mapboxsdk.maps.MapboxMap
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback
 import com.mapbox.mapboxsdk.maps.Style
-import kotlinx.android.synthetic.main.activity_main.*
+import com.mapbox.mapboxsdk.plugins.places.autocomplete.PlaceAutocomplete
+import com.mapbox.mapboxsdk.plugins.places.autocomplete.model.PlaceOptions
+import com.mapbox.mapboxsdk.plugins.places.autocomplete.model.PlaceOptions.MODE_CARDS
+import kotlinx.android.synthetic.main.activity_main_two.*
+
 
 class MainActivityTwo : AppCompatActivity(), PermissionsListener, OnMapReadyCallback {
 
-
+    private val REQUEST_CODE_AUTOCOMPLETE = 1
     private var permissionsManager : PermissionsManager = PermissionsManager(this)
     private lateinit var mapboxMap : MapboxMap
 
@@ -35,6 +49,38 @@ class MainActivityTwo : AppCompatActivity(), PermissionsListener, OnMapReadyCall
         this.mapboxMap = mapboxMap
         mapboxMap.setStyle(Style.MAPBOX_STREETS) {
             style -> enableLocationComponent()
+        }
+        initFab()
+    }
+
+    private fun initFab() {
+        fab.setOnClickListener {
+            val intent = PlaceAutocomplete.IntentBuilder()
+                    .accessToken(getString(R.string.access_token))
+                    .placeOptions(PlaceOptions.builder()
+                            .language("sv")
+                            .build(MODE_CARDS))
+                    .build(this)
+            startActivityForResult(intent, REQUEST_CODE_AUTOCOMPLETE)
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (resultCode == Activity.RESULT_OK && requestCode == REQUEST_CODE_AUTOCOMPLETE) {
+            //Gets the place data from searched position
+            val feature = PlaceAutocomplete.getPlace(data)
+            val latLng: LatLng = LatLng((feature.geometry() as com.mapbox.geojson.Point).latitude(),
+                    (feature.geometry() as com.mapbox.geojson.Point).longitude())
+            //Animates the camera to the searched position
+            mapboxMap.animateCamera(CameraUpdateFactory.newCameraPosition(CameraPosition.Builder()
+                    .target(latLng)
+                    .zoom(14.0)
+                    .bearing(90.0)
+                    .tilt(15.0)
+                    .build()), 4000)
+            mapboxMap.clear()
+            mapboxMap.addMarker(com.mapbox.mapboxsdk.annotations.MarkerOptions().position(latLng))
         }
     }
 
@@ -85,6 +131,7 @@ class MainActivityTwo : AppCompatActivity(), PermissionsListener, OnMapReadyCall
         }
     }
 
+    //Lifecycle methods below
     override fun onStart() {
         super.onStart()
         mapView.onStart()

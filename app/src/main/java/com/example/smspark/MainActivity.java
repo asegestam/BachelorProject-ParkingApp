@@ -48,6 +48,7 @@ public class MainActivity extends AppCompatActivity implements PermissionsListen
             }
         });
     }
+
     @SuppressWarnings( {"MissingPermission"})
     private void enableLocationComponent(@NonNull Style loadedMapStyle) {
         // Check if permissions are enabled and if not request
