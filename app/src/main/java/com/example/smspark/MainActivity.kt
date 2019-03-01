@@ -4,37 +4,29 @@ import androidx.appcompat.app.AppCompatActivity
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import timber.log.Timber
-
 import android.annotation.SuppressLint
-import android.content.Context
+import android.app.Activity
+import android.content.Intent
 import android.graphics.BitmapFactory
-import android.location.Location
-import android.os.Build
 import android.os.Bundle
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.util.Log
-import android.view.View
 import android.widget.Button
 import android.widget.Toast
-
 import com.google.android.material.snackbar.Snackbar
 import com.mapbox.android.core.permissions.PermissionsListener
 import com.mapbox.android.core.permissions.PermissionsManager
-import com.mapbox.api.directions.v5.DirectionsCriteria
-import com.mapbox.api.directions.v5.MapboxDirections
 import com.mapbox.api.directions.v5.models.DirectionsResponse
 import com.mapbox.api.directions.v5.models.DirectionsRoute
 import com.mapbox.geojson.Feature
 import com.mapbox.geojson.Point
 import com.mapbox.mapboxsdk.Mapbox
-import com.mapbox.mapboxsdk.annotations.Marker
-import com.mapbox.mapboxsdk.annotations.MarkerOptions
+import com.mapbox.mapboxsdk.camera.CameraPosition
+import com.mapbox.mapboxsdk.camera.CameraUpdateFactory
 import com.mapbox.mapboxsdk.geometry.LatLng
 import com.mapbox.mapboxsdk.location.LocationComponent
 import com.mapbox.mapboxsdk.location.modes.CameraMode
-import com.mapbox.mapboxsdk.location.modes.RenderMode
 import com.mapbox.mapboxsdk.maps.MapView
 import com.mapbox.mapboxsdk.maps.MapboxMap
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback
@@ -45,17 +37,21 @@ import com.mapbox.services.android.navigation.ui.v5.NavigationLauncher
 import com.mapbox.services.android.navigation.ui.v5.NavigationLauncherOptions
 import com.mapbox.services.android.navigation.ui.v5.route.NavigationMapRoute
 import com.mapbox.services.android.navigation.v5.navigation.NavigationRoute
-
-import com.mapbox.mapboxsdk.maps.Style.MAPBOX_STREETS
+import com.mapbox.mapboxsdk.plugins.places.autocomplete.PlaceAutocomplete
+import com.mapbox.mapboxsdk.plugins.places.autocomplete.model.PlaceOptions
+import com.mapbox.mapboxsdk.plugins.places.autocomplete.model.PlaceOptions.MODE_CARDS
 import com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconAllowOverlap
 import com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconIgnorePlacement
 import com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconImage
+import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapClickListener, PermissionsListener {
 
     // variables for adding location layer
     private var mapView: MapView? = null
     private var mapboxMap: MapboxMap? = null
+
+    private val REQUEST_CODE_AUTOCOMPLETE = 1
 
     // variables for adding location layer
     private var permissionsManager: PermissionsManager? = null
@@ -64,9 +60,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
     // variables for calculating and drawing a route
     private var currentRoute: DirectionsRoute? = null
     private var navigationMapRoute: NavigationMapRoute? = null
-
-    // variables needed to initialize navigation
-    private var button: Button? = null
+    private var sjukhus: Point = Point.fromLngLat(57.661244, 12.012948)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -81,14 +75,11 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
         this.mapboxMap = mapboxMap
         mapboxMap.setStyle(getString(R.string.navigation_guidance_day)) { style ->
             enableLocationComponent(style)
-
             addDestinationIconSymbolLayer(style)
-
             mapboxMap.addOnMapClickListener(this@MainActivity)
-            button = findViewById(R.id.startNavigationButton)
-            button!!.setOnClickListener {
-                Log.d(TAG, "onClick: Trying to start the simulation of the navigation")
 
+            startNavigationButton!!.setOnClickListener {
+                Log.d(TAG, "onClick: Trying to start the simulation of the navigation")
                 val simulateRoute = true
                 val options = NavigationLauncherOptions.builder()
                         .directionsRoute(currentRoute)
@@ -96,11 +87,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
                         .build()
                 // Call this method with Context from within an Activity
                 NavigationLauncher.startNavigation(this@MainActivity, options)
-
-                Toast.makeText(applicationContext, "Simulation", Toast.LENGTH_SHORT).show()
-
-                Log.d(TAG, "onClick: The simulation should pop-up right now")
             }
+            initFab()
         }
     }
 
@@ -118,8 +106,9 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
         loadedMapStyle.addLayer(destinationSymbolLayer)
     }
 
+    @SuppressLint("MissingPermission")
     override fun onMapClick(point: LatLng): Boolean {
-
+/*
         val destinationPoint = Point.fromLngLat(point.longitude, point.latitude)
         val originPoint = Point.fromLngLat(locationComponent!!.lastKnownLocation!!.longitude,
                 locationComponent!!.lastKnownLocation!!.latitude)
@@ -127,7 +116,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
         val source = mapboxMap!!.style!!.getSourceAs<GeoJsonSource>("destination-source-id")
         source?.setGeoJson(Feature.fromGeometry(destinationPoint))
 
-        getRoute(originPoint, destinationPoint)
+        //getRoute(originPoint, destinationPoint)
+        */
         return true
     }
 
@@ -161,8 +151,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
                         }
                         if (currentRoute != null) {
                             navigationMapRoute!!.addRoute(currentRoute)
-                            button!!.isEnabled = true
-                            button!!.setBackgroundResource(R.color.mapbox_blue)
+                            startNavigationButton!!.isEnabled = true
+                            startNavigationButton!!.setBackgroundResource(R.color.mapbox_blue)
                         } else {
                             Log.e(TAG, "Error, route is null")
                         }
@@ -174,6 +164,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
                 })
     }
 
+    @SuppressLint("MissingPermission")
     private fun enableLocationComponent(loadedMapStyle: Style) {
         // Check if permissions are enabled and if not request
         if (PermissionsManager.areLocationPermissionsGranted(this)) {
@@ -187,6 +178,43 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
         } else {
             permissionsManager = PermissionsManager(this)
             permissionsManager!!.requestLocationPermissions(this)
+        }
+    }
+
+    private fun initFab() {
+        fab.setOnClickListener {
+            val intent = PlaceAutocomplete.IntentBuilder()
+                    .accessToken(getString(R.string.access_token))
+                    .placeOptions(PlaceOptions.builder()
+                            .language("sv")
+                            .country("SE")
+                            .build(MODE_CARDS))
+
+                    .build(this)
+            startActivityForResult(intent, REQUEST_CODE_AUTOCOMPLETE)
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (resultCode == Activity.RESULT_OK && requestCode == REQUEST_CODE_AUTOCOMPLETE) {
+            //Gets the place data from searched position
+            val feature = PlaceAutocomplete.getPlace(data)
+            val destination: Point = feature.geometry() as Point
+            val latLng = LatLng(destination.latitude(), destination.longitude())
+            //Animates the camera to the searched position
+            mapboxMap!!.animateCamera(CameraUpdateFactory.newCameraPosition(CameraPosition.Builder()
+                    .target(latLng)
+                    .zoom(14.0)
+                    .bearing(90.0)
+                    .tilt(15.0)
+                    .build()), 4000)
+            mapboxMap!!.clear()
+            mapboxMap!!.addMarker(com.mapbox.mapboxsdk.annotations.MarkerOptions().position(latLng))
+            val origin = Point.fromLngLat(locationComponent!!.lastKnownLocation!!.longitude,
+                    locationComponent!!.lastKnownLocation!!.latitude)
+            getRoute(origin, destination)
         }
     }
 
