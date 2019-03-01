@@ -18,6 +18,7 @@
         android:layout_gravity="end|bottom"
         android:src="@drawable/ic_search_black_24dp"
         mapbox:rippleColor="@color/colorPrimaryDark"
+        android:backgroundTint="@color/colorAccent"
         android:layout_margin="16dp" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
