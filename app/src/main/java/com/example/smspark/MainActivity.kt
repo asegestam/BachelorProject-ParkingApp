@@ -8,6 +8,7 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
 import android.graphics.BitmapFactory
+import android.location.Location
 import android.os.Bundle
 import android.os.VibrationEffect
 import android.os.Vibrator
@@ -43,9 +44,13 @@ import com.mapbox.mapboxsdk.plugins.places.autocomplete.model.PlaceOptions.MODE_
 import com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconAllowOverlap
 import com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconIgnorePlacement
 import com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconImage
+import com.mapbox.services.android.navigation.ui.v5.NavigationViewOptions
+import com.mapbox.services.android.navigation.v5.routeprogress.ProgressChangeListener
+import com.mapbox.services.android.navigation.v5.routeprogress.RouteProgress
+import com.mapbox.services.android.navigation.v5.routeprogress.RouteProgressState
 import kotlinx.android.synthetic.main.activity_main.*
 
-class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapClickListener, PermissionsListener {
+class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapClickListener, PermissionsListener, ProgressChangeListener {
 
     // variables for adding location layer
     private var mapView: MapView? = null
@@ -125,6 +130,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
         NavigationRoute.builder(this)
                 .accessToken(Mapbox.getAccessToken()!!)
                 .origin(origin)
+                .profile("driving")
                 .destination(destination)
                 .build()
                 .getRoute(object : Callback<DirectionsResponse> {
@@ -188,6 +194,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
                     .placeOptions(PlaceOptions.builder()
                             .language("sv")
                             .country("SE")
+                            .proximity(getUserLocation())
                             .build(MODE_CARDS))
 
                     .build(this)
@@ -203,6 +210,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
             val feature = PlaceAutocomplete.getPlace(data)
             val destination: Point = feature.geometry() as Point
             val latLng = LatLng(destination.latitude(), destination.longitude())
+            //get and display the route to searched location
+            getRoute(getUserLocation(), destination)
             //Animates the camera to the searched position
             mapboxMap!!.animateCamera(CameraUpdateFactory.newCameraPosition(CameraPosition.Builder()
                     .target(latLng)
@@ -212,9 +221,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
                     .build()), 4000)
             mapboxMap!!.clear()
             mapboxMap!!.addMarker(com.mapbox.mapboxsdk.annotations.MarkerOptions().position(latLng))
-            val origin = Point.fromLngLat(locationComponent!!.lastKnownLocation!!.longitude,
-                    locationComponent!!.lastKnownLocation!!.latitude)
-            getRoute(origin, destination)
         }
     }
 
@@ -234,6 +240,19 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
             finish()
         }
     }
+
+    @SuppressLint("MissingPermission")
+    private fun getUserLocation() : Point {
+        return Point.fromLngLat(locationComponent!!.lastKnownLocation!!.longitude,
+                locationComponent!!.lastKnownLocation!!.latitude)
+    }
+
+    override fun onProgressChange(location: Location?, routeProgress: RouteProgress?) {
+        Log.i(TAG, "route progress changed")
+        if(routeProgress!!.currentState()!! == RouteProgressState.ROUTE_ARRIVED)
+            Toast.makeText(applicationContext, "Route finished", Toast.LENGTH_SHORT).show()
+    }
+
 
     override fun onStart() {
         super.onStart()
