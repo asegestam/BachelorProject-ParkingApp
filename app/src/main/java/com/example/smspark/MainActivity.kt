@@ -10,17 +10,16 @@ import android.content.Intent
 import android.graphics.BitmapFactory
 import android.location.Location
 import android.os.Bundle
-import android.os.VibrationEffect
-import android.os.Vibrator
 import android.util.Log
-import android.widget.Button
 import android.widget.Toast
-import com.google.android.material.snackbar.Snackbar
+import com.example.smspark.dto.Parking
 import com.mapbox.android.core.permissions.PermissionsListener
 import com.mapbox.android.core.permissions.PermissionsManager
 import com.mapbox.api.directions.v5.models.DirectionsResponse
 import com.mapbox.api.directions.v5.models.DirectionsRoute
 import com.mapbox.geojson.Feature
+import com.mapbox.geojson.FeatureCollection
+import com.mapbox.geojson.GeoJson
 import com.mapbox.geojson.Point
 import com.mapbox.mapboxsdk.Mapbox
 import com.mapbox.mapboxsdk.camera.CameraPosition
@@ -44,7 +43,7 @@ import com.mapbox.mapboxsdk.plugins.places.autocomplete.model.PlaceOptions.MODE_
 import com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconAllowOverlap
 import com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconIgnorePlacement
 import com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconImage
-import com.mapbox.services.android.navigation.ui.v5.NavigationViewOptions
+import com.mapbox.mapboxsdk.style.light.Position
 import com.mapbox.services.android.navigation.v5.routeprogress.ProgressChangeListener
 import com.mapbox.services.android.navigation.v5.routeprogress.RouteProgress
 import com.mapbox.services.android.navigation.v5.routeprogress.RouteProgressState
@@ -64,8 +63,11 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
 
     // variables for calculating and drawing a route
     private var currentRoute: DirectionsRoute? = null
+    private var currentRoute2: DirectionsRoute? = null
     private var navigationMapRoute: NavigationMapRoute? = null
-    private var sjukhus: Point = Point.fromLngLat(57.661244, 12.012948)
+    private var goteborg: Point = Point.fromLngLat(11.9745, 57.7088)
+
+    private val TAG: String = "MainActivity"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -74,6 +76,32 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
         mapView = findViewById(R.id.mapView)
         mapView!!.onCreate(savedInstanceState)
         mapView!!.getMapAsync(this)
+
+
+        //getParkingLots()
+
+
+    }
+
+    fun getParkingLots() {
+        val service = RetrofitClientInstance.retrofitInstance?.create(GetParkingService::class.java)
+        val call = service?.getParkings()
+        call?.enqueue(object : Callback<Parking>{
+            override fun onFailure(call: Call<Parking>, t: Throwable) {
+                Log.e(TAG, "Failed loading in parkings $t")
+                Toast.makeText(applicationContext, "ERROR: Failed to load parking lots", Toast.LENGTH_SHORT).show()
+            }
+
+            override fun onResponse(call: Call<Parking>, response: Response<Parking>) {
+                val body = response?.body()
+                val responseMessage = response?.toString()
+                var callString = call.toString()
+
+                Toast.makeText(applicationContext, "Recieved $body lots", Toast.LENGTH_SHORT).show()
+                Log.d(TAG, "Recieved $body lots and CallString: $callString ResponseMessage: $responseMessage")
+            }
+
+        })
     }
 
     override fun onMapReady(mapboxMap: MapboxMap) {
@@ -113,7 +141,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
 
     @SuppressLint("MissingPermission")
     override fun onMapClick(point: LatLng): Boolean {
-/*
+
         val destinationPoint = Point.fromLngLat(point.longitude, point.latitude)
         val originPoint = Point.fromLngLat(locationComponent!!.lastKnownLocation!!.longitude,
                 locationComponent!!.lastKnownLocation!!.latitude)
@@ -121,8 +149,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
         val source = mapboxMap!!.style!!.getSourceAs<GeoJsonSource>("destination-source-id")
         source?.setGeoJson(Feature.fromGeometry(destinationPoint))
 
-        //getRoute(originPoint, destinationPoint)
-        */
+        getRoute(originPoint, destinationPoint)
         return true
     }
 
@@ -130,6 +157,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
         NavigationRoute.builder(this)
                 .accessToken(Mapbox.getAccessToken()!!)
                 .origin(origin)
+                .addWaypoint(goteborg)
                 .profile("driving")
                 .destination(destination)
                 .build()
@@ -151,7 +179,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
 
                         // Draw the route on the map
                         if (navigationMapRoute != null) {
-                            navigationMapRoute!!.removeRoute()
+                           //navigationMapRoute!!.removeRoute()
                         } else {
                             navigationMapRoute = NavigationMapRoute(null, mapView!!, mapboxMap!!, R.style.NavigationMapRoute)
                         }
