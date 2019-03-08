@@ -7,6 +7,7 @@
     <string name="user_location_permission_explanation">You need to give location permission</string>
     //Buttons
     <string name="startNavigation">Start Navigation</string>
+    <string name="streets_parking">mapbox://styles/asegestam/cjszumel31fv31fpdpzbm51b8</string>
 
 
 </resources>

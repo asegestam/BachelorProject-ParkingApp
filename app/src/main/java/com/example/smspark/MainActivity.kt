@@ -45,6 +45,7 @@ import com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconAllowOverlap
 import com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconIgnorePlacement
 import com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconImage
 import com.mapbox.services.android.navigation.ui.v5.NavigationViewOptions
+import com.mapbox.services.android.navigation.v5.navigation.MapboxNavigation
 import com.mapbox.services.android.navigation.v5.routeprogress.ProgressChangeListener
 import com.mapbox.services.android.navigation.v5.routeprogress.RouteProgress
 import com.mapbox.services.android.navigation.v5.routeprogress.RouteProgressState
@@ -66,6 +67,9 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
     private var currentRoute: DirectionsRoute? = null
     private var navigationMapRoute: NavigationMapRoute? = null
     private var sjukhus: Point = Point.fromLngLat(57.661244, 12.012948)
+    private var navigation: MapboxNavigation? = null
+
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -78,10 +82,13 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
 
     override fun onMapReady(mapboxMap: MapboxMap) {
         this.mapboxMap = mapboxMap
-        mapboxMap.setStyle(getString(R.string.navigation_guidance_day)) { style ->
+        mapboxMap.setStyle(getString(R.string.streets_parking)) { style ->
             enableLocationComponent(style)
             addDestinationIconSymbolLayer(style)
+
             mapboxMap.addOnMapClickListener(this@MainActivity)
+            navigation = MapboxNavigation(applicationContext, getString(R.string.access_token))
+
 
             startNavigationButton!!.setOnClickListener {
                 Log.d(TAG, "onClick: Trying to start the simulation of the navigation")
@@ -113,16 +120,23 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
 
     @SuppressLint("MissingPermission")
     override fun onMapClick(point: LatLng): Boolean {
-/*
-        val destinationPoint = Point.fromLngLat(point.longitude, point.latitude)
-        val originPoint = Point.fromLngLat(locationComponent!!.lastKnownLocation!!.longitude,
-                locationComponent!!.lastKnownLocation!!.latitude)
+        val pixel = mapboxMap!!.projection.toScreenLocation(point)
+        val features = mapboxMap!!.queryRenderedFeatures(pixel)
+        // Get the first feature within the list if one exist
+        if (features.size > 0) {
+            val feature = features[0]
 
-        val source = mapboxMap!!.style!!.getSourceAs<GeoJsonSource>("destination-source-id")
-        source?.setGeoJson(Feature.fromGeometry(destinationPoint))
+            // Ensure the feature has properties defined
+            if (feature.properties() != null) {
+                for ((key, value) in feature.properties()!!.entrySet()) {
+                    // Log all the properties
+                    Log.d(TAG, String.format("%s = %s", key, value))
+                    if(key.equals("zonecode"))
+                    Toast.makeText(applicationContext, "" + value, Toast.LENGTH_SHORT).show()
 
-        //getRoute(originPoint, destinationPoint)
-        */
+                }
+            }
+        }
         return true
     }
 
