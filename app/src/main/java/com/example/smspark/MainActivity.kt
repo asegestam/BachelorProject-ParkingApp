@@ -65,9 +65,9 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
 
     // variables for calculating and drawing a route
     private var currentRoute: DirectionsRoute? = null
-    private var currentRoute2: DirectionsRoute? = null
     private var navigationMapRoute: NavigationMapRoute? = null
     private var goteborg: Point = Point.fromLngLat(11.9745, 57.7088)
+    private var destination: Point? = null
 
     private val TAG: String = "MainActivity"
 
@@ -108,13 +108,11 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
 
     override fun onMapReady(mapboxMap: MapboxMap) {
         this.mapboxMap = mapboxMap
-        mapboxMap.setStyle(getString(R.string.streets_parking)) { style ->
+        mapboxMap.setStyle(getString(R.string.streets_parking_debug)) { style ->
             enableLocationComponent(style)
             addDestinationIconSymbolLayer(style)
 
             mapboxMap.addOnMapClickListener(this@MainActivity)
-            navigation = MapboxNavigation(applicationContext, getString(R.string.access_token))
-
 
             startNavigationButton!!.setOnClickListener {
                 Log.d(TAG, "onClick: Trying to start the simulation of the navigation")
@@ -144,17 +142,22 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
         loadedMapStyle.addLayer(destinationSymbolLayer)
     }
 
+
+
+
     @SuppressLint("MissingPermission")
     override fun onMapClick(point: LatLng): Boolean {
 
-        val destinationPoint = Point.fromLngLat(point.longitude, point.latitude)
-        val originPoint = Point.fromLngLat(locationComponent!!.lastKnownLocation!!.longitude,
-                locationComponent!!.lastKnownLocation!!.latitude)
+        val originPoint = getUserLocation()
 
         val source = mapboxMap!!.style!!.getSourceAs<GeoJsonSource>("destination-source-id")
-        source?.setGeoJson(Feature.fromGeometry(destinationPoint))
 
-        getRoute(originPoint, destinationPoint)
+        if (destination != null) {
+            val wayPoint = Point.fromLngLat(point.longitude, point.latitude)
+            source?.setGeoJson(Feature.fromGeometry(wayPoint))
+            getRoute(originPoint, wayPoint, destination!!)
+        }
+
 
         val pixel = mapboxMap!!.projection.toScreenLocation(point)
         val features = mapboxMap!!.queryRenderedFeatures(pixel)
@@ -177,11 +180,11 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
         return true
     }
 
-    private fun getRoute(origin: Point, destination: Point) {
+    private fun getRoute(origin: Point, wayPoint: Point, destination: Point) {
         NavigationRoute.builder(this)
                 .accessToken(Mapbox.getAccessToken()!!)
                 .origin(origin)
-                .addWaypoint(goteborg)
+                .addWaypoint(wayPoint)
                 .profile("driving")
                 .destination(destination)
                 .build()
@@ -260,10 +263,9 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
         if (resultCode == Activity.RESULT_OK && requestCode == REQUEST_CODE_AUTOCOMPLETE) {
             //Gets the place data from searched position
             val feature = PlaceAutocomplete.getPlace(data)
-            val destination: Point = feature.geometry() as Point
-            val latLng = LatLng(destination.latitude(), destination.longitude())
-            //get and display the route to searched location
-            getRoute(getUserLocation(), destination)
+            destination = feature.geometry() as Point
+            val latLng = LatLng(destination!!.latitude(), destination!!.longitude())
+
             //Animates the camera to the searched position
             mapboxMap!!.animateCamera(CameraUpdateFactory.newCameraPosition(CameraPosition.Builder()
                     .target(latLng)
@@ -294,10 +296,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
     }
 
     @SuppressLint("MissingPermission")
-    private fun getUserLocation() : Point {
-        return Point.fromLngLat(locationComponent!!.lastKnownLocation!!.longitude,
-                locationComponent!!.lastKnownLocation!!.latitude)
-    }
+    private fun getUserLocation() : Point = Point.fromLngLat(locationComponent!!.lastKnownLocation!!.longitude, locationComponent!!.lastKnownLocation!!.latitude)
+
 
     override fun onProgressChange(location: Location?, routeProgress: RouteProgress?) {
         Log.i(TAG, "route progress changed")
