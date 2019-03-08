@@ -44,6 +44,8 @@ import com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconAllowOverlap
 import com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconIgnorePlacement
 import com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconImage
 import com.mapbox.mapboxsdk.style.light.Position
+import com.mapbox.services.android.navigation.ui.v5.NavigationViewOptions
+import com.mapbox.services.android.navigation.v5.navigation.MapboxNavigation
 import com.mapbox.services.android.navigation.v5.routeprogress.ProgressChangeListener
 import com.mapbox.services.android.navigation.v5.routeprogress.RouteProgress
 import com.mapbox.services.android.navigation.v5.routeprogress.RouteProgressState
@@ -106,10 +108,13 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
 
     override fun onMapReady(mapboxMap: MapboxMap) {
         this.mapboxMap = mapboxMap
-        mapboxMap.setStyle(getString(R.string.navigation_guidance_day)) { style ->
+        mapboxMap.setStyle(getString(R.string.streets_parking)) { style ->
             enableLocationComponent(style)
             addDestinationIconSymbolLayer(style)
+
             mapboxMap.addOnMapClickListener(this@MainActivity)
+            navigation = MapboxNavigation(applicationContext, getString(R.string.access_token))
+
 
             startNavigationButton!!.setOnClickListener {
                 Log.d(TAG, "onClick: Trying to start the simulation of the navigation")
@@ -150,6 +155,25 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
         source?.setGeoJson(Feature.fromGeometry(destinationPoint))
 
         getRoute(originPoint, destinationPoint)
+
+        val pixel = mapboxMap!!.projection.toScreenLocation(point)
+        val features = mapboxMap!!.queryRenderedFeatures(pixel)
+        // Get the first feature within the list if one exist
+        if (features.size > 0) {
+            val feature = features[0]
+
+            // Ensure the feature has properties defined
+            if (feature.properties() != null) {
+                for ((key, value) in feature.properties()!!.entrySet()) {
+                    // Log all the properties
+                    Log.d(TAG, String.format("%s = %s", key, value))
+                    if(key.equals("zonecode"))
+                    Toast.makeText(applicationContext, "" + value, Toast.LENGTH_SHORT).show()
+
+                }
+            }
+        }
+
         return true
     }
 

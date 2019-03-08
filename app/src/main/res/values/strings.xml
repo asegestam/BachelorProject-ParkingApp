@@ -8,6 +8,7 @@
 
     //Buttons
     <string name="startNavigation">Start Navigation</string>
+    <string name="streets_parking">mapbox://styles/asegestam/cjszumel31fv31fpdpzbm51b8</string>
 
     //App_code
     <string name="app_code">38cd95124d0c4c4045550a90664ec77a</string>
