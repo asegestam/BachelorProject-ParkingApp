@@ -2,6 +2,7 @@ package com.example.smspark
 
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.converter.scalars.ScalarsConverterFactory
 
 object RetrofitClientInstance {
 
@@ -14,8 +15,10 @@ object RetrofitClientInstance {
         if (retrofit == null){
             retrofit = retrofit2.Retrofit.Builder()
                     .baseUrl(BASE_URL)
-                    .addConverterFactory(GsonConverterFactory.create())
+                    .addConverterFactory(ScalarsConverterFactory.create())
                     .build()
+
+            //GSON converter: GsonConverterFactory.create()
         }
         return retrofit
     }

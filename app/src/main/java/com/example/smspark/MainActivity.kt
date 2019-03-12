@@ -22,6 +22,7 @@ import com.mapbox.geojson.FeatureCollection
 import com.mapbox.geojson.GeoJson
 import com.mapbox.geojson.Point
 import com.mapbox.mapboxsdk.Mapbox
+import com.mapbox.mapboxsdk.annotations.MarkerOptions
 import com.mapbox.mapboxsdk.camera.CameraPosition
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory
 import com.mapbox.mapboxsdk.geometry.LatLng
@@ -40,6 +41,8 @@ import com.mapbox.services.android.navigation.v5.navigation.NavigationRoute
 import com.mapbox.mapboxsdk.plugins.places.autocomplete.PlaceAutocomplete
 import com.mapbox.mapboxsdk.plugins.places.autocomplete.model.PlaceOptions
 import com.mapbox.mapboxsdk.plugins.places.autocomplete.model.PlaceOptions.MODE_CARDS
+import com.mapbox.mapboxsdk.style.layers.LineLayer
+import com.mapbox.mapboxsdk.style.layers.PropertyFactory
 import com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconAllowOverlap
 import com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconIgnorePlacement
 import com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconImage
@@ -78,37 +81,50 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
         mapView = findViewById(R.id.mapView)
         mapView!!.onCreate(savedInstanceState)
         mapView!!.getMapAsync(this)
-
-
-        //getParkingLots()
-
-
     }
 
-    fun getParkingLots() {
+    private fun initParkinglots(style: Style, geojson: String) {
+        style.addSource(GeoJsonSource("geojson", geojson))
+        style.addLayer(LineLayer("geojson", "geojson"))
+
+        Log.i(TAG, "GeoJson:" + geojson)
+        Toast.makeText(this, "geojson", Toast.LENGTH_SHORT).show()
+
+
+        val fromJson = FeatureCollection.fromJson(geojson)
+        var features = fromJson.features()
+
+        val filteredFeatures = features!!.filter { it.geometry() is Point }
+        
+    }
+
+    private fun getParkingLots() {
+
+
         val service = RetrofitClientInstance.retrofitInstance?.create(GetParkingService::class.java)
         val call = service?.getParkings()
-        call?.enqueue(object : Callback<Parking>{
-            override fun onFailure(call: Call<Parking>, t: Throwable) {
+        call?.enqueue(object : Callback<String>{
+            override fun onFailure(call: Call<String>, t: Throwable) {
                 Log.e(TAG, "Failed loading in parkings $t")
-                Toast.makeText(applicationContext, "ERROR: Failed to load parking lots", Toast.LENGTH_SHORT).show()
+                Toast.makeText(applicationContext, "Failed to load parking lots from the server", Toast.LENGTH_LONG).show()
             }
 
-            override fun onResponse(call: Call<Parking>, response: Response<Parking>) {
-                val body = response?.body()
-                val responseMessage = response?.toString()
-                var callString = call.toString()
-
-                Toast.makeText(applicationContext, "Recieved $body lots", Toast.LENGTH_SHORT).show()
-                Log.d(TAG, "Recieved $body lots and CallString: $callString ResponseMessage: $responseMessage")
+            override fun onResponse(call: Call<String>, response: Response<String>) {
+                loadParkingLots(response.body().toString())
             }
 
         })
+
+    }
+
+    private fun loadParkingLots(geojson: String){
+        Toast.makeText(this, "Loading parking lots into the map", Toast.LENGTH_LONG).show()
+        initParkinglots(mapboxMap!!.style!!, geojson)
     }
 
     override fun onMapReady(mapboxMap: MapboxMap) {
         this.mapboxMap = mapboxMap
-        mapboxMap.setStyle(getString(R.string.streets_parking_debug)) { style ->
+        mapboxMap.setStyle(Style.MAPBOX_STREETS) { style ->
             enableLocationComponent(style)
             addDestinationIconSymbolLayer(style)
 
@@ -125,6 +141,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
                 NavigationLauncher.startNavigation(this@MainActivity, options)
             }
             initFab()
+            getParkingLots()
         }
     }
 
@@ -142,7 +159,18 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
         loadedMapStyle.addLayer(destinationSymbolLayer)
     }
 
-
+    private fun addMarker(loadedMapStyle: Style, geoJsonSource: GeoJsonSource) {
+        loadedMapStyle.addImage("destination-icon-id",
+                BitmapFactory.decodeResource(this.resources, R.drawable.mapbox_marker_icon_default))
+        loadedMapStyle.addSource(geoJsonSource)
+        val destinationSymbolLayer = SymbolLayer("destination-symbol-layer-id", "destination-source-id")
+        destinationSymbolLayer.withProperties(
+                iconImage("destination-icon-id"),
+                iconAllowOverlap(true),
+                iconIgnorePlacement(true)
+        )
+        loadedMapStyle.addLayer(destinationSymbolLayer)
+    }
 
 
     @SuppressLint("MissingPermission")
