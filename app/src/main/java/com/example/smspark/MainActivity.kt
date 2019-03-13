@@ -8,19 +8,20 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
 import android.graphics.BitmapFactory
+import android.graphics.Color
+import android.graphics.PointF
+import android.graphics.RectF
 import android.location.Location
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
 import com.example.smspark.dto.Parking
+import com.google.gson.GsonBuilder
 import com.mapbox.android.core.permissions.PermissionsListener
 import com.mapbox.android.core.permissions.PermissionsManager
 import com.mapbox.api.directions.v5.models.DirectionsResponse
 import com.mapbox.api.directions.v5.models.DirectionsRoute
-import com.mapbox.geojson.Feature
-import com.mapbox.geojson.FeatureCollection
-import com.mapbox.geojson.GeoJson
-import com.mapbox.geojson.Point
+import com.mapbox.geojson.*
 import com.mapbox.mapboxsdk.Mapbox
 import com.mapbox.mapboxsdk.camera.CameraPosition
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory
@@ -31,27 +32,27 @@ import com.mapbox.mapboxsdk.maps.MapView
 import com.mapbox.mapboxsdk.maps.MapboxMap
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback
 import com.mapbox.mapboxsdk.maps.Style
+import com.mapbox.mapboxsdk.plugins.annotation.Fill
 import com.mapbox.mapboxsdk.style.layers.SymbolLayer
 import com.mapbox.mapboxsdk.style.sources.GeoJsonSource
-import com.mapbox.services.android.navigation.ui.v5.NavigationLauncher
-import com.mapbox.services.android.navigation.ui.v5.NavigationLauncherOptions
 import com.mapbox.services.android.navigation.ui.v5.route.NavigationMapRoute
 import com.mapbox.services.android.navigation.v5.navigation.NavigationRoute
 import com.mapbox.mapboxsdk.plugins.places.autocomplete.PlaceAutocomplete
 import com.mapbox.mapboxsdk.plugins.places.autocomplete.model.PlaceOptions
 import com.mapbox.mapboxsdk.plugins.places.autocomplete.model.PlaceOptions.MODE_CARDS
-import com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconAllowOverlap
-import com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconIgnorePlacement
-import com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconImage
-import com.mapbox.mapboxsdk.style.light.Position
-import com.mapbox.services.android.navigation.ui.v5.NavigationViewOptions
-import com.mapbox.services.android.navigation.v5.navigation.MapboxNavigation
+import com.mapbox.mapboxsdk.plugins.places.picker.PlacePicker
+import com.mapbox.mapboxsdk.plugins.places.picker.model.PlacePickerOptions
+import com.mapbox.mapboxsdk.style.layers.FillLayer
+import com.mapbox.mapboxsdk.style.layers.LineLayer
+import com.mapbox.mapboxsdk.style.layers.PropertyFactory.*
+import com.mapbox.services.android.navigation.ui.v5.NavigationLauncher
+import com.mapbox.services.android.navigation.ui.v5.NavigationLauncherOptions
 import com.mapbox.services.android.navigation.v5.routeprogress.ProgressChangeListener
 import com.mapbox.services.android.navigation.v5.routeprogress.RouteProgress
 import com.mapbox.services.android.navigation.v5.routeprogress.RouteProgressState
 import kotlinx.android.synthetic.main.activity_main.*
 
-class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapClickListener, PermissionsListener, ProgressChangeListener {
+class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapClickListener, PermissionsListener {
 
     // variables for adding location layer
     private var mapView: MapView? = null
@@ -78,151 +79,27 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
         mapView = findViewById(R.id.mapView)
         mapView!!.onCreate(savedInstanceState)
         mapView!!.getMapAsync(this)
-
-
-        //getParkingLots()
-
-
-    }
-
-    fun getParkingLots() {
-        val service = RetrofitClientInstance.retrofitInstance?.create(GetParkingService::class.java)
-        val call = service?.getParkings()
-        call?.enqueue(object : Callback<Parking>{
-            override fun onFailure(call: Call<Parking>, t: Throwable) {
-                Log.e(TAG, "Failed loading in parkings $t")
-                Toast.makeText(applicationContext, "ERROR: Failed to load parking lots", Toast.LENGTH_SHORT).show()
-            }
-
-            override fun onResponse(call: Call<Parking>, response: Response<Parking>) {
-                val body = response?.body()
-                val responseMessage = response?.toString()
-                var callString = call.toString()
-
-                Toast.makeText(applicationContext, "Recieved $body lots", Toast.LENGTH_SHORT).show()
-                Log.d(TAG, "Recieved $body lots and CallString: $callString ResponseMessage: $responseMessage")
-            }
-
-        })
     }
 
     override fun onMapReady(mapboxMap: MapboxMap) {
         this.mapboxMap = mapboxMap
-        mapboxMap.setStyle(getString(R.string.streets_parking_debug)) { style ->
+        mapboxMap.setStyle(Style.MAPBOX_STREETS) { style ->
             enableLocationComponent(style)
             addDestinationIconSymbolLayer(style)
 
             mapboxMap.addOnMapClickListener(this@MainActivity)
-
-            startNavigationButton!!.setOnClickListener {
-                Log.d(TAG, "onClick: Trying to start the simulation of the navigation")
-                val simulateRoute = true
-                val options = NavigationLauncherOptions.builder()
-                        .directionsRoute(currentRoute)
-                        .shouldSimulateRoute(simulateRoute)
-                        .build()
-                // Call this method with Context from within an Activity
-                NavigationLauncher.startNavigation(this@MainActivity, options)
             }
-            initFab()
-        }
+        initButtons()
+        getParkingLots()
     }
 
-    private fun addDestinationIconSymbolLayer(loadedMapStyle: Style) {
-        loadedMapStyle.addImage("destination-icon-id",
-                BitmapFactory.decodeResource(this.resources, R.drawable.mapbox_marker_icon_default))
-        val geoJsonSource = GeoJsonSource("destination-source-id")
-        loadedMapStyle.addSource(geoJsonSource)
-        val destinationSymbolLayer = SymbolLayer("destination-symbol-layer-id", "destination-source-id")
-        destinationSymbolLayer.withProperties(
-                iconImage("destination-icon-id"),
-                iconAllowOverlap(true),
-                iconIgnorePlacement(true)
-        )
-        loadedMapStyle.addLayer(destinationSymbolLayer)
-    }
-
-
-
-
-    @SuppressLint("MissingPermission")
-    override fun onMapClick(point: LatLng): Boolean {
-
-        val originPoint = getUserLocation()
-
-        val source = mapboxMap!!.style!!.getSourceAs<GeoJsonSource>("destination-source-id")
-
-        if (destination != null) {
-            val wayPoint = Point.fromLngLat(point.longitude, point.latitude)
-            source?.setGeoJson(Feature.fromGeometry(wayPoint))
-            getRoute(originPoint, wayPoint, destination!!)
+    private fun initButtons() {
+        fab.setOnClickListener {
+            startAutoCompleteActivity()
         }
-
-
-        val pixel = mapboxMap!!.projection.toScreenLocation(point)
-        val features = mapboxMap!!.queryRenderedFeatures(pixel)
-        // Get the first feature within the list if one exist
-        if (features.size > 0) {
-            val feature = features[0]
-
-            // Ensure the feature has properties defined
-            if (feature.properties() != null) {
-                for ((key, value) in feature.properties()!!.entrySet()) {
-                    // Log all the properties
-                    Log.d(TAG, String.format("%s = %s", key, value))
-                    if(key.equals("zonecode"))
-                    Toast.makeText(applicationContext, "" + value, Toast.LENGTH_SHORT).show()
-
-                }
-            }
+        startNavigationButton!!.setOnClickListener {
+            startNavigationUI()
         }
-
-        return true
-    }
-
-    private fun getRoute(origin: Point, wayPoint: Point, destination: Point) {
-        NavigationRoute.builder(this)
-                .accessToken(Mapbox.getAccessToken()!!)
-                .origin(origin)
-                .addWaypoint(wayPoint)
-                .profile("driving")
-                .destination(destination)
-                .build()
-                .getRoute(object : Callback<DirectionsResponse> {
-                    override fun onResponse(call: Call<DirectionsResponse>, response: Response<DirectionsResponse>) {
-                        // You can get the generic HTTP info about the response
-                        Log.d(TAG, "Response code: " + response.code())
-                        if (response.body() == null) {
-                            Log.e(TAG, "No routes found, make sure you set the right user and access token.")
-                            return
-                        } else if (response.body()!!.routes().size < 1) {
-                            Log.e(TAG, "No routes found")
-                            return
-                        }
-
-                        Log.d(TAG, "onResponse: Number of routes: " + response.body()!!.routes().size)
-
-                        currentRoute = response.body()!!.routes()[0]
-
-                        // Draw the route on the map
-                        if (navigationMapRoute != null) {
-                           //navigationMapRoute!!.removeRoute()
-                        } else {
-                            navigationMapRoute = NavigationMapRoute(null, mapView!!, mapboxMap!!, R.style.NavigationMapRoute)
-                        }
-                        if (currentRoute != null) {
-                            navigationMapRoute!!.addRoute(currentRoute)
-                            startNavigationButton!!.isEnabled = true
-                            startNavigationButton!!.setBackgroundResource(R.color.mapbox_blue)
-                        } else {
-                            Log.e(TAG, "Error, route is null")
-                        }
-                    }
-
-                    override fun onFailure(call: Call<DirectionsResponse>, throwable: Throwable) {
-                        Log.e(TAG, "Error: " + throwable.message)
-                    }
-                })
     }
 
     @SuppressLint("MissingPermission")
@@ -242,41 +119,184 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
         }
     }
 
-    private fun initFab() {
-        fab.setOnClickListener {
-            val intent = PlaceAutocomplete.IntentBuilder()
-                    .accessToken(getString(R.string.access_token))
-                    .placeOptions(PlaceOptions.builder()
-                            .language("sv")
-                            .country("SE")
-                            .proximity(getUserLocation())
-                            .build(MODE_CARDS))
-
-                    .build(this)
-            startActivityForResult(intent, REQUEST_CODE_AUTOCOMPLETE)
+    @SuppressLint("MissingPermission")
+    override fun onMapClick(point: LatLng): Boolean {
+        queryMapClick(point)
+        val originPoint = getUserLocation()
+        val source = mapboxMap!!.style!!.getSourceAs<GeoJsonSource>("destination-source-id")
+        if (destination != null) {
+            val wayPoint = Point.fromLngLat(point.longitude, point.latitude)
+            source?.setGeoJson(Feature.fromGeometry(wayPoint))
+            getRoute(originPoint, wayPoint, destination!!)
         }
+        return true
+    }
+
+
+    /** Queryes the map for zone features on the point clicked */
+    private fun queryMapClick(point: LatLng) {
+        val pixel = mapboxMap!!.projection.toScreenLocation(point)
+        var features = mapboxMap!!.queryRenderedFeatures(pixel)
+        Log.d(TAG, "Queryed features size " + features.size)
+        if (features.size > 0) {
+            for(feature in features) {
+                //Only relevant features has zonecodes
+                if(feature.hasProperty("zonecode")) {
+                    for((key, value) in feature.properties()!!.entrySet()) {
+                        Log.d(TAG, String.format("%s = %s", key, value))
+                        if(key == "zonecode") Toast.makeText(applicationContext, "" + value , Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
+    }
+
+    private fun addDestinationIconSymbolLayer(loadedMapStyle: Style) {
+        loadedMapStyle.addImage("destination-icon-id",
+                BitmapFactory.decodeResource(this.resources, R.drawable.mapbox_marker_icon_default))
+        val geoJsonSource = GeoJsonSource("destination-source-id")
+        loadedMapStyle.addSource(geoJsonSource)
+        val destinationSymbolLayer = SymbolLayer("destination-symbol-layer-id", "destination-source-id")
+        destinationSymbolLayer.withProperties(
+                iconImage("destination-icon-id"),
+                iconAllowOverlap(true),
+                iconIgnorePlacement(true)
+        )
+        loadedMapStyle.addLayer(destinationSymbolLayer)
+    }
+
+    /** Returns a route from a origin point, to a destination with a waypoint in between */
+    private fun getRoute(origin: Point, wayPoint: Point, destination: Point) {
+        NavigationRoute.builder(this)
+                .accessToken(Mapbox.getAccessToken()!!)
+                .origin(origin)
+                .addWaypoint(wayPoint)
+                .profile("driving")
+                .destination(destination)
+                .build()
+                .getRoute(object : Callback<DirectionsResponse> {
+                    override fun onResponse(call: Call<DirectionsResponse>, response: Response<DirectionsResponse>) {
+                        // You can get the generic HTTP info about the response
+                        Log.d(TAG, "Response code: " + response.code())
+                        if (response.body() == null) {
+                            Log.e(TAG, "No routes found, make sure you set the right user and access token.")
+                            return
+                        } else if (response.body()!!.routes().size < 1) {
+                            Log.e(TAG, "No routes found")
+                            return
+                        }
+                        Log.d(TAG, "onResponse: Number of routes: " + response.body()!!.routes().size)
+                        currentRoute = response.body()!!.routes()[0]
+                        // Draw the route on the map
+                        if (navigationMapRoute != null) {
+                           //navigationMapRoute!!.removeRoute()
+                        } else {
+                            navigationMapRoute = NavigationMapRoute(null, mapView!!, mapboxMap!!, R.style.NavigationMapRoute)
+                        }
+                        if (currentRoute != null) {
+                            navigationMapRoute!!.addRoute(currentRoute)
+                            startNavigationButton!!.isEnabled = true
+                            startNavigationButton!!.setBackgroundResource(R.color.mapbox_blue)
+                        } else {
+                            Log.e(TAG, "Error, route is null")
+                        }
+                    }
+                    override fun onFailure(call: Call<DirectionsResponse>, throwable: Throwable) {
+                        Log.e(TAG, "Error: " + throwable.message)
+                    }
+                })
+    }
+
+    /** Starts the navigationUI to navigate to the currentRoute */
+    private fun startNavigationUI() {
+        val simulateRoute = true
+        val options = NavigationLauncherOptions.builder()
+                .directionsRoute(currentRoute)
+                .shouldSimulateRoute(simulateRoute)
+                .build()
+        // Call this method with Context from within an Activity
+        NavigationLauncher.startNavigation(this@MainActivity, options)
+    }
+
+    /** Starts a Search AutoComplete activity for searching locations */
+    private fun startAutoCompleteActivity() {
+        val intent = PlaceAutocomplete.IntentBuilder()
+                .accessToken(getString(R.string.access_token))
+                .placeOptions(PlaceOptions.builder()
+                        .language("sv")
+                        .country("SE")
+                        .proximity(getUserLocation())
+                        .build(MODE_CARDS))
+                .build(this)
+        startActivityForResult(intent, REQUEST_CODE_AUTOCOMPLETE)
     }
 
     @SuppressLint("MissingPermission")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        //if result code is for AutoComplete activity
         if (resultCode == Activity.RESULT_OK && requestCode == REQUEST_CODE_AUTOCOMPLETE) {
-            //Gets the place data from searched position
-            val feature = PlaceAutocomplete.getPlace(data)
-            destination = feature.geometry() as Point
-            val latLng = LatLng(destination!!.latitude(), destination!!.longitude())
-
-            //Animates the camera to the searched position
-            mapboxMap!!.animateCamera(CameraUpdateFactory.newCameraPosition(CameraPosition.Builder()
-                    .target(latLng)
-                    .zoom(14.0)
-                    .bearing(90.0)
-                    .tilt(15.0)
-                    .build()), 4000)
-            mapboxMap!!.clear()
-            mapboxMap!!.addMarker(com.mapbox.mapboxsdk.annotations.MarkerOptions().position(latLng))
+           handleAutoCompleteResult(data)
         }
     }
+
+    /** Handles the result given from the Search AutoComplete Activity*/
+    private fun handleAutoCompleteResult(data: Intent?) {
+        //Gets the place data from searched position
+        val feature = PlaceAutocomplete.getPlace(data)
+        destination = feature.geometry() as Point
+        val latLng = LatLng(destination!!.latitude(), destination!!.longitude())
+        //Animates the camera to the searched position
+        mapboxMap!!.animateCamera(CameraUpdateFactory.newCameraPosition(CameraPosition.Builder()
+                .target(latLng)
+                .zoom(14.0)
+                .bearing(90.0)
+                .tilt(15.0)
+                .build()), 2000)
+        mapboxMap!!.clear()
+        mapboxMap!!.addMarker(com.mapbox.mapboxsdk.annotations.MarkerOptions().position(latLng))
+        if(currentRoute != null) {
+            //if there is a previous route, reset it
+            currentRoute = null
+        }
+    }
+
+    /** Returns a JSON string of parkingzone information from SMSParks API */
+    fun getParkingLots() {
+        val service = RetrofitClientInstance.retrofitInstance?.create(GetParkingService::class.java)
+        val call = service?.getParkings()
+        call?.enqueue(object : Callback<Parking>{
+            override fun onFailure(call: Call<Parking>, t: Throwable) {
+                Log.e(TAG, "Failed loading in parkings $t")
+                Toast.makeText(applicationContext, "ERROR: Failed to load parking lots", Toast.LENGTH_SHORT).show()
+            }
+
+            override fun onResponse(call: Call<Parking>, response: Response<Parking>) {
+                val parking: Parking = response.body()!!
+                val parkings = parking.features
+                val gson = GsonBuilder().setPrettyPrinting().create()
+                val features: String = getString(R.string.geojson_string) + gson.toJson(parkings) + "}"
+                // println(features)
+                addParkingsToMap(features)
+            }
+
+        })
+    }
+
+    /** Adds a FillLayer representation of a given JSON String */
+    private fun addParkingsToMap(json: String) {
+        getMapStyle().addSource(GeoJsonSource("parkings", json))
+        //getMapStyle().addLayer(LineLayer("geojson", "parkings"))
+        val parkingLayer = FillLayer("parkingLayer", "parkings")
+        parkingLayer.setProperties(fillColor(Color.parseColor("#f42428")),
+                fillOpacity(0.75f))
+        getMapStyle().addLayer(parkingLayer)
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun getUserLocation() : Point = Point.fromLngLat(locationComponent!!.lastKnownLocation!!.longitude, locationComponent!!.lastKnownLocation!!.latitude)
+
+    private fun getMapStyle() : Style = mapboxMap!!.style!!
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         permissionsManager!!.onRequestPermissionsResult(requestCode, permissions, grantResults)
@@ -294,17 +314,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
             finish()
         }
     }
-
-    @SuppressLint("MissingPermission")
-    private fun getUserLocation() : Point = Point.fromLngLat(locationComponent!!.lastKnownLocation!!.longitude, locationComponent!!.lastKnownLocation!!.latitude)
-
-
-    override fun onProgressChange(location: Location?, routeProgress: RouteProgress?) {
-        Log.i(TAG, "route progress changed")
-        if(routeProgress!!.currentState()!! == RouteProgressState.ROUTE_ARRIVED)
-            Toast.makeText(applicationContext, "Route finished", Toast.LENGTH_SHORT).show()
-    }
-
 
     override fun onStart() {
         super.onStart()
