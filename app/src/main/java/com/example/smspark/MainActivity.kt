@@ -9,9 +9,6 @@ import android.app.Activity
 import android.content.Intent
 import android.graphics.BitmapFactory
 import android.graphics.Color
-import android.graphics.PointF
-import android.graphics.RectF
-import android.location.Location
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
@@ -32,7 +29,6 @@ import com.mapbox.mapboxsdk.maps.MapView
 import com.mapbox.mapboxsdk.maps.MapboxMap
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback
 import com.mapbox.mapboxsdk.maps.Style
-import com.mapbox.mapboxsdk.plugins.annotation.Fill
 import com.mapbox.mapboxsdk.style.layers.SymbolLayer
 import com.mapbox.mapboxsdk.style.sources.GeoJsonSource
 import com.mapbox.services.android.navigation.ui.v5.route.NavigationMapRoute
@@ -40,16 +36,12 @@ import com.mapbox.services.android.navigation.v5.navigation.NavigationRoute
 import com.mapbox.mapboxsdk.plugins.places.autocomplete.PlaceAutocomplete
 import com.mapbox.mapboxsdk.plugins.places.autocomplete.model.PlaceOptions
 import com.mapbox.mapboxsdk.plugins.places.autocomplete.model.PlaceOptions.MODE_CARDS
-import com.mapbox.mapboxsdk.plugins.places.picker.PlacePicker
-import com.mapbox.mapboxsdk.plugins.places.picker.model.PlacePickerOptions
 import com.mapbox.mapboxsdk.style.layers.FillLayer
-import com.mapbox.mapboxsdk.style.layers.LineLayer
+import com.mapbox.mapboxsdk.style.layers.PropertyFactory
 import com.mapbox.mapboxsdk.style.layers.PropertyFactory.*
+import com.mapbox.mapboxsdk.style.sources.GeoJsonOptions
 import com.mapbox.services.android.navigation.ui.v5.NavigationLauncher
 import com.mapbox.services.android.navigation.ui.v5.NavigationLauncherOptions
-import com.mapbox.services.android.navigation.v5.routeprogress.ProgressChangeListener
-import com.mapbox.services.android.navigation.v5.routeprogress.RouteProgress
-import com.mapbox.services.android.navigation.v5.routeprogress.RouteProgressState
 import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapClickListener, PermissionsListener {
@@ -273,24 +265,38 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
 
             override fun onResponse(call: Call<Parking>, response: Response<Parking>) {
                 val parking: Parking = response.body()!!
-                val parkings = parking.features
                 val gson = GsonBuilder().setPrettyPrinting().create()
-                val features: String = getString(R.string.geojson_string) + gson.toJson(parkings) + "}"
-                // println(features)
-                addParkingsToMap(features)
+                //filter out polygon features to a separate list
+                val polygons = parking.features.toCollection(ArrayList()).filter {  it.geometry.type == "Polygon" }
+                val polygonsString: String = getString(R.string.geojson_string) + gson.toJson(polygons) + "}"
+                println(polygonsString)
+                //filter out point features to a separate list
+                val points = parking.features.toCollection(ArrayList()).filter { it.geometry.type == "Point" }
+                val pointString: String = getString(R.string.geojson_string) + gson.toJson(points) + "}"
+                println(pointString)
+                
+                addPolygonsToMap(polygonsString)
+                addMarkersToMap(pointString)
             }
 
         })
     }
 
     /** Adds a FillLayer representation of a given JSON String */
-    private fun addParkingsToMap(json: String) {
-        getMapStyle().addSource(GeoJsonSource("parkings", json))
+    private fun addPolygonsToMap(json: String) {
+        getMapStyle().addSource(GeoJsonSource("zonePolygons", json))
         //getMapStyle().addLayer(LineLayer("geojson", "parkings"))
-        val parkingLayer = FillLayer("parkingLayer", "parkings")
+        val parkingLayer = FillLayer("parkingLayer", "zonePolygons")
         parkingLayer.setProperties(fillColor(Color.parseColor("#f42428")),
                 fillOpacity(0.75f))
-        getMapStyle().addLayer(parkingLayer)
+        getMapStyle().addLayerAbove(parkingLayer, "road-rail-tracks")
+    }
+
+    private fun addMarkersToMap(json: String) {
+        getMapStyle().addSource(GeoJsonSource("zonePoints", json))
+        getMapStyle().addImage("parking_marker", BitmapFactory.decodeResource(resources, R.drawable.park_blue))
+        getMapStyle().addLayer(SymbolLayer("markerLayer", "zonePoints")
+                .withProperties(PropertyFactory.iconImage("parking_marker"), iconSize(0.35f)))
     }
 
     @SuppressLint("MissingPermission")
