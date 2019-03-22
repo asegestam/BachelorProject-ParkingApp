@@ -1,11 +1,10 @@
-package com.example.smspark.dto
+package com.example.smspark.model
 
 import com.google.gson.annotations.SerializedName
-import com.mapbox.geojson.Feature
 
-data class Parking(
+data class Zone(
         val type: String,
-        val features: Array<com.example.smspark.dto.Feature>
+        val features: Array<Feature>
     )
 
 data class Feature(

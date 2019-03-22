@@ -1,4 +1,4 @@
-package com.example.smspark
+package com.example.smspark.views
 
 import androidx.appcompat.app.AppCompatActivity
 import retrofit2.Call
@@ -12,13 +12,15 @@ import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
-import com.example.smspark.dto.Parking
-import com.google.gson.GsonBuilder
+import androidx.lifecycle.Observer
+import com.example.smspark.R
+import com.example.smspark.viewmodels.ZoneViewModel
 import com.mapbox.android.core.permissions.PermissionsListener
 import com.mapbox.android.core.permissions.PermissionsManager
 import com.mapbox.api.directions.v5.models.DirectionsResponse
 import com.mapbox.api.directions.v5.models.DirectionsRoute
 import com.mapbox.geojson.*
+import com.mapbox.geojson.Feature
 import com.mapbox.mapboxsdk.Mapbox
 import com.mapbox.mapboxsdk.camera.CameraPosition
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory
@@ -39,10 +41,10 @@ import com.mapbox.mapboxsdk.plugins.places.autocomplete.model.PlaceOptions.MODE_
 import com.mapbox.mapboxsdk.style.layers.FillLayer
 import com.mapbox.mapboxsdk.style.layers.PropertyFactory
 import com.mapbox.mapboxsdk.style.layers.PropertyFactory.*
-import com.mapbox.mapboxsdk.style.sources.GeoJsonOptions
 import com.mapbox.services.android.navigation.ui.v5.NavigationLauncher
 import com.mapbox.services.android.navigation.ui.v5.NavigationLauncherOptions
 import kotlinx.android.synthetic.main.activity_main.*
+import org.koin.android.viewmodel.ext.android.viewModel
 
 class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapClickListener, PermissionsListener {
 
@@ -62,6 +64,9 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
     private var goteborg: Point = Point.fromLngLat(11.9745, 57.7088)
     private var destination: Point? = null
 
+    //lazy inject ViewModel
+    val zoneViewModel: ZoneViewModel by viewModel()
+
     private val TAG: String = "MainActivity"
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -71,6 +76,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
         mapView = findViewById(R.id.mapView)
         mapView!!.onCreate(savedInstanceState)
         mapView!!.getMapAsync(this)
+        zoneViewModel.zones.observe(this, Observer { polygons -> println(polygons)})
     }
 
     override fun onMapReady(mapboxMap: MapboxMap) {
@@ -82,7 +88,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
             mapboxMap.addOnMapClickListener(this@MainActivity)
             }
         initButtons()
-        getParkingLots()
+        getZoneLots()
     }
 
     private fun initButtons() {
@@ -121,6 +127,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
             source?.setGeoJson(Feature.fromGeometry(wayPoint))
             getRoute(originPoint, wayPoint, destination!!)
         }
+        zoneViewModel.getZones()
         return true
     }
 
@@ -254,17 +261,18 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
     }
 
     /** Returns a JSON string of parkingzone information from SMSParks API */
-    fun getParkingLots() {
-        val service = RetrofitClientInstance.retrofitInstance?.create(GetParkingService::class.java)
-        val call = service?.getParkings()
-        call?.enqueue(object : Callback<Parking>{
-            override fun onFailure(call: Call<Parking>, t: Throwable) {
+    fun getZoneLots() {
+        /*
+        val service = RetrofitClientInstance.retrofitInstance?.create(ZoneService::class.java)
+        val call = service?.getZones()
+        call?.enqueue(object : Callback<Zone>{
+            override fun onFailure(call: Call<Zone>, t: Throwable) {
                 Log.e(TAG, "Failed loading in parkings $t")
                 Toast.makeText(applicationContext, "ERROR: Failed to load parking lots", Toast.LENGTH_SHORT).show()
             }
 
-            override fun onResponse(call: Call<Parking>, response: Response<Parking>) {
-                val parking: Parking = response.body()!!
+            override fun onResponse(call: Call<Zone>, response: Response<Zone>) {
+                val parking: Zone = response.body()!!
                 val gson = GsonBuilder().setPrettyPrinting().create()
                 //filter out polygon features to a separate list
                 val polygons = parking.features.toCollection(ArrayList()).filter {  it.geometry.type == "Polygon" }
@@ -272,7 +280,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
                 println(polygonsString)
                 //filter out point features to a separate list
                 val points = parking.features.toCollection(ArrayList()).filter { it.geometry.type == "Point" }
-                val pointString: String = getString(R.string.geojson_string) + gson.toJson(points) + "}"
+                val pointString: String = getString(R.string.geojson_string) + gson.toJson(points) + "}" //<- Look away
                 println(pointString)
                 
                 addPolygonsToMap(polygonsString)
@@ -280,6 +288,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
             }
 
         })
+        */
     }
 
     /** Adds a FillLayer representation of a given JSON String */
