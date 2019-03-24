@@ -1,9 +1,8 @@
 package com.example.smspark.model
 
-import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.LiveData
 
 interface ZoneRepository {
-    fun getZone(): String
 
-    fun getZones(): MutableLiveData<String>
+    fun getZones(): LiveData<HashMap<String, String>>
 }

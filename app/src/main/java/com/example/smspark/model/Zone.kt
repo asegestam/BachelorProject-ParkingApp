@@ -3,19 +3,28 @@ package com.example.smspark.model
 import com.google.gson.annotations.SerializedName
 
 data class Zone(
+        @SerializedName("type")
         val type: String,
-        val features: Array<Feature>
+        @SerializedName("features")
+        var features: List<Feature>
     )
 
 data class Feature(
+        @SerializedName("id")
         val id: String,
+        @SerializedName("type")
         val type: String,
+        @SerializedName("geometry")
         val geometry: Geometry,
+        @SerializedName("properties")
         val properties: Properties
 )
 
+
 data class Geometry (
+        @SerializedName("type")
         val type: String,
+        @SerializedName("coordinates")
         val coordinates: Any
 )
 

@@ -76,19 +76,18 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
         mapView = findViewById(R.id.mapView)
         mapView!!.onCreate(savedInstanceState)
         mapView!!.getMapAsync(this)
-        zoneViewModel.zones.observe(this, Observer { polygons -> println(polygons)})
+        zoneViewModel.zonePolygons.observe(this, Observer { polygons -> addPolygonsToMap(polygons) })
+        zoneViewModel.zonePoints.observe(this, Observer { points -> addMarkersToMap(points) })
+        zoneViewModel.getZones()
     }
 
     override fun onMapReady(mapboxMap: MapboxMap) {
         this.mapboxMap = mapboxMap
-        mapboxMap.setStyle(Style.MAPBOX_STREETS) { style ->
+        mapboxMap.setStyle(getString(R.string.streets_parking)) { style ->
             enableLocationComponent(style)
-            addDestinationIconSymbolLayer(style)
-
             mapboxMap.addOnMapClickListener(this@MainActivity)
             }
         initButtons()
-        getZoneLots()
     }
 
     private fun initButtons() {
@@ -127,7 +126,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
             source?.setGeoJson(Feature.fromGeometry(wayPoint))
             getRoute(originPoint, wayPoint, destination!!)
         }
-        zoneViewModel.getZones()
         return true
     }
 
@@ -150,19 +148,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
         }
     }
 
-    private fun addDestinationIconSymbolLayer(loadedMapStyle: Style) {
-        loadedMapStyle.addImage("destination-icon-id",
-                BitmapFactory.decodeResource(this.resources, R.drawable.mapbox_marker_icon_default))
-        val geoJsonSource = GeoJsonSource("destination-source-id")
-        loadedMapStyle.addSource(geoJsonSource)
-        val destinationSymbolLayer = SymbolLayer("destination-symbol-layer-id", "destination-source-id")
-        destinationSymbolLayer.withProperties(
-                iconImage("destination-icon-id"),
-                iconAllowOverlap(true),
-                iconIgnorePlacement(true)
-        )
-        loadedMapStyle.addLayer(destinationSymbolLayer)
-    }
+
 
     /** Returns a route from a origin point, to a destination with a waypoint in between */
     private fun getRoute(origin: Point, wayPoint: Point, destination: Point) {
@@ -194,8 +180,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
                         }
                         if (currentRoute != null) {
                             navigationMapRoute!!.addRoute(currentRoute)
-                            startNavigationButton!!.isEnabled = true
-                            startNavigationButton!!.setBackgroundResource(R.color.mapbox_blue)
+                            startNavigationButton.isEnabled = true
+                            startNavigationButton.setBackgroundResource(R.color.mapbox_blue)
                         } else {
                             Log.e(TAG, "Error, route is null")
                         }
@@ -235,7 +221,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
         super.onActivityResult(requestCode, resultCode, data)
         //if result code is for AutoComplete activity
         if (resultCode == Activity.RESULT_OK && requestCode == REQUEST_CODE_AUTOCOMPLETE) {
-           handleAutoCompleteResult(data)
+            handleAutoCompleteResult(data)
+            zoneViewModel.getZones()
         }
     }
 
@@ -260,58 +247,46 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
         }
     }
 
-    /** Returns a JSON string of parkingzone information from SMSParks API */
-    fun getZoneLots() {
-        /*
-        val service = RetrofitClientInstance.retrofitInstance?.create(ZoneService::class.java)
-        val call = service?.getZones()
-        call?.enqueue(object : Callback<Zone>{
-            override fun onFailure(call: Call<Zone>, t: Throwable) {
-                Log.e(TAG, "Failed loading in parkings $t")
-                Toast.makeText(applicationContext, "ERROR: Failed to load parking lots", Toast.LENGTH_SHORT).show()
-            }
-
-            override fun onResponse(call: Call<Zone>, response: Response<Zone>) {
-                val parking: Zone = response.body()!!
-                val gson = GsonBuilder().setPrettyPrinting().create()
-                //filter out polygon features to a separate list
-                val polygons = parking.features.toCollection(ArrayList()).filter {  it.geometry.type == "Polygon" }
-                val polygonsString: String = getString(R.string.geojson_string) + gson.toJson(polygons) + "}"
-                println(polygonsString)
-                //filter out point features to a separate list
-                val points = parking.features.toCollection(ArrayList()).filter { it.geometry.type == "Point" }
-                val pointString: String = getString(R.string.geojson_string) + gson.toJson(points) + "}" //<- Look away
-                println(pointString)
-                
-                addPolygonsToMap(polygonsString)
-                addMarkersToMap(pointString)
-            }
-
-        })
-        */
-    }
 
     /** Adds a FillLayer representation of a given JSON String */
     private fun addPolygonsToMap(json: String) {
+        /*
+       Mapbox does not allow us to edit current layers, so before adding a layer
+       we remove the existing one if it exists
+        */
+        val layer = getMapStyle().getLayer("zonePolygonsLayer")
+        val source = getMapStyle().getSource("zonePolygons")
+        if(layer != null) { getMapStyle().removeLayer(layer)}
+        if(source != null) { getMapStyle().removeSource(source)}
+
         getMapStyle().addSource(GeoJsonSource("zonePolygons", json))
-        //getMapStyle().addLayer(LineLayer("geojson", "parkings"))
-        val parkingLayer = FillLayer("parkingLayer", "zonePolygons")
-        parkingLayer.setProperties(fillColor(Color.parseColor("#f42428")),
+        val zonePolygonsLayer = FillLayer("zonePolygonsLayer", "zonePolygons")
+        zonePolygonsLayer.setProperties(fillColor(Color.parseColor("#f42428")),
                 fillOpacity(0.75f))
-        getMapStyle().addLayerAbove(parkingLayer, "road-rail-tracks")
+        getMapStyle().addLayerAbove(zonePolygonsLayer, "road-rail-tracks")
     }
 
+    /** Adds a SymbolLayer representation of a given JSON String, where the icon is a Parking Icon */
     private fun addMarkersToMap(json: String) {
-        getMapStyle().addSource(GeoJsonSource("zonePoints", json))
+        /*
+        Mapbox does not allow us to edit current layers, so before adding a layer
+        we remove the existing one if it exists
+         */
+        val layer = getMapStyle().getLayer("zoneMarkerLayer")
+        val source = getMapStyle().getSource("zonePoint")
+        if(layer != null) { getMapStyle().removeLayer(layer)}
+        if(source != null) { getMapStyle().removeSource(source)}
+
+        getMapStyle().addSource(GeoJsonSource("zonePoint", json))
         getMapStyle().addImage("parking_marker", BitmapFactory.decodeResource(resources, R.drawable.park_blue))
-        getMapStyle().addLayer(SymbolLayer("markerLayer", "zonePoints")
+        getMapStyle().addLayer(SymbolLayer("zoneMarkerLayer", "zonePoint")
                 .withProperties(PropertyFactory.iconImage("parking_marker"), iconSize(0.35f)))
     }
 
     @SuppressLint("MissingPermission")
     private fun getUserLocation() : Point = Point.fromLngLat(locationComponent!!.lastKnownLocation!!.longitude, locationComponent!!.lastKnownLocation!!.latitude)
 
-    private fun getMapStyle() : Style = mapboxMap!!.style!!
+    private fun getMapStyle() : Style = mapboxMap?.style!!
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         permissionsManager!!.onRequestPermissionsResult(requestCode, permissions, grantResults)
