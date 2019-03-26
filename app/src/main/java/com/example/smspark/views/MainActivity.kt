@@ -11,6 +11,7 @@ import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.widget.Toast
 import androidx.lifecycle.Observer
 import com.example.smspark.R
@@ -39,13 +40,16 @@ import com.mapbox.mapboxsdk.plugins.places.autocomplete.PlaceAutocomplete
 import com.mapbox.mapboxsdk.plugins.places.autocomplete.model.PlaceOptions
 import com.mapbox.mapboxsdk.plugins.places.autocomplete.model.PlaceOptions.MODE_CARDS
 import com.mapbox.mapboxsdk.style.layers.FillLayer
+import com.mapbox.mapboxsdk.style.layers.Property
 import com.mapbox.mapboxsdk.style.layers.PropertyFactory
 import com.mapbox.mapboxsdk.style.layers.PropertyFactory.*
 import com.mapbox.services.android.navigation.ui.v5.NavigationLauncher
 import com.mapbox.services.android.navigation.ui.v5.NavigationLauncherOptions
 import kotlinx.android.synthetic.main.activity_main.*
 import org.koin.android.viewmodel.ext.android.viewModel
+import java.lang.StringBuilder
 
+@SuppressLint("LogNotTimber")
 class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapClickListener, PermissionsListener {
 
     // variables for adding location layer
@@ -106,10 +110,10 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
             // Activate the MapboxMap LocationComponent to show user location
             // Adding in LocationComponentOptions is also an optional parameter
             locationComponent = mapboxMap!!.locationComponent
-            locationComponent!!.activateLocationComponent(this, loadedMapStyle)
-            locationComponent!!.isLocationComponentEnabled = true
+            locationComponent?.activateLocationComponent(this, loadedMapStyle)
+            locationComponent?.isLocationComponentEnabled = true
             // Set the component's camera mode
-            locationComponent!!.cameraMode = CameraMode.TRACKING
+            locationComponent?.cameraMode = CameraMode.TRACKING
         } else {
             permissionsManager = PermissionsManager(this)
             permissionsManager!!.requestLocationPermissions(this)
@@ -118,11 +122,10 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
 
     @SuppressLint("MissingPermission")
     override fun onMapClick(point: LatLng): Boolean {
-        queryMapClick(point)
         val originPoint = getUserLocation()
-        val source = mapboxMap!!.style!!.getSourceAs<GeoJsonSource>("destination-source-id")
-        if (destination != null) {
+        if (destination != null && queryMapClick(point)) {
             val wayPoint = Point.fromLngLat(point.longitude, point.latitude)
+            val source = mapboxMap?.style!!.getSourceAs<GeoJsonSource>("map-click-marker")
             source?.setGeoJson(Feature.fromGeometry(wayPoint))
             getRoute(originPoint, wayPoint, destination!!)
         }
@@ -131,23 +134,26 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
 
 
     /** Queryes the map for zone features on the point clicked */
-    private fun queryMapClick(point: LatLng) {
-        val pixel = mapboxMap!!.projection.toScreenLocation(point)
-        var features = mapboxMap!!.queryRenderedFeatures(pixel)
-        Log.d(TAG, "Queryed features size " + features.size)
-        if (features.size > 0) {
+    private fun queryMapClick(point: LatLng) : Boolean{
+        val pixel = mapboxMap?.projection!!.toScreenLocation(point)
+        val features = mapboxMap?.queryRenderedFeatures(pixel)
+        features?.let {
             for(feature in features) {
                 //Only relevant features has zonecodes
                 if(feature.hasProperty("zonecode")) {
+                    val stringBuilder = StringBuilder()
                     for((key, value) in feature.properties()!!.entrySet()) {
                         Log.d(TAG, String.format("%s = %s", key, value))
-                        if(key == "zonecode") Toast.makeText(applicationContext, "" + value , Toast.LENGTH_SHORT).show()
+                        stringBuilder.append(value)
+                        stringBuilder.append("\n")
                     }
+                    Toast.makeText(applicationContext, stringBuilder.toString(),  Toast.LENGTH_LONG).show()
+                    return true
                 }
             }
         }
+        return false
     }
-
 
 
     /** Returns a route from a origin point, to a destination with a waypoint in between */
@@ -161,8 +167,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
                 .build()
                 .getRoute(object : Callback<DirectionsResponse> {
                     override fun onResponse(call: Call<DirectionsResponse>, response: Response<DirectionsResponse>) {
-                        // You can get the generic HTTP info about the response
-                        Log.d(TAG, "Response code: " + response.code())
                         if (response.body() == null) {
                             Log.e(TAG, "No routes found, make sure you set the right user and access token.")
                             return
@@ -170,7 +174,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
                             Log.e(TAG, "No routes found")
                             return
                         }
-                        Log.d(TAG, "onResponse: Number of routes: " + response.body()!!.routes().size)
                         currentRoute = response.body()!!.routes()[0]
                         // Draw the route on the map
                         if (navigationMapRoute != null) {
@@ -180,8 +183,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
                         }
                         if (currentRoute != null) {
                             navigationMapRoute!!.addRoute(currentRoute)
-                            startNavigationButton.isEnabled = true
-                            startNavigationButton.setBackgroundResource(R.color.mapbox_blue)
+                            startNavigationButton.visibility = View.VISIBLE
+                            startNavigationButton.text = getString(R.string.start_navigation)
                         } else {
                             Log.e(TAG, "Error, route is null")
                         }
@@ -223,6 +226,10 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
         if (resultCode == Activity.RESULT_OK && requestCode == REQUEST_CODE_AUTOCOMPLETE) {
             handleAutoCompleteResult(data)
             zoneViewModel.getZones()
+            navigationMapRoute?.updateRouteVisibilityTo(false)
+            startNavigationButton.visibility = View.GONE
+            startNavigationButton.text = getString(R.string.select_zone)
+            Toast.makeText(applicationContext, "Please select a zone" , Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -230,17 +237,17 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
     private fun handleAutoCompleteResult(data: Intent?) {
         //Gets the place data from searched position
         val feature = PlaceAutocomplete.getPlace(data)
-        destination = feature.geometry() as Point
+        destination = feature?.geometry() as Point
         val latLng = LatLng(destination!!.latitude(), destination!!.longitude())
         //Animates the camera to the searched position
-        mapboxMap!!.animateCamera(CameraUpdateFactory.newCameraPosition(CameraPosition.Builder()
+        mapboxMap?.animateCamera(CameraUpdateFactory.newCameraPosition(CameraPosition.Builder()
                 .target(latLng)
                 .zoom(14.0)
                 .bearing(90.0)
                 .tilt(15.0)
                 .build()), 2000)
-        mapboxMap!!.clear()
-        mapboxMap!!.addMarker(com.mapbox.mapboxsdk.annotations.MarkerOptions().position(latLng))
+        val source = mapboxMap?.style!!.getSourceAs<GeoJsonSource>("destination-map-marker")
+        source?.setGeoJson(Feature.fromGeometry(destination))
         if(currentRoute != null) {
             //if there is a previous route, reset it
             currentRoute = null

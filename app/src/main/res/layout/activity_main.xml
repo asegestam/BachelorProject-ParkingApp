@@ -15,24 +15,26 @@
         mapbox:mapbox_cameraTargetLng="-73.99155"
         mapbox:mapbox_cameraZoom="11" />
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/startNavigationButton"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
         android:layout_width="184dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="24dp"
         android:layout_marginEnd="24dp"
-        android:layout_marginBottom="24dp"
-        android:background="@color/mapbox_blue"
+        android:layout_marginBottom="10dp"
+        android:backgroundTint="@color/mapbox_blue"
+        android:textColor="@color/colorPrimaryDark"
         android:elevation="5dp"
-        android:enabled="false"
         android:text="@string/startNavigation"
-        android:visibility="visible"
+        android:textAppearance="@style/NotificationText"
+        android:visibility="gone"
+        mapbox:cornerRadius="10dp"
         mapbox:layout_anchor="@+id/mapView"
         mapbox:layout_anchorGravity="bottom|center"
         mapbox:layout_constraintBottom_toBottomOf="parent"
         mapbox:layout_constraintEnd_toEndOf="parent"
-        mapbox:layout_constraintStart_toStartOf="parent"
-        mapbox:cornerRadius="5dp"/>
+        mapbox:layout_constraintStart_toStartOf="parent" />
 
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -40,10 +42,10 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="end|bottom"
-        android:src="@drawable/ic_search_black_24dp"
-        mapbox:rippleColor="@color/colorPrimaryDark"
-        android:backgroundTint="@color/colorAccent"
+        android:layout_margin="16dp"
         android:elevation="8dp"
-        android:layout_margin="16dp" />
+        android:src="@drawable/ic_search_black_24dp"
+        mapbox:backgroundTint="@color/mapbox_blue"
+        mapbox:rippleColor="@color/colorPrimaryDark" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
