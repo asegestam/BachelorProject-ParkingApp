@@ -15,6 +15,10 @@ class ZoneViewModel(val repo: ZoneRepository): ViewModel(){
         MutableLiveData<String>()
     }
 
+    val handicapPoints: MutableLiveData<String> by lazy {
+        MutableLiveData<String>()
+    }
+
     fun getZones() {
         val data = repo.getZones().value
         if(data != null) {
@@ -24,4 +28,10 @@ class ZoneViewModel(val repo: ZoneRepository): ViewModel(){
         }
     }
 
+    fun getHandicapZones(){
+        val data = repo.getHandicapZones().value
+        if (data != null){
+            handicapPoints.value = data
+        }
+    }
 }

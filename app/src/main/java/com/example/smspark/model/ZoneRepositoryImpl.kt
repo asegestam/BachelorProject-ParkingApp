@@ -14,6 +14,7 @@ class ZoneRepositoryImpl: ZoneRepository, KoinComponent {
     private val TAG  = "ZoneRepositoryImpl"
     private val service: ZoneService by inject()
     val data = MutableLiveData<HashMap<String, String>>()
+    val handicap = MutableLiveData<String>()
 
     override fun getZones(): LiveData<HashMap<String, String>> {
         val call = service.getZones()
@@ -41,6 +42,57 @@ class ZoneRepositoryImpl: ZoneRepository, KoinComponent {
             }
         })
         return data
+    }
+
+    override fun getHandicapZones(): MutableLiveData<String> {
+        val call = service.getHandicapZones()
+        call.enqueue(object : retrofit2.Callback<List<Handicap>> {
+
+            override fun onFailure(call: Call<List<Handicap>>, t: Throwable) {
+                Log.e(TAG, t.message)
+            }
+
+            override fun onResponse(call: Call<List<Handicap>>, response: Response<List<Handicap>>) {
+                if(response.isSuccessful) {
+                    val zones = response.body()!!
+                    var geojsonString = "{\"type\":\"FeatureCollection\"," +
+                                                "\"features\":["
+
+                    var listIterator = zones.listIterator()
+
+                    while (listIterator.hasNext()) {
+                        var handicap = listIterator.next()
+                        geojsonString +=
+                                "{" +
+                                    "\"type\":\"Feature\"," +
+                                    "\"geometry\":{" +
+                                        "\"type\":\"Point\"," +
+                                        "\"coordinates\":[" + "${handicap.long}," + "${handicap.lat}" + "]" +
+                                        "}," +
+                                    "\"properties\":{" +
+                                            "\"Id\":\"${handicap.id}\"," +
+                                            "\"Name\":\"${handicap.name}\"," +
+                                            "\"Owner\":\"${handicap.owner}\"," +
+                                            "\"ParkingSpaces\":${handicap.parkingSpaces}," +
+                                            "\"MaxParkingTime\":\"${handicap.maxParkingTime}\"," +
+                                            "\"Distance\":${handicap.distance}," +
+                                            "\"WKT\":\"${handicap.WKT}\"" +
+                                        "}" +
+                                "}"
+
+                        if (listIterator.hasNext())
+                            geojsonString += ","
+                    }
+
+                    geojsonString += "]}"
+
+                    println("Handicap call to GBGSTAD parsed: " + geojsonString)
+                    handicap.value = geojsonString
+                }
+            }
+        })
+
+        return handicap
     }
 
 }

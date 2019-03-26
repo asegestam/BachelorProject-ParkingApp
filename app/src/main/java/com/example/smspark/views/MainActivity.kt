@@ -76,9 +76,13 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
         mapView = findViewById(R.id.mapView)
         mapView!!.onCreate(savedInstanceState)
         mapView!!.getMapAsync(this)
-        zoneViewModel.zonePolygons.observe(this, Observer { polygons -> addPolygonsToMap(polygons) })
-        zoneViewModel.zonePoints.observe(this, Observer { points -> addMarkersToMap(points) })
-        zoneViewModel.getZones()
+
+
+        //zoneViewModel.zonePolygons.observe(this, Observer { polygons -> addPolygonsToMap(polygons) })
+        //zoneViewModel.zonePoints.observe(this, Observer { points -> addMarkersToMap(points) })
+        zoneViewModel.handicapPoints.observe(this, Observer { handicapZones -> addMarkersToMap(handicapZones) })
+        zoneViewModel.getHandicapZones()
+        //zoneViewModel.getZones()
     }
 
     override fun onMapReady(mapboxMap: MapboxMap) {
@@ -126,6 +130,10 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
             source?.setGeoJson(Feature.fromGeometry(wayPoint))
             getRoute(originPoint, wayPoint, destination!!)
         }
+
+        zoneViewModel.getHandicapZones()
+
+
         return true
     }
 
