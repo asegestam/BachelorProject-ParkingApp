@@ -48,4 +48,23 @@
         mapbox:backgroundTint="@color/mapbox_blue"
         mapbox:rippleColor="@color/colorPrimaryDark" />
 
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/listButton"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:layout_width="wrap_content"
+        android:layout_height="50dp"
+        android:text="@string/list_of_zones"
+        android:textAppearance="@style/NotificationText"
+        />
+
+
+    <fragment
+        android:id="@+id/zone_list_fragment"
+        android:name="com.example.smspark.views.ZoneListFragment"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        />
+
+
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

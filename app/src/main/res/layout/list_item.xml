@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/card_view"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    android:orientation="vertical"
+    app:cardBackgroundColor="@color/colorPrimaryLight"
+    app:cardCornerRadius="5dp"
+    app:cardElevation="8dp"
+    app:cardPreventCornerOverlap="false"
+    app:cardUseCompatPadding="false">
+
+    <GridLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <ImageView
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_gravity="center"
+            android:layout_marginLeft="5dp"
+            android:layout_row="0"
+            android:layout_column="1"
+            app:srcCompat="@drawable/park_blue" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="8dp">
+
+            <TextView
+                android:id="@+id/zoneName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="1dp"
+                android:textColor="@color/colorPrimaryDark"
+                android:textSize="24sp"
+                android:text="Centralstationen (långtid)" />
+
+            <TextView
+                android:id="@+id/zoneCode"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="1dp"
+                android:textColor="@color/colorPrimaryDark"
+                android:text="Zonkod: 3071" />
+
+            <TextView
+                android:id="@+id/zoneOwner"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="1dp"
+                android:textColor="@color/colorPrimaryDark"
+                android:text="EuroPark Svenska AB EPS"/>
+
+            <TextView
+                android:id="@+id/zoneDistance"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="1dp"
+                android:textColor="@color/colorPrimaryDark"
+                android:text="5 km"/>
+
+
+        </LinearLayout>
+
+
+    </GridLayout>
+
+</androidx.cardview.widget.CardView>

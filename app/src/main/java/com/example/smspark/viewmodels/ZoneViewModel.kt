@@ -3,7 +3,9 @@ package com.example.smspark.viewmodels
 import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import com.example.smspark.model.Feature
 import com.example.smspark.model.ZoneRepository
+import com.google.gson.GsonBuilder
 
 class ZoneViewModel(val repo: ZoneRepository): ViewModel(){
 
@@ -19,12 +21,28 @@ class ZoneViewModel(val repo: ZoneRepository): ViewModel(){
         MutableLiveData<String>()
     }
 
+    val zoneFeatures: MutableLiveData<List<Feature>> by lazy {
+        MutableLiveData<List<Feature>>()
+    }
+
     fun getZones() {
         val data = repo.getZones().value
-        if(data != null) {
-            Log.d("ViewModel" , "Data not null, changing value on zones")
-            zonePolygons.value = data.getValue("polygons")
-            zonePoints.value = data.getValue("points")
+        if (data != null) {
+            Log.d("ViewModel", "Data not null, changing value on zones")
+
+            val gson = GsonBuilder().setLenient().create()
+            //Filter out features that are polygons and points to seperate lists
+            val polygonFeatures = data.features.toCollection(ArrayList()).filter { it.geometry.type == "Polygon" }
+            val pointFeatures = data.features.toCollection(ArrayList()).filter { it.geometry.type == "Point" }
+
+            val polygons = data.copy()
+            val points = data.copy()
+            polygons.features = polygonFeatures
+            points.features = pointFeatures
+
+            zonePolygons.value = gson.toJson(polygons)
+            zonePoints.value = gson.toJson(points)
+            zoneFeatures.postValue(data.features)
         }
     }
 

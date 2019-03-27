@@ -13,10 +13,10 @@ class ZoneRepositoryImpl: ZoneRepository, KoinComponent {
 
     private val TAG  = "ZoneRepositoryImpl"
     private val service: ZoneService by inject()
-    val data = MutableLiveData<HashMap<String, String>>()
+    val data = MutableLiveData<Zone>()
     val handicap = MutableLiveData<String>()
 
-    override fun getZones(): LiveData<HashMap<String, String>> {
+    override fun getZones(): LiveData<Zone> {
         val call = service.getZones()
         call.enqueue(object : retrofit2.Callback<Zone> {
             override fun onFailure(call: Call<Zone>, t: Throwable) {
@@ -25,19 +25,10 @@ class ZoneRepositoryImpl: ZoneRepository, KoinComponent {
 
             override fun onResponse(call: Call<Zone>, response: Response<Zone>) {
                 if(response.isSuccessful) {
-                    val zones = response.body()!!
-                    val gson = GsonBuilder().setLenient().create()
-                    //Filter out features that are polygons and points to seperate lists
-                    val polygonFeatures = zones.features.toCollection(ArrayList()).filter { it.geometry.type == "Polygon" }
-                    val pointFeatures = zones.features.toCollection(ArrayList()).filter { it.geometry.type == "Point" }
-
-                    val polygons = zones.copy()
-                    val points = zones.copy()
-                    polygons.features = polygonFeatures
-                    points.features = pointFeatures
-
-                    println("polygon filtered zone object to json " + gson.toJson(zones))
-                    data.value = hashMapOf("polygons" to gson.toJson(polygons), "points" to gson.toJson(points))
+                    val zones = response.body()
+                    zones?.let {
+                        data.value = zones
+                    }
                 }
             }
         })

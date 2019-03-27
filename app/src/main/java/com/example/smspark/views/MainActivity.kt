@@ -66,7 +66,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
     // variables for calculating and drawing a route
     private var currentRoute: DirectionsRoute? = null
     private var navigationMapRoute: NavigationMapRoute? = null
-    private var goteborg: Point = Point.fromLngLat(11.9745, 57.7088)
     private var destination: Point? = null
 
     //lazy inject ViewModel
@@ -84,8 +83,15 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
 
 
         zoneViewModel.zonePolygons.observe(this, Observer { polygons -> addPolygonsToMap(polygons) })
-        zoneViewModel.zonePoints.observe(this, Observer { points -> addMarkersToMap(points) })
-        zoneViewModel.handicapPoints.observe(this, Observer { handicapZones -> addHandicapMarkerToMap(handicapZones) })
+
+        zoneViewModel.zonePoints.observe(this, Observer { points ->
+            addMarkersToMap(points, "zoneMarkerLayer", "zonePoints",
+                    "parking-marker", R.drawable.park_blue, 0.35f)
+        })
+
+        zoneViewModel.handicapPoints.observe(this, Observer { handicapZones ->
+            addMarkersToMap(handicapZones, "handicapZoneLayer", "handicapZones",
+                    "handicap-marker" ,R.drawable.handicap_icon, 0.8f) })
     }
 
     override fun onMapReady(mapboxMap: MapboxMap) {
@@ -93,18 +99,27 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
         mapboxMap.setStyle(getString(R.string.streets_parking)) { style ->
             enableLocationComponent(style)
             mapboxMap.addOnMapClickListener(this@MainActivity)
+            zoneViewModel.getZones()
+            zoneViewModel.getHandicapZones()
             }
         initButtons()
-        zoneViewModel.getZones()
-        zoneViewModel.getHandicapZones()
     }
 
     private fun initButtons() {
         fab.setOnClickListener {
             startAutoCompleteActivity()
         }
-        startNavigationButton!!.setOnClickListener {
+        startNavigationButton.setOnClickListener {
             startNavigationUI()
+        }
+        listButton.setOnClickListener {
+            if(zoneViewModel.zoneFeatures.value == null) {
+                zoneViewModel.getZones()
+            } else {
+                supportFragmentManager.beginTransaction()
+                        .add(R.id.zone_list_fragment, ZoneListFragment(), "zoneList")
+                        .commit()
+            }
         }
     }
 
@@ -282,39 +297,18 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, MapboxMap.OnMapCli
     }
 
     /** Adds a SymbolLayer representation of a given JSON String, where the icon is a Parking Icon */
-    private fun addMarkersToMap(json: String) {
-        /*
-        Mapbox does not allow us to edit current layers, so before adding a layer
-        we remove the existing one if it exists
-         */
-        val layer = getMapStyle().getLayer("zoneMarkerLayer")
-        val source = getMapStyle().getSource("zonePoint")
+    private fun addMarkersToMap(json: String, layerName: String, sourceName: String, imageName: String, drawableId: Int, markerSize: Float) {
+
+        val layer = getMapStyle().getLayer(layerName)
+        val source = getMapStyle().getSource(sourceName)
         if(layer != null) { getMapStyle().removeLayer(layer)}
         if(source != null) { getMapStyle().removeSource(source)}
 
-        getMapStyle().addSource(GeoJsonSource("zonePoint", json))
-        getMapStyle().addImage("parking_marker", BitmapFactory.decodeResource(resources, R.drawable.park_blue))
-        getMapStyle().addLayer(SymbolLayer("zoneMarkerLayer", "zonePoint")
-                .withProperties(PropertyFactory.iconImage("parking_marker"), iconSize(0.35f)))
+        getMapStyle().addSource(GeoJsonSource(sourceName, json))
+        getMapStyle().addImage(imageName, BitmapFactory.decodeResource(resources, drawableId))
+        getMapStyle().addLayer(SymbolLayer(layerName, sourceName)
+                .withProperties(PropertyFactory.iconImage(imageName), iconSize(markerSize)))
     }
-
-    /** Adds a SymbolLayer representation of a given JSON String, where the icon is a Parking Icon */
-    private fun addHandicapMarkerToMap(json: String) {
-        /*
-        Mapbox does not allow us to edit current layers, so before adding a layer
-        we remove the existing one if it exists
-         */
-        val layer = getMapStyle().getLayer("handicapZoneLayer")
-        val source = getMapStyle().getSource("handicapZonePoint")
-        if(layer != null) { getMapStyle().removeLayer(layer)}
-        if(source != null) { getMapStyle().removeSource(source)}
-
-        getMapStyle().addSource(GeoJsonSource("handicapZonePoint", json))
-        getMapStyle().addImage("handicap_marker", BitmapFactory.decodeResource(resources, R.drawable.handicap_icon))
-        getMapStyle().addLayer(SymbolLayer("handicapZoneLayer", "handicapZonePoint")
-                .withProperties(PropertyFactory.iconImage("handicap_marker"), iconSize(0.8f)))
-    }
-
 
     @SuppressLint("MissingPermission")
     private fun getUserLocation() : Point = Point.fromLngLat(locationComponent!!.lastKnownLocation!!.longitude, locationComponent!!.lastKnownLocation!!.latitude)

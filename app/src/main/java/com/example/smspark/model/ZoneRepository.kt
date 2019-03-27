@@ -4,7 +4,7 @@ import androidx.lifecycle.LiveData
 
 interface ZoneRepository {
 
-    fun getZones(): LiveData<HashMap<String, String>>
+    fun getZones(): LiveData<Zone>
 
     fun getHandicapZones(): LiveData<String>
 }
