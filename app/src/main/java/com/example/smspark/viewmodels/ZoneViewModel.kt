@@ -25,15 +25,16 @@ class ZoneViewModel(val repo: ZoneRepository): ViewModel(){
         MutableLiveData<List<Feature>>()
     }
 
+
     fun getZones() {
         val data = repo.getZones().value
-        if (data != null) {
+        if (data != null && !data.equals(zoneFeatures.value)) {
             Log.d("ViewModel", "Data not null, changing value on zones")
 
             val gson = GsonBuilder().setLenient().create()
             //Filter out features that are polygons and points to seperate lists
-            val polygonFeatures = data.features.toCollection(ArrayList()).filter { it.geometry.type == "Polygon" }
-            val pointFeatures = data.features.toCollection(ArrayList()).filter { it.geometry.type == "Point" }
+            val polygonFeatures = data.features.filter { it.geometry.type == "Polygon" }
+            val pointFeatures = data.features.filter { it.geometry.type == "Point" }
 
             val polygons = data.copy()
             val points = data.copy()
@@ -42,7 +43,7 @@ class ZoneViewModel(val repo: ZoneRepository): ViewModel(){
 
             zonePolygons.value = gson.toJson(polygons)
             zonePoints.value = gson.toJson(points)
-            zoneFeatures.postValue(data.features)
+            zoneFeatures.value = data.features
         }
     }
 

@@ -8,6 +8,20 @@
     <fragment
         android:id="@+id/mapFragment"
         android:name="com.example.smspark.views.MapFragment"
-        android:label="fragment_map"
-        tools:layout="@layout/fragment_map" />
+        android:label="Map"
+        tools:layout="@layout/fragment_map">
+        <action
+            android:id="@+id/map_to_list"
+            app:destination="@id/zoneListFragment"
+            app:popUpTo="@id/mapFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/zoneListFragment"
+        android:name="com.example.smspark.views.ZoneListFragment"
+        android:label="ZoneList"
+        tools:layout="@layout/fragment_zone_list" >
+        <action
+            android:id="@+id/action_zoneListFragment_to_mapFragment"
+            app:destination="@id/mapFragment" />
+    </fragment>
 </navigation>
