@@ -14,6 +14,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.lifecycle.Observer
+import androidx.navigation.Navigation
 import com.example.smspark.R
 import com.example.smspark.viewmodels.ZoneViewModel
 import com.mapbox.android.core.permissions.PermissionsListener
@@ -39,6 +40,7 @@ import com.mapbox.services.android.navigation.ui.v5.NavigationLauncher
 import com.mapbox.services.android.navigation.ui.v5.NavigationLauncherOptions
 import com.mapbox.services.android.navigation.ui.v5.route.NavigationMapRoute
 import com.mapbox.services.android.navigation.v5.navigation.NavigationRoute
+import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.fragment_map.*
 import org.koin.android.viewmodel.ext.android.viewModel
 import retrofit2.Call
@@ -86,13 +88,11 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
         super.onViewCreated(view, savedInstanceState)
 
 
+
         mapView = view?.findViewById(R.id.mapView)
         mapView!!.onCreate(savedInstanceState)
         mapView!!.getMapAsync(this)
 
-        zoneViewModel.zonePolygons.observe(this, Observer { polygons -> addPolygonsToMap(polygons) })
-        zoneViewModel.zonePoints.observe(this, Observer { points -> addMarkersToMap(points) })
-        zoneViewModel.handicapPoints.observe(this, Observer { handicapZones -> addHandicapMarkerToMap(handicapZones) })
     }
 
     override fun onMapReady(mapboxMap: MapboxMap) {
@@ -100,10 +100,15 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
         mapboxMap.setStyle(getString(R.string.streets_parking)) { style ->
             enableLocationComponent(style)
             mapboxMap.addOnMapClickListener(this)
+
+            zoneViewModel.zonePolygons.observe(this, Observer { polygons -> addPolygonsToMap(polygons) })
+            zoneViewModel.zonePoints.observe(this, Observer { points -> addMarkersToMap(points) })
+            zoneViewModel.handicapPoints.observe(this, Observer { handicapZones -> addHandicapMarkerToMap(handicapZones) })
+            zoneViewModel.getZones()
+            zoneViewModel.getHandicapZones()
         }
         initButtons()
-        zoneViewModel.getZones()
-        zoneViewModel.getHandicapZones()
+
     }
 
     private fun initButtons() {
@@ -113,6 +118,10 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
         startNavigationButton!!.setOnClickListener {
             startNavigationUI()
         }
+
+        profile_btn.setOnClickListener(Navigation.createNavigateOnClickListener(R.id.action_mapFragment_to_profileFragment))
+        tickets_btn.setOnClickListener(Navigation.createNavigateOnClickListener(R.id.action_mapFragment_to_ticketsFragment))
+        trip_btn.setOnClickListener(Navigation.createNavigateOnClickListener(R.id.action_mapFragment_to_tripFragment))
     }
 
     @SuppressLint("MissingPermission")

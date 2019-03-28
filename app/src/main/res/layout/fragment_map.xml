@@ -5,17 +5,92 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:mapbox="http://schemas.android.com/apk/res-auto"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:context="com.example.smspark.views.MapFragment">
 
-    <com.mapbox.mapboxsdk.maps.MapView
-        android:id="@+id/mapView"
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        mapbox:mapbox_cameraTargetLat="40.73581"
-        mapbox:mapbox_cameraTargetLng="-73.99155"
-        mapbox:mapbox_cameraZoom="11" >
+        android:layout_height="match_parent">
 
-    </com.mapbox.mapboxsdk.maps.MapView>
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/navbar"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:background="@color/mapbox_blue">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/trip_btn"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:backgroundTint="@color/mapbox_blue"
+                android:textAppearance="@style/NotificationText"
+                android:textColor="@color/colorPrimaryDark"
+                mapbox:icon="@drawable/ic_directions"
+                mapbox:iconGravity="textStart"
+                mapbox:iconTint="@color/mapbox_plugins_white"
+                mapbox:layout_constraintBottom_toBottomOf="parent"
+                mapbox:layout_constraintEnd_toStartOf="@+id/profile_btn"
+                mapbox:layout_constraintHorizontal_bias="0.5"
+                mapbox:layout_constraintHorizontal_weight=".50"
+                mapbox:layout_constraintStart_toStartOf="parent"
+                mapbox:layout_constraintTop_toTopOf="parent" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/profile_btn"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_marginStart="8dp"
+                android:backgroundTint="@color/mapbox_blue"
+                android:textAppearance="@style/NotificationText"
+                android:textColor="@color/colorPrimaryDark"
+                mapbox:icon="@drawable/ic_person"
+                mapbox:iconGravity="textStart"
+                mapbox:iconTint="@color/mapbox_plugins_white"
+                mapbox:layout_constraintBottom_toBottomOf="parent"
+                mapbox:layout_constraintEnd_toStartOf="@+id/tickets_btn"
+                mapbox:layout_constraintHorizontal_bias="0.5"
+                mapbox:layout_constraintStart_toEndOf="@+id/trip_btn"
+                mapbox:layout_constraintTop_toTopOf="parent"
+                mapbox:layout_constraintVertical_bias="0.0" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/tickets_btn"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:backgroundTint="@color/mapbox_blue"
+                android:textAppearance="@style/NotificationText"
+                android:textColor="@color/colorPrimaryDark"
+                mapbox:icon="@drawable/ic_receipt"
+                mapbox:iconGravity="textStart"
+                mapbox:iconTint="@color/mapbox_plugins_white"
+                mapbox:layout_constraintBottom_toBottomOf="parent"
+                mapbox:layout_constraintEnd_toEndOf="parent"
+                mapbox:layout_constraintHorizontal_bias="0.5"
+                mapbox:layout_constraintStart_toEndOf="@+id/profile_btn"
+                mapbox:layout_constraintTop_toTopOf="parent" />
+
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <com.mapbox.mapboxsdk.maps.MapView
+            android:id="@+id/mapView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            mapbox:mapbox_cameraTargetLat="40.73581"
+            mapbox:mapbox_cameraTargetLng="-73.99155"
+            mapbox:mapbox_cameraZoom="11"
+            android:layout_below="@id/navbar">
+
+        </com.mapbox.mapboxsdk.maps.MapView>
+
+
+
+    </RelativeLayout>
+
+
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/startNavigationButton"

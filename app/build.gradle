@@ -61,6 +61,9 @@ dependencies {
     implementation "android.arch.navigation:navigation-fragment-ktx:1.0.0-alpha06"
     implementation "android.arch.navigation:navigation-ui-ktx:1.0.0-alpha06"
 
+    //Google material
+    implementation 'com.google.android.material:material:1.0.0'
+
 }
 repositories {
     mavenCentral()
