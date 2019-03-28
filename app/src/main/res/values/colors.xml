@@ -3,4 +3,5 @@
     <color name="colorPrimary">#A50202</color>
     <color name="colorPrimaryDark">#000000</color>
     <color name="colorAccent">#D81B1B</color>
+    <color name="mapbox_blue_light">#02708e</color>
 </resources>
