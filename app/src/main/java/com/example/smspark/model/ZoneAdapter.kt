@@ -37,7 +37,7 @@ class ZoneAdapter(context: Context): RecyclerView.Adapter<ZoneAdapter.ZoneViewHo
         holder.zoneName?.text = zones[position].properties.zoneName
         holder.zoneCode?.text = zones[position].properties.zonecode.toString()
         holder.zoneOwner?.text = zones[position].properties.zoneOwner
-        holder.zoneDistance?.text = zones[position].properties.distance.toString()
+        holder.zoneDistance?.text = zones[position].properties.distance.toString() + " m"
     }
 
     fun setData(zonesData: List<Feature>) {
@@ -47,8 +47,6 @@ class ZoneAdapter(context: Context): RecyclerView.Adapter<ZoneAdapter.ZoneViewHo
 
 
     class ZoneViewHolder(v: View) : RecyclerView.ViewHolder(v), View.OnClickListener {
-
-        val cardView = v.findViewById<CardView>(R.id.card_view)
         val zoneName = v.findViewById<TextView>(R.id.zoneName)
         val zoneCode = v.findViewById<TextView>(R.id.zoneCode)
         val zoneOwner = v.findViewById<TextView>(R.id.zoneOwner)

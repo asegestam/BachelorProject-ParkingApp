@@ -8,6 +8,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.lifecycle.Observer
+import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 
@@ -44,6 +45,8 @@ class ZoneListFragment : Fragment() {
 
         recyclerView.adapter = zoneAdapter
         recyclerView.layoutManager = LinearLayoutManager(activity)
+        val dividerItemDecoration = DividerItemDecoration(recyclerView.context, LinearLayoutManager.VERTICAL )
+        recyclerView.addItemDecoration(dividerItemDecoration)
 
         zoneViewModel.zoneFeatures.observe(this, Observer {
             features -> zoneAdapter.setData(features)
