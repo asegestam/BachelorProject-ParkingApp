@@ -400,7 +400,6 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
         mapboxMap?.animateCamera(CameraUpdateFactory.newCameraPosition(CameraPosition.Builder()
                 .target(latLng)
                 .zoom(14.0)
-                .bearing(90.0)
                 .tilt(15.0)
                 .build()), 2000)
         addMarkerOnMap(destination!!, false)
@@ -413,20 +412,26 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
     /** Called when an item in the RecyclerView is clicked
      * @param zone The list items binded object*/
     private fun zoneListItemClicked(zone: com.example.smspark.model.Feature) {
-        var wayPoint: Point? = null
-        if(zone.geometry.type == "Point") {
-            val pointCoordinates = zone.geometry.coordinates as List<Double>
-            wayPoint = Point.fromLngLat(pointCoordinates.get(0), pointCoordinates.get(1))
-            addMarkerOnMap(wayPoint, true)
+        if(!zone.equals(zoneViewModel.zoneChosen.value)) {
+            zoneViewModel.zoneChosen.value = zone
+            var wayPoint: Point? = null
+            if (zone.geometry.type == "Point") {
+                val pointCoordinates = zone.geometry.coordinates as List<Double>
+                wayPoint = Point.fromLngLat(pointCoordinates.get(0), pointCoordinates.get(1))
+                addMarkerOnMap(wayPoint, true)
+            } else {
+                val polygonCoordinates = zone.geometry.coordinates as List<List<List<Double>>>
+                val long = polygonCoordinates[0][0][0]
+                val lat = polygonCoordinates[0][0][1]
+                wayPoint = Point.fromLngLat(long, lat)
+                addMarkerOnMap(wayPoint, true)
+            }
+            Toast.makeText(requireContext(), "Vald Zon: " + zone.properties.zonecode, Toast.LENGTH_LONG).show()
+            getRoute(getUserLocation(), wayPoint, destination!!)
         } else {
-            val polygonCoordinates = zone.geometry.coordinates as List<List<List<Double>>>
-            val long = polygonCoordinates[0][0][0]
-            val lat = polygonCoordinates[0][0][1]
-            wayPoint = Point.fromLngLat(long, lat)
-            addMarkerOnMap(wayPoint, true)
+            Log.d(TAG, "Zone is equal to chosen zone")
         }
-        Toast.makeText(requireContext(), "Vald Zon: " + zone.properties.zonecode , Toast.LENGTH_LONG).show()
-        getRoute(getUserLocation(), wayPoint, destination!!)
+
     }
 
     @SuppressLint("MissingPermission")

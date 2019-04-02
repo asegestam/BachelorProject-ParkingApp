@@ -56,6 +56,8 @@
         android:layout_height="wrap_content"
         android:layout_gravity="top"
         tools:listitem="@layout/list_item"
+        android:clickable="true"
+        android:focusable="true"
         android:visibility="gone"/>
 
     <Switch

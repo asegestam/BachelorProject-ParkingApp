@@ -1,6 +1,7 @@
 package com.example.smspark.viewmodels
 
 import android.util.Log
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.example.smspark.model.Feature
@@ -23,6 +24,10 @@ class ZoneViewModel(val repo: ZoneRepository): ViewModel(){
 
     val zoneFeatures: MutableLiveData<List<Feature>> by lazy {
         MutableLiveData<List<Feature>>()
+    }
+
+    val zoneChosen: MutableLiveData<Feature> by lazy {
+        MutableLiveData<Feature>()
     }
 
 
