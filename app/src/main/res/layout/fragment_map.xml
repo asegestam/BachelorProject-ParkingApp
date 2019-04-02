@@ -50,17 +50,21 @@
         mapbox:backgroundTint="@color/mapbox_blue"
         mapbox:rippleColor="@color/colorPrimaryDark" />
 
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recycler_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        tools:listitem="@layout/list_item"
+        android:visibility="gone"/>
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/listButton"
-        style="@style/Widget.MaterialComponents.Button.TextButton"
-        android:backgroundTint="@color/colorAccentLight"
+    <Switch
+        android:id="@+id/list_switch"
         android:layout_width="wrap_content"
-        android:layout_height="50dp"
-        android:layout_marginTop="100dp"
-        android:text="@string/list_of_zones"
-        android:textColor="@color/colorPrimaryDark"
-        android:textAppearance="@style/NotificationText"
-        />
+        android:layout_height="wrap_content"
+        android:checked="false"
+        mapbox:layout_anchor="@+id/mapView"
+        android:layout_marginBottom="25dp"
+        mapbox:layout_anchorGravity="left|bottom" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -41,7 +41,7 @@ dependencies {
     implementation 'com.google.code.gson:gson:2.8.5'
 
     //Mapbox
-    implementation 'com.mapbox.mapboxsdk:mapbox-android-sdk:7.2.0'
+    implementation 'com.mapbox.mapboxsdk:mapbox-android-sdk:7.3.0'
     implementation 'com.mapbox.mapboxsdk:mapbox-android-plugin-localization-v7:0.8.0'
     implementation 'com.mapbox.mapboxsdk:mapbox-android-navigation:0.30.0'
     implementation 'com.mapbox.mapboxsdk:mapbox-android-navigation-ui:0.30.0'

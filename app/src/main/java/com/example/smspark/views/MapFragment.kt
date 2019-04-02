@@ -14,14 +14,19 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.lifecycle.Observer
-import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.DefaultItemAnimator
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.LinearSnapHelper
+import androidx.recyclerview.widget.RecyclerView
 import com.example.smspark.R
+import com.example.smspark.model.ZoneAdapter
 import com.example.smspark.viewmodels.ZoneViewModel
 import com.mapbox.android.core.permissions.PermissionsListener
 import com.mapbox.android.core.permissions.PermissionsManager
 import com.mapbox.api.directions.v5.models.DirectionsResponse
 import com.mapbox.api.directions.v5.models.DirectionsRoute
 import com.mapbox.geojson.Feature
+import com.mapbox.geojson.FeatureCollection
 import com.mapbox.geojson.Point
 import com.mapbox.mapboxsdk.Mapbox
 import com.mapbox.mapboxsdk.camera.CameraPosition
@@ -30,11 +35,12 @@ import com.mapbox.mapboxsdk.geometry.LatLng
 import com.mapbox.mapboxsdk.location.LocationComponent
 import com.mapbox.mapboxsdk.location.modes.CameraMode
 import com.mapbox.mapboxsdk.maps.*
+import com.mapbox.mapboxsdk.plugins.annotation.Fill
 import com.mapbox.mapboxsdk.plugins.places.autocomplete.PlaceAutocomplete
 import com.mapbox.mapboxsdk.plugins.places.autocomplete.model.PlaceOptions
 import com.mapbox.mapboxsdk.style.layers.FillLayer
 import com.mapbox.mapboxsdk.style.layers.PropertyFactory
-import com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconSize
+import com.mapbox.mapboxsdk.style.layers.PropertyFactory.*
 import com.mapbox.mapboxsdk.style.layers.SymbolLayer
 import com.mapbox.mapboxsdk.style.sources.GeoJsonSource
 import com.mapbox.services.android.navigation.ui.v5.NavigationLauncher
@@ -43,13 +49,12 @@ import com.mapbox.services.android.navigation.ui.v5.route.NavigationMapRoute
 import com.mapbox.services.android.navigation.v5.navigation.NavigationRoute
 import kotlinx.android.synthetic.main.fragment_map.*
 import org.koin.android.viewmodel.ext.android.sharedViewModel
-import org.koin.android.viewmodel.ext.android.viewModel
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import java.lang.StringBuilder
 
-
+@SuppressLint("LogNotTimber")
 class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener, PermissionsListener {
 
     // variables for adding location layer
@@ -67,8 +72,30 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
     private var navigationMapRoute: NavigationMapRoute? = null
     private var destination: Point? = null
 
+    //RecyclerView fields
+    private lateinit var recyclerView: RecyclerView
+    private lateinit var zoneAdapter: ZoneAdapter
+    //Layer and Source Strings
+    //Polygon
+    private val polygonLayer = "zone-polygons-layer"
+    private val polygonSource = "polygon-source"
+    //Point
+    private val pointLayer = "zone-point-layer"
+    private val pointSource = "point-source"
+    //Handicap
+    private val handicapLayer = "handicap-layer"
+    private val handicapSource = "handicap-source"
+    //Marker
+    private val markerSource = "marker-layer"
+    //Images
+    private val markerImage = "marker-image"
+    private val parkingImage = "parking-image"
+    private val handicapImage = "handicap-image"
+
     //lazy inject ViewModel
     val zoneViewModel: ZoneViewModel by sharedViewModel()
+
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -96,23 +123,32 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
         mapboxMap.setStyle(getString(R.string.streets_parking)) { style ->
             enableLocationComponent(style)
             mapboxMap.addOnMapClickListener(this)
-            
+            setupImageSource(style)
+            setupZoneLayers(style)
+            setupMarkerLayer(style)
             zoneViewModel.getZones()
             zoneViewModel.getHandicapZones()
-            zoneViewModel.zonePolygons.observe(this, Observer { polygons -> addPolygonsToMap(polygons) })
-            zoneViewModel.zonePoints.observe(this, Observer { points ->
-                addMarkersToMap(points, "zoneMarkerLayer", "zonePoints",
-                        "parking-marker", R.drawable.park_blue, 0.35f)
-            })
-
-            zoneViewModel.handicapPoints.observe(this, Observer { handicapZones ->
-                addMarkersToMap(handicapZones, "handicapZoneLayer", "handicapZones",
-                        "handicap-marker", R.drawable.handicap_icon, 0.8f)
-            })
+            initObservers()
+            initRecyclerView()
         }
         initButtons()
     }
 
+    /** Initiates ViewModel observers */
+    private fun initObservers() {
+        zoneViewModel.zonePolygons.observe(this, Observer { polygons -> addPolygonsToMap(polygons) })
+        zoneViewModel.zoneFeatures.observe(this, Observer { features -> zoneAdapter.setData(features) })
+        zoneViewModel.zoneChosen.observe(this, Observer { feature ->  })
+        zoneViewModel.zonePoints.observe(this, Observer { points ->
+            addMarkersToMap(points,false)
+        })
+        zoneViewModel.handicapPoints.observe(this, Observer { handicapZones ->
+            addMarkersToMap(handicapZones, true)
+        })
+
+    }
+
+    /** Initiates button clickListeners */
     private fun initButtons() {
         fab.setOnClickListener {
             startAutoCompleteActivity()
@@ -120,11 +156,27 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
         startNavigationButton!!.setOnClickListener {
             startNavigationUI()
         }
-        listButton.setOnClickListener {
-            zoneViewModel.zoneFeatures.value?.let {
-                findNavController().navigate(R.id.map_to_list)
+        list_switch.setOnCheckedChangeListener { buttonView, isChecked ->
+            if(isChecked) {
+                recycler_view.visibility = View.VISIBLE
+            } else {
+                recycler_view.visibility = View.GONE
             }
         }
+    }
+
+
+    /**Initiates the RecyclerView with a adapter, clickListener, LayoutManager, Animator, SnapHelper*/
+    private fun initRecyclerView() {
+        recyclerView = recycler_view
+        recyclerView.setHasFixedSize(true)
+        zoneAdapter = ZoneAdapter(context!!) { zone: com.example.smspark.model.Feature -> zoneListItemClicked(zone)}
+
+        recyclerView.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
+        recyclerView.itemAnimator = DefaultItemAnimator()
+        recyclerView.adapter = zoneAdapter
+        val snapHelper = LinearSnapHelper()
+        snapHelper.attachToRecyclerView(recyclerView)
     }
 
     @SuppressLint("MissingPermission")
@@ -140,7 +192,7 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
             locationComponent?.cameraMode = CameraMode.TRACKING
         } else {
             permissionsManager = PermissionsManager(this)
-            permissionsManager!!.requestLocationPermissions(requireActivity())
+            permissionsManager?.requestLocationPermissions(requireActivity())
         }
     }
 
@@ -156,7 +208,10 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
         return true
     }
 
-    /** Queryes the map for zone features on the point clicked */
+    /** Queryes the map for zone features on the point clicked
+     *
+     * @param point Location to query
+     * */
     private fun queryMapClick(point: LatLng): Boolean {
         val pixel = mapboxMap?.projection!!.toScreenLocation(point)
         val features = mapboxMap?.queryRenderedFeatures(pixel)
@@ -164,22 +219,98 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
             Log.d(TAG, "" + features.size)
             for (feature in features) {
                 //Only relevant features has zonecodes
-                if (feature.hasProperty("zonecode") || feature.hasProperty("Owner")) {
-                    val stringBuilder = StringBuilder()
-                    for ((key, value) in feature.properties()!!.entrySet()) {
-                        Log.d(TAG, String.format("%s = %s", key, value))
-                        stringBuilder.append(value)
-                        stringBuilder.append("\n")
-                    }
-                    Toast.makeText(requireContext(), stringBuilder.toString(), Toast.LENGTH_LONG).show()
-                    return true
+                when {
+                    feature.hasProperty("zonecode") -> handleChosenZone(feature, Point.fromLngLat(point.longitude, point.latitude), false)
+                    feature.hasProperty("Owner") -> handleChosenZone(feature, Point.fromLngLat(point.longitude, point.latitude), true)
                 }
+                return true
             }
         }
         return false
     }
 
-    /** Returns a route from a origin point, to a destination with a waypoint in between */
+    private fun handleChosenZone(feature: Feature?, point: Point?, b: Boolean) {
+        if(b) {
+            Toast.makeText(requireContext(), "Vald Zon: " + feature?.getProperty("Name"), Toast.LENGTH_LONG).show()
+        } else {
+            Toast.makeText(requireContext(), "Vald Zon: " + feature?.getProperty("zone_name"), Toast.LENGTH_LONG).show()
+        }
+        point?.let { addMarkerOnMap(point, true) }
+    }
+
+    /** Adds a marker layer to be reused over and over
+     * @param loadedMapStyle Mapbox style to add Layers and Sources to
+     * */
+    private fun setupMarkerLayer(loadedMapStyle: Style) {
+        loadedMapStyle.addSource(GeoJsonSource(markerSource))
+        loadedMapStyle.addLayer(SymbolLayer("marker-layer", markerSource)
+                .withProperties(PropertyFactory.iconImage(markerImage),
+                        iconAllowOverlap(true),
+                        iconIgnorePlacement(true)))
+    }
+
+    /** Sets an marker on the given point
+     * @param point Where the marker is getting set
+     * @param isWayPoint if the SymbolLayer should have 2 markers or 1
+     * */
+    private fun addMarkerOnMap(point: Point, isWayPoint: Boolean) {
+        val source = mapboxMap?.style!!.getSourceAs<GeoJsonSource>(markerSource)
+        if(source != null) {
+            if(isWayPoint) {
+                source.setGeoJson(FeatureCollection.fromFeatures(listOf(Feature.fromGeometry(destination), Feature.fromGeometry(point))))
+            } else {
+                source.setGeoJson(destination)
+            }
+        }
+    }
+
+    private fun setupZoneLayers(loadedMapStyle: Style) {
+        loadedMapStyle.addSource(GeoJsonSource(polygonSource))
+        loadedMapStyle.addSource(GeoJsonSource(pointSource))
+        loadedMapStyle.addSource(GeoJsonSource(handicapSource))
+        //Polygon Layer
+        loadedMapStyle.addLayer(FillLayer(polygonLayer, polygonSource)
+                .withProperties(
+                        PropertyFactory.fillColor(Color.parseColor("#f42428")),
+                        PropertyFactory.fillOpacity(0.75f)))
+        //Point Layer
+        loadedMapStyle.addLayer(SymbolLayer(pointLayer, pointSource)
+                .withProperties(PropertyFactory.iconImage(parkingImage), iconSize(0.35f)))
+        //Handicap Layer
+        loadedMapStyle.addLayer(SymbolLayer(handicapLayer, handicapSource)
+                .withProperties(PropertyFactory.iconImage(handicapImage), iconSize(0.8f)))
+
+    }
+    private fun setupImageSource(loadedMapStyle: Style) {
+        loadedMapStyle.addImage(markerImage, BitmapFactory.decodeResource(resources, R.drawable.mapbox_marker_icon_default))
+        loadedMapStyle.addImage(parkingImage, BitmapFactory.decodeResource(resources, R.drawable.park_blue))
+        loadedMapStyle.addImage(handicapImage, BitmapFactory.decodeResource(resources, R.drawable.handicap_icon))
+    }
+
+    /** Adds a FillLayer representation of a given JSON String
+     * @param json Valid JSON string containing Polygon Features */
+    private fun addPolygonsToMap(json: String) {
+        val source = getMapStyle().getSourceAs<GeoJsonSource>(polygonSource)
+        source?.setGeoJson(json)
+    }
+
+    /** Adds a SymbolLayer representation of a given JSON String, where the icon is a Parking Icon
+     * @param json Valid JSON string containing Point Features
+     * @param isHandicap indicates if the given JSON is handicap zones, used to change marker icon*/
+    private fun addMarkersToMap(json: String, isHandicap: Boolean) {
+        if(isHandicap) {
+            val handicapSource = getMapStyle().getSourceAs<GeoJsonSource>(handicapSource)
+            handicapSource?.setGeoJson(json)
+        } else {
+            val pointSource = getMapStyle().getSourceAs<GeoJsonSource>(pointSource)
+            pointSource?.setGeoJson(json)
+        }
+    }
+
+    /** Returns a route from a origin point, to a destination with a waypoint in between
+     * @param origin Start location of the route, usually the user location
+     * @param wayPoint A stop point in the route between start and destination
+     * @param destination Final destination of the route*/
     private fun getRoute(origin: Point, wayPoint: Point, destination: Point) {
         NavigationRoute.builder(requireContext())
                 .accessToken(Mapbox.getAccessToken()!!)
@@ -272,52 +403,30 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
                 .bearing(90.0)
                 .tilt(15.0)
                 .build()), 2000)
-        val source = mapboxMap?.style!!.getSourceAs<GeoJsonSource>("destination-map-marker")
-        source?.setGeoJson(Feature.fromGeometry(destination))
+        addMarkerOnMap(destination!!, false)
         if (currentRoute != null) {
             //if there is a previous route, reset it
             currentRoute = null
         }
     }
 
-    /** Adds a FillLayer representation of a given JSON String */
-    private fun addPolygonsToMap(json: String) {
-        /*
-       Mapbox does not allow us to edit current layers, so before adding a layer
-       we remove the existing one if it exists
-        */
-        val layer = getMapStyle().getLayer("zonePolygonsLayer")
-        val source = getMapStyle().getSource("zonePolygons")
-        if (layer != null) {
-            getMapStyle().removeLayer(layer)
+    /** Called when an item in the RecyclerView is clicked
+     * @param zone The list items binded object*/
+    private fun zoneListItemClicked(zone: com.example.smspark.model.Feature) {
+        var wayPoint: Point? = null
+        if(zone.geometry.type == "Point") {
+            val pointCoordinates = zone.geometry.coordinates as List<Double>
+            wayPoint = Point.fromLngLat(pointCoordinates.get(0), pointCoordinates.get(1))
+            addMarkerOnMap(wayPoint, true)
+        } else {
+            val polygonCoordinates = zone.geometry.coordinates as List<List<List<Double>>>
+            val long = polygonCoordinates[0][0][0]
+            val lat = polygonCoordinates[0][0][1]
+            wayPoint = Point.fromLngLat(long, lat)
+            addMarkerOnMap(wayPoint, true)
         }
-        if (source != null) {
-            getMapStyle().removeSource(source)
-        }
-
-        getMapStyle().addSource(GeoJsonSource("zonePolygons", json))
-        val zonePolygonsLayer = FillLayer("zonePolygonsLayer", "zonePolygons")
-        zonePolygonsLayer.setProperties(PropertyFactory.fillColor(Color.parseColor("#f42428")),
-                PropertyFactory.fillOpacity(0.75f))
-        getMapStyle().addLayerAbove(zonePolygonsLayer, "road-rail-tracks")
-    }
-
-    /** Adds a SymbolLayer representation of a given JSON String, where the icon is a Parking Icon */
-    private fun addMarkersToMap(json: String, layerName: String, sourceName: String, imageName: String, drawableId: Int, markerSize: Float) {
-        val layer = getMapStyle().getLayer(layerName)
-        val source = getMapStyle().getSource(sourceName)
-        if (layer != null) {
-            getMapStyle().removeLayer(layer)
-        }
-        if (source != null) {
-            getMapStyle().removeSource(source)
-        }
-
-        getMapStyle().addSource(GeoJsonSource(sourceName, json))
-        getMapStyle().addImage(imageName, BitmapFactory.decodeResource(resources, drawableId))
-        getMapStyle().addLayer(SymbolLayer(layerName, sourceName)
-                .withProperties(PropertyFactory.iconImage(imageName), iconSize(markerSize)))
-
+        Toast.makeText(requireContext(), "Vald Zon: " + zone.properties.zonecode , Toast.LENGTH_LONG).show()
+        getRoute(getUserLocation(), wayPoint, destination!!)
     }
 
     @SuppressLint("MissingPermission")
@@ -342,6 +451,7 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
         }
     }
 
+    /**  ------ LifeCycle Methods ------*/
     override fun onStart() {
         super.onStart()
         mapView!!.onStart()

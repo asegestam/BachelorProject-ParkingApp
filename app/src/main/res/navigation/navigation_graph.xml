@@ -15,13 +15,5 @@
             app:destination="@id/zoneListFragment"
             app:popUpTo="@id/mapFragment" />
     </fragment>
-    <fragment
-        android:id="@+id/zoneListFragment"
-        android:name="com.example.smspark.views.ZoneListFragment"
-        android:label="ZoneList"
-        tools:layout="@layout/fragment_zone_list" >
-        <action
-            android:id="@+id/action_zoneListFragment_to_mapFragment"
-            app:destination="@id/mapFragment" />
-    </fragment>
+
 </navigation>

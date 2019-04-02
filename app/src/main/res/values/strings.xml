@@ -20,8 +20,8 @@
     <string name="select_zone">SELECT ZONE</string>
     <string name="start_navigation">START NAVIGATION</string>
 
-    <!-- TODO: Remove or change this placeholder text -->
     <string name="list_of_zones">List of Zones</string>
+
 
 
 </resources>

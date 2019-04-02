@@ -1,7 +1,6 @@
 package com.example.smspark.model
 
 import android.content.Context
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -9,18 +8,17 @@ import android.widget.TextView
 import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.smspark.R
-import com.example.smspark.viewmodels.ZoneViewModel
-import kotlinx.android.synthetic.main.fragment_zone_list.*
+import kotlin.math.round
 
 
-class ZoneAdapter(context: Context): RecyclerView.Adapter<ZoneAdapter.ZoneViewHolder>() {
+class ZoneAdapter(context: Context, private val listener: (Feature) -> Unit): RecyclerView.Adapter<ZoneAdapter.ZoneViewHolder>() {
 
     private var zones: List<Feature>
-    private val inflater: LayoutInflater
+    private val applicationContext: Context
 
     init {
-        inflater = LayoutInflater.from(context)
         zones = emptyList()
+        applicationContext = context
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ZoneViewHolder {
@@ -32,12 +30,9 @@ class ZoneAdapter(context: Context): RecyclerView.Adapter<ZoneAdapter.ZoneViewHo
 
     override fun getItemCount(): Int = zones.size
 
+
     override fun onBindViewHolder(holder: ZoneViewHolder, position: Int) {
-        Log.d("Adapter", "onBind called")
-        holder.zoneName?.text = zones[position].properties.zoneName
-        holder.zoneCode?.text = zones[position].properties.zonecode.toString()
-        holder.zoneOwner?.text = zones[position].properties.zoneOwner
-        holder.zoneDistance?.text = zones[position].properties.distance.toString()
+        holder.bind(zones[position], listener)
     }
 
     fun setData(zonesData: List<Feature>) {
@@ -46,7 +41,7 @@ class ZoneAdapter(context: Context): RecyclerView.Adapter<ZoneAdapter.ZoneViewHo
     }
 
 
-    class ZoneViewHolder(v: View) : RecyclerView.ViewHolder(v), View.OnClickListener {
+    class ZoneViewHolder(val v: View) : RecyclerView.ViewHolder(v), View.OnClickListener {
 
         val cardView = v.findViewById<CardView>(R.id.card_view)
         val zoneName = v.findViewById<TextView>(R.id.zoneName)
@@ -54,8 +49,18 @@ class ZoneAdapter(context: Context): RecyclerView.Adapter<ZoneAdapter.ZoneViewHo
         val zoneOwner = v.findViewById<TextView>(R.id.zoneOwner)
         val zoneDistance = v.findViewById<TextView>(R.id.zoneDistance)
 
+
+        /** Binds the data to the viewholder by setting the text and listener */
+        fun bind(zone: Feature, listner: (Feature) -> Unit) {
+            zoneName.text = zone.properties.zoneName
+            zoneCode.text = "Zonkod: " + zone.properties.zonecode.toString()
+            zoneOwner.text = zone.properties.zoneOwner
+            zoneDistance.text = round(zone.properties.distance).toString() + " m"
+            v.setOnClickListener { listner(zone) }
+        }
+
+
         override fun onClick(v: View?) {
-            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
         }
     }
 }
