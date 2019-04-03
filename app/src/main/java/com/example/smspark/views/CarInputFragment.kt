@@ -7,17 +7,16 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.navigation.Navigation
-import androidx.navigation.findNavController
 import com.example.smspark.R
-import kotlinx.android.synthetic.main.fragment_trip.*
+import kotlinx.android.synthetic.main.fragment_car_input.*
 
 
-class TripFragment : Fragment() {
+class CarInputFragment : Fragment() {
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View? {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_trip, container, false)
+        return inflater.inflate(R.layout.fragment_car_input, container, false)
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
@@ -26,17 +25,11 @@ class TripFragment : Fragment() {
     }
 
     private fun initButtons() {
-        next_btn.setOnClickListener {
-            val fromBundle = Bundle()
-            fromBundle.putString("fromArg", textFrom.text.toString())
-
-            it.findNavController().navigate(R.id.action_tripFragment_to_destinationInputFragment, fromBundle)
-        }
+        //next_btn.setOnClickListener(Navigation.createNavigateOnClickListener(R.id.action_tripFragment_to_destinationInputFragment))
     }
-
-
 
     companion object {
-        val TAG : String = "TripFragment"
+        val TAG : String = "CarInputFragment"
     }
+
 }
