@@ -1,13 +1,14 @@
 package com.example.smspark.viewmodels
 
 import android.util.Log
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.example.smspark.model.Feature
 import com.example.smspark.model.ZoneRepository
 import com.google.gson.GsonBuilder
 
-class ZoneViewModel(val repo: ZoneRepository): ViewModel(){
+class ZoneViewModel(private val repo: ZoneRepository): ViewModel(){
 
     val zonePolygons:  MutableLiveData<String> by lazy {
         MutableLiveData<String>()
@@ -24,7 +25,6 @@ class ZoneViewModel(val repo: ZoneRepository): ViewModel(){
     val zoneFeatures: MutableLiveData<List<Feature>> by lazy {
         MutableLiveData<List<Feature>>()
     }
-
 
     fun getZones() {
         val data = repo.getZones().value

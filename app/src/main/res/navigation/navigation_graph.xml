@@ -14,14 +14,18 @@
             android:id="@+id/map_to_list"
             app:destination="@id/zoneListFragment"
             app:popUpTo="@id/mapFragment" />
+        <action
+            android:id="@+id/mapFragment_to_navigation"
+            app:destination="@id/navigationFragment" />
     </fragment>
     <fragment
-        android:id="@+id/zoneListFragment"
-        android:name="com.example.smspark.views.ZoneListFragment"
-        android:label="ZoneList"
-        tools:layout="@layout/fragment_zone_list" >
+        android:id="@+id/navigationFragment"
+        android:name="com.example.smspark.views.NavigationFragment"
+        android:label="fragment_navigation"
+        tools:layout="@layout/fragment_navigation" >
         <action
-            android:id="@+id/action_zoneListFragment_to_mapFragment"
+            android:id="@+id/navigation_to_map"
             app:destination="@id/mapFragment" />
     </fragment>
+
 </navigation>
