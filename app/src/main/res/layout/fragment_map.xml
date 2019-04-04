@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.coordinatorlayout.widget.CoordinatorLayout
+    android:id="@+id/coordinator"
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -36,7 +37,9 @@
         mapbox:layout_anchorGravity="bottom|center"
         mapbox:layout_constraintBottom_toBottomOf="parent"
         mapbox:layout_constraintEnd_toEndOf="parent"
-        mapbox:layout_constraintStart_toStartOf="parent" />
+        mapbox:layout_constraintStart_toStartOf="parent"
+        mapbox:layout_dodgeInsetEdges="bottom"
+        />
 
     <LinearLayout
         android:layout_width="wrap_content"
@@ -44,6 +47,7 @@
         android:layout_gravity="end|bottom"
         android:orientation="vertical"
         android:layout_marginEnd="10dp"
+        mapbox:layout_dodgeInsetEdges="bottom"
         >
 
         <Switch
@@ -87,5 +91,6 @@
         android:clickable="true"
         android:focusable="true"
         android:visibility="gone"/>
+
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

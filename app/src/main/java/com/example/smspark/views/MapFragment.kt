@@ -1,6 +1,5 @@
 package com.example.smspark.views
 
-
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
@@ -13,6 +12,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.DefaultItemAnimator
@@ -23,6 +23,8 @@ import com.example.smspark.R
 import com.example.smspark.model.ZoneAdapter
 import com.example.smspark.viewmodels.SelectedZoneViewModel
 import com.example.smspark.viewmodels.ZoneViewModel
+import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.google.android.material.snackbar.Snackbar
 import com.mapbox.android.core.permissions.PermissionsListener
 import com.mapbox.android.core.permissions.PermissionsManager
 import com.mapbox.api.directions.v5.models.DirectionsResponse
@@ -44,10 +46,9 @@ import com.mapbox.mapboxsdk.style.layers.PropertyFactory
 import com.mapbox.mapboxsdk.style.layers.PropertyFactory.*
 import com.mapbox.mapboxsdk.style.layers.SymbolLayer
 import com.mapbox.mapboxsdk.style.sources.GeoJsonSource
-import com.mapbox.services.android.navigation.ui.v5.NavigationLauncher
-import com.mapbox.services.android.navigation.ui.v5.NavigationLauncherOptions
 import com.mapbox.services.android.navigation.ui.v5.route.NavigationMapRoute
 import com.mapbox.services.android.navigation.v5.navigation.NavigationRoute
+import kotlinx.android.synthetic.main.chosen_zone.*
 import kotlinx.android.synthetic.main.fragment_map.*
 import org.koin.android.viewmodel.ext.android.sharedViewModel
 import org.koin.android.viewmodel.ext.android.viewModel
@@ -93,6 +94,8 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
     private val parkingImage = "parking-image"
     private val handicapImage = "handicap-image"
 
+    private lateinit var snackbar: Snackbar
+
     //lazy inject ViewModel
     val zoneViewModel: ZoneViewModel by sharedViewModel()
     val selectedZoneViewModel: SelectedZoneViewModel by viewModel()
@@ -116,7 +119,6 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
         mapView = view.findViewById(R.id.mapView)
         mapView!!.onCreate(savedInstanceState)
         mapView!!.getMapAsync(this)
-
     }
 
     override fun onMapReady(mapboxMap: MapboxMap) {
@@ -182,6 +184,17 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
         snapHelper.attachToRecyclerView(recyclerView)
     }
 
+    private fun initBottomSheet() {
+        val bottomSheetBehavior = BottomSheetBehavior.from(bottom_sheet)
+        bottomSheetBehavior.isHideable = true
+        bottomSheetBehavior.peekHeight = 150
+        if(bottomSheetBehavior.state == BottomSheetBehavior.STATE_COLLAPSED) {
+            bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
+        } else {
+            bottomSheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
+        }
+    }
+
     @SuppressLint("MissingPermission")
     private fun enableLocationComponent(loadedMapStyle: Style) {
         // Check if permissions are enabled and if not request
@@ -230,10 +243,13 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
     }
 
     private fun handleChosenZone(feature: Feature?, point: Point?, b: Boolean) {
+        val name: CharSequence
         if(b) {
-            Toast.makeText(requireContext(), "Vald Zon: " + feature?.getProperty("Name"), Toast.LENGTH_LONG).show()
+            name = getString(R.string.vald_zon) + feature?.getProperty("Name")
+            showSnackBar(name, Snackbar.LENGTH_LONG)
         } else {
-            Toast.makeText(requireContext(), "Vald Zon: " + feature?.getProperty("zone_name"), Toast.LENGTH_LONG).show()
+            name = getString(R.string.vald_zon) + feature?.getProperty("zone_name").toString()
+            showSnackBar(name, Snackbar.LENGTH_LONG)
         }
         point?.let { addMarkerOnMap(point, true) }
     }
@@ -372,8 +388,7 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
 
             navigationMapRoute?.updateRouteVisibilityTo(false)
             startNavigationButton.visibility = View.GONE
-
-            Toast.makeText(requireContext(), "Please select a zone", Toast.LENGTH_SHORT).show()
+            showSnackBar(getString(R.string.select_zone), Snackbar.LENGTH_LONG)
         }
     }
 
@@ -409,7 +424,7 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
                 wayPoint = Point.fromLngLat(long, lat)
                 addMarkerOnMap(wayPoint, true)
             }
-            Toast.makeText(requireContext(), "Vald Zon: " + zone.properties.zonecode, Toast.LENGTH_LONG).show()
+            showSnackBar(getString(R.string.vald_zon) + zone.properties.zoneName)
             if(destination != null) {
                 getRoute(getUserLocation(), wayPoint, destination!!)
             }
@@ -424,6 +439,13 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
                 .zoom(14.0)
                 .tilt(tilt)
                 .build()), duration)
+    }
+
+    private fun showSnackBar(charSequence: CharSequence, length: Int = Snackbar.LENGTH_LONG) {
+        snackbar = Snackbar.make(coordinator, charSequence, length)
+        val snackbarView = snackbar.view
+        snackbarView.setBackgroundColor(ContextCompat.getColor(activity!!.applicationContext,R.color.colorSuccess))
+        snackbar.show()
     }
 
     @SuppressLint("MissingPermission")
