@@ -19,6 +19,14 @@
         <action
             android:id="@+id/action_mapFragment_to_tripFragment"
             app:destination="@id/tripFragment" />
+        <argument
+            android:name="fromArg"
+            app:argType="string"
+            app:nullable="true" />
+        <argument
+            android:name="destinationArg"
+            app:argType="string"
+            app:nullable="true" />
     </fragment>
     <fragment
         android:id="@+id/profileFragment"
@@ -38,6 +46,9 @@
         <action
             android:id="@+id/action_tripFragment_to_destinationInputFragment"
             app:destination="@id/destinationInputFragment" />
+        <action
+            android:id="@+id/action_tripFragment_to_mapFragment"
+            app:destination="@id/mapFragment" />
     </fragment>
     <fragment
         android:id="@+id/wayPointInputFragment"

@@ -17,6 +17,8 @@ import androidx.lifecycle.Observer
 import androidx.navigation.Navigation
 import com.example.smspark.R
 import com.example.smspark.viewmodels.ZoneViewModel
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 import com.mapbox.android.core.permissions.PermissionsListener
 import com.mapbox.android.core.permissions.PermissionsManager
 import com.mapbox.api.directions.v5.models.DirectionsResponse
@@ -87,6 +89,45 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        if(arguments != null){
+
+            val fromPoint = Point.fromJson(arguments!!.getString("fromArg"))
+            val destinationPoint = Point.fromJson(arguments!!.getString("destArg"))
+
+            NavigationRoute.builder(requireContext())
+                    .accessToken(Mapbox.getAccessToken()!!)
+                    .origin(fromPoint)
+                    .profile("driving")
+                    .destination(destinationPoint)
+                    .build()
+                    .getRoute(object : Callback<DirectionsResponse> {
+                        override fun onResponse(call: Call<DirectionsResponse>, response: Response<DirectionsResponse>) {
+                            if (response.body() == null) {
+                                Log.e(TAG, "No routes found, make sure you set the right user and access token.")
+                                return
+                            } else if (response.body()!!.routes().size < 1) {
+                                Log.e(TAG, "No routes found")
+                                return
+                            }
+                            currentRoute = response.body()!!.routes()[0]
+                            // Draw the route on the map
+                            if (navigationMapRoute != null) {
+                                //navigationMapRoute!!.removeRoute()
+                            } else {
+                                navigationMapRoute = NavigationMapRoute(null, mapView!!, mapboxMap!!, R.style.NavigationMapRoute)
+                            }
+                            if (currentRoute != null) {
+                                navigationMapRoute!!.addRoute(currentRoute)
+                                startNavigationButton.visibility = View.VISIBLE
+                            } else {
+                                Log.e(TAG, "Error, route is null")
+                            }
+                        }
+                        override fun onFailure(call: Call<DirectionsResponse>, throwable: Throwable) {
+                            Log.e(TAG, "Error: " + throwable.message)
+                        }
+                    })
+        }
 
 
         mapView = view?.findViewById(R.id.mapView)
