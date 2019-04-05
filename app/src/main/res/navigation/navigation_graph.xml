@@ -11,12 +11,20 @@
         android:label="fragment_map"
         tools:layout="@layout/fragment_map" >
         <action
-            android:id="@+id/map_to_list"
-            app:destination="@id/zoneListFragment"
-            app:popUpTo="@id/mapFragment" />
-        <action
             android:id="@+id/mapFragment_to_navigation"
             app:destination="@id/navigationFragment" />
+        <action
+            android:id="@+id/action_mapFragment_to_tripFragment2"
+            app:destination="@id/tripFragment" />
+        <action
+            android:id="@+id/action_mapFragment_to_profileFragment2"
+            app:destination="@id/profileFragment" />
+        <action
+            android:id="@+id/action_mapFragment_to_profileFragment"
+            app:destination="@id/profileFragment" />
+        <action
+            android:id="@+id/action_mapFragment_to_ticketsFragment"
+            app:destination="@id/ticketsFragment" />
     </fragment>
     <fragment
         android:id="@+id/navigationFragment"
@@ -27,16 +35,7 @@
             android:id="@+id/navigation_to_map"
             app:destination="@id/mapFragment" />
     </fragment>
-        <action
-            android:id="@+id/action_mapFragment_to_profileFragment"
-            app:destination="@id/profileFragment" />
-        <action
-            android:id="@+id/action_mapFragment_to_ticketsFragment"
-            app:destination="@id/ticketsFragment" />
-        <action
-            android:id="@+id/action_mapFragment_to_tripFragment"
-            app:destination="@id/tripFragment" />
-        <argument
+    <argument
             android:name="fromArg"
             app:argType="string"
             app:nullable="true" />
@@ -44,7 +43,6 @@
             android:name="destinationArg"
             app:argType="string"
             app:nullable="true" />
-    </fragment>
     <fragment
         android:id="@+id/profileFragment"
         android:name="com.example.smspark.views.ProfileFragment"

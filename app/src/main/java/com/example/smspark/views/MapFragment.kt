@@ -40,6 +40,7 @@ import com.mapbox.mapboxsdk.camera.CameraPosition
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory
 import com.mapbox.mapboxsdk.geometry.LatLng
 import com.mapbox.mapboxsdk.location.LocationComponent
+import com.mapbox.mapboxsdk.location.LocationComponentActivationOptions
 import com.mapbox.mapboxsdk.location.modes.CameraMode
 import com.mapbox.mapboxsdk.maps.*
 import com.mapbox.mapboxsdk.plugins.places.autocomplete.PlaceAutocomplete
@@ -72,8 +73,8 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
     private val REQUEST_CODE_AUTOCOMPLETE = 1
 
     // variables for adding location layer
-    private var permissionsManager: PermissionsManager? = null
-    private var locationComponent: LocationComponent? = null
+    private lateinit var permissionsManager: PermissionsManager
+    private lateinit var locationComponent: LocationComponent
 
     // variables for calculating and drawing a route
     private var currentRoute: DirectionsRoute? = null
@@ -178,7 +179,6 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
         this.mapboxMap = mapboxMap
         mapboxMap.setStyle(getString(R.string.streets_parking)) { style ->
             enableLocationComponent(style)
-            moveCameraToLocation(duration = 1000)
             mapboxMap.addOnMapClickListener(this)
             setupImageSource(style)
             setupZoneLayers(style)
@@ -230,7 +230,7 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
 
         profile_btn.setOnClickListener(Navigation.createNavigateOnClickListener(R.id.action_mapFragment_to_profileFragment))
         tickets_btn.setOnClickListener(Navigation.createNavigateOnClickListener(R.id.action_mapFragment_to_ticketsFragment))
-        trip_btn.setOnClickListener(Navigation.createNavigateOnClickListener(R.id.action_mapFragment_to_tripFragment))
+        trip_btn.setOnClickListener(Navigation.createNavigateOnClickListener(R.id.action_mapFragment_to_tripFragment2))
     }
 
     /**Initiates the RecyclerView with a adapter, clickListener, LayoutManager, Animator, SnapHelper*/
@@ -271,13 +271,13 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
             // Activate the MapboxMap LocationComponent to show user location
             // Adding in LocationComponentOptions is also an optional parameter
             locationComponent = mapboxMap!!.locationComponent
-            locationComponent?.activateLocationComponent(requireContext(), loadedMapStyle)
-            locationComponent?.isLocationComponentEnabled = true
+            locationComponent.activateLocationComponent(requireContext(), loadedMapStyle)
+            locationComponent.isLocationComponentEnabled = true
             // Set the component's camera mode
-            locationComponent?.cameraMode = CameraMode.NONE_GPS
+            locationComponent.cameraMode = CameraMode.NONE_GPS
         } else {
             permissionsManager = PermissionsManager(this)
-            permissionsManager?.requestLocationPermissions(requireActivity())
+            permissionsManager.requestLocationPermissions(requireActivity())
         }
     }
 
@@ -503,12 +503,13 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
 
 
     @SuppressLint("MissingPermission")
-    private fun getUserLocation(): Point = Point.fromLngLat(locationComponent!!.lastKnownLocation!!.longitude, locationComponent!!.lastKnownLocation!!.latitude)
+    private fun getUserLocation(): Point = Point.fromLngLat(locationComponent.lastKnownLocation!!.longitude, locationComponent.lastKnownLocation!!.latitude)
+
 
     private fun getMapStyle(): Style = mapboxMap?.style!!
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
-        permissionsManager!!.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        permissionsManager.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
 
     override fun onExplanationNeeded(permissionsToExplain: List<String>) {
@@ -517,7 +518,7 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
 
     override fun onPermissionResult(granted: Boolean) {
         if (granted) {
-            enableLocationComponent(mapboxMap!!.style!!)
+            enableLocationComponent(getMapStyle())
         } else {
             Toast.makeText(requireContext(), R.string.user_location_permission_not_granted, Toast.LENGTH_LONG).show()
             requireActivity().finish()
