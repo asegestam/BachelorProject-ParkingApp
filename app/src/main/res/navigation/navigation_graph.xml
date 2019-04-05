@@ -8,8 +8,8 @@
     <fragment
         android:id="@+id/mapFragment"
         android:name="com.example.smspark.views.MapFragment"
-        android:label="Map"
-        tools:layout="@layout/fragment_map">
+        android:label="fragment_map"
+        tools:layout="@layout/fragment_map" >
         <action
             android:id="@+id/map_to_list"
             app:destination="@id/zoneListFragment"
@@ -27,5 +27,41 @@
             android:id="@+id/navigation_to_map"
             app:destination="@id/mapFragment" />
     </fragment>
-
+        <action
+            android:id="@+id/action_mapFragment_to_profileFragment"
+            app:destination="@id/profileFragment" />
+        <action
+            android:id="@+id/action_mapFragment_to_ticketsFragment"
+            app:destination="@id/ticketsFragment" />
+        <action
+            android:id="@+id/action_mapFragment_to_tripFragment"
+            app:destination="@id/tripFragment" />
+        <argument
+            android:name="fromArg"
+            app:argType="string"
+            app:nullable="true" />
+        <argument
+            android:name="destinationArg"
+            app:argType="string"
+            app:nullable="true" />
+    </fragment>
+    <fragment
+        android:id="@+id/profileFragment"
+        android:name="com.example.smspark.views.ProfileFragment"
+        android:label="fragment_profile"
+        tools:layout="@layout/fragment_profile" />
+    <fragment
+        android:id="@+id/ticketsFragment"
+        android:name="com.example.smspark.views.TicketsFragment"
+        android:label="fragment_tickets"
+        tools:layout="@layout/fragment_tickets" />
+    <fragment
+        android:id="@+id/tripFragment"
+        android:name="com.example.smspark.views.TripFragment"
+        android:label="fragment_trip"
+        tools:layout="@layout/fragment_trip" >
+        <action
+            android:id="@+id/action_tripFragment_to_mapFragment"
+            app:destination="@id/mapFragment" />
+    </fragment>
 </navigation>

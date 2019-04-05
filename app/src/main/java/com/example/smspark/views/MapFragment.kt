@@ -14,15 +14,18 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Observer
+import androidx.navigation.Navigation
+import com.example.smspark.R
+import com.example.smspark.model.ZoneAdapter
+import com.example.smspark.viewmodels.SelectedZoneViewModel
+import com.example.smspark.viewmodels.ZoneViewModel
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.LinearSnapHelper
 import androidx.recyclerview.widget.RecyclerView
-import com.example.smspark.R
-import com.example.smspark.model.ZoneAdapter
-import com.example.smspark.viewmodels.SelectedZoneViewModel
-import com.example.smspark.viewmodels.ZoneViewModel
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.snackbar.Snackbar
 import com.mapbox.android.core.permissions.PermissionsListener
@@ -50,6 +53,7 @@ import com.mapbox.services.android.navigation.ui.v5.route.NavigationMapRoute
 import com.mapbox.services.android.navigation.v5.navigation.NavigationRoute
 import kotlinx.android.synthetic.main.chosen_zone.*
 import kotlinx.android.synthetic.main.chosen_zone.view.*
+import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.fragment_map.*
 import org.koin.android.viewmodel.ext.android.sharedViewModel
 import org.koin.android.viewmodel.ext.android.viewModel
@@ -122,9 +126,52 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        mapView = view.findViewById(R.id.mapView)
+
+        if(arguments != null){
+
+            val fromPoint = Point.fromJson(arguments!!.getString("fromArg"))
+            val destinationPoint = Point.fromJson(arguments!!.getString("destArg"))
+
+            NavigationRoute.builder(requireContext())
+                    .accessToken(Mapbox.getAccessToken()!!)
+                    .origin(fromPoint)
+                    .profile("driving")
+                    .destination(destinationPoint)
+                    .build()
+                    .getRoute(object : Callback<DirectionsResponse> {
+                        override fun onResponse(call: Call<DirectionsResponse>, response: Response<DirectionsResponse>) {
+                            if (response.body() == null) {
+                                Log.e(TAG, "No routes found, make sure you set the right user and access token.")
+                                return
+                            } else if (response.body()!!.routes().size < 1) {
+                                Log.e(TAG, "No routes found")
+                                return
+                            }
+                            currentRoute = response.body()!!.routes()[0]
+                            // Draw the route on the map
+                            if (navigationMapRoute != null) {
+                                //navigationMapRoute!!.removeRoute()
+                            } else {
+                                navigationMapRoute = NavigationMapRoute(null, mapView!!, mapboxMap!!, R.style.NavigationMapRoute)
+                            }
+                            if (currentRoute != null) {
+                                navigationMapRoute!!.addRoute(currentRoute)
+                                startNavigationButton.visibility = View.VISIBLE
+                            } else {
+                                Log.e(TAG, "Error, route is null")
+                            }
+                        }
+                        override fun onFailure(call: Call<DirectionsResponse>, throwable: Throwable) {
+                            Log.e(TAG, "Error: " + throwable.message)
+                        }
+                    })
+        }
+
+
+        mapView = view?.findViewById(R.id.mapView)
         mapView!!.onCreate(savedInstanceState)
         mapView!!.getMapAsync(this)
+
     }
 
     override fun onMapReady(mapboxMap: MapboxMap) {
@@ -180,6 +227,10 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
         sheet_ok_button.setOnClickListener {
             bottomSheetBehavior.state = HIDDEN
         }
+
+        profile_btn.setOnClickListener(Navigation.createNavigateOnClickListener(R.id.action_mapFragment_to_profileFragment))
+        tickets_btn.setOnClickListener(Navigation.createNavigateOnClickListener(R.id.action_mapFragment_to_ticketsFragment))
+        trip_btn.setOnClickListener(Navigation.createNavigateOnClickListener(R.id.action_mapFragment_to_tripFragment))
     }
 
     /**Initiates the RecyclerView with a adapter, clickListener, LayoutManager, Animator, SnapHelper*/
