@@ -4,6 +4,8 @@ package com.example.smspark.views
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
+import android.location.Location
+import android.location.LocationManager
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
@@ -13,12 +15,14 @@ import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.navigation.findNavController
 import com.example.smspark.R
+import com.google.android.gms.location.LocationServices
 import com.mapbox.geojson.Point
 import com.mapbox.mapboxsdk.maps.MapboxMap
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback
 import com.mapbox.mapboxsdk.plugins.places.autocomplete.PlaceAutocomplete
 import com.mapbox.mapboxsdk.plugins.places.autocomplete.model.PlaceOptions
 import kotlinx.android.synthetic.main.fragment_trip.*
+
 
 
 class TripFragment : Fragment(), OnMapReadyCallback {
@@ -36,17 +40,44 @@ class TripFragment : Fragment(), OnMapReadyCallback {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        initButtons()
-        initSpinner()
-        initTextViews()
+
+        initComponents()
     }
 
     override fun onMapReady(mapboxMap: MapboxMap) {}
 
-    private fun initTextViews(){
+    @SuppressLint("MissingPermission")
+    private fun initComponents(){
         textFrom.setOnClickListener { startAutoCompleteActivity(FROM_TEXT_VIEW) }
         textDestination.setOnClickListener { startAutoCompleteActivity(DESTINATION_TEXT_VIEW) }
+        iv_my_location.setOnClickListener {
+            val fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity())
+            fusedLocationClient.lastLocation
+                    .addOnSuccessListener { location: Location? ->
+                        // Got last known location. In some rare situations this can be null.
+                        if ((location != null) && (textDestination.text.toString() != "Current Location")) {
+                            textFrom.text = "Current Location"
+                            var point = Point.fromLngLat(location.longitude, location.latitude)
+                            fromLatLng = point.toJson().toString()
+                        }
+                    }
+        }
 
+        iv_swap.setOnClickListener {
+            if ((fromLatLng != null) && (destinationLatLng != null)){
+                val tempText = textFrom.text.toString()
+                val tempPoint = fromLatLng
+                textFrom.text = textDestination.text
+                textDestination.text = tempText
+                fromLatLng = destinationLatLng
+                destinationLatLng = tempPoint
+            } else {
+                Toast.makeText(requireContext(), "Can´t swap", Toast.LENGTH_LONG).show()
+            }
+        }
+
+        initButtons()
+        initSpinner()
     }
 
     private fun initSpinner(){

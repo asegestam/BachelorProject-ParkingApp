@@ -44,56 +44,7 @@
         android:label="fragment_trip"
         tools:layout="@layout/fragment_trip" >
         <action
-            android:id="@+id/action_tripFragment_to_destinationInputFragment"
-            app:destination="@id/destinationInputFragment" />
-        <action
             android:id="@+id/action_tripFragment_to_mapFragment"
             app:destination="@id/mapFragment" />
-    </fragment>
-    <fragment
-        android:id="@+id/wayPointInputFragment"
-        android:name="com.example.smspark.views.WayPointInputFragment"
-        android:label="fragment_way_point_input"
-        tools:layout="@layout/fragment_way_point_input" >
-        <action
-            android:id="@+id/action_wayPointInputFragment_to_carInputFragment"
-            app:destination="@id/carInputFragment" />
-        <argument
-            android:name="fromArg"
-            app:argType="string"
-            android:defaultValue=" " />
-        <argument
-            android:name="destinationArg"
-            app:argType="string"
-            android:defaultValue=" " />
-    </fragment>
-    <fragment
-        android:id="@+id/carInputFragment"
-        android:name="com.example.smspark.views.CarInputFragment"
-        android:label="fragment_car_input"
-        tools:layout="@layout/fragment_car_input" >
-        <argument
-            android:name="fromArg"
-            app:argType="string"
-            android:defaultValue=" " />
-        <argument
-            android:name="destinationArg"
-            app:argType="string"
-            android:defaultValue=" " />
-        <argument
-            android:name="waypointArg"
-            android:defaultValue=" " />
-    </fragment>
-    <fragment
-        android:id="@+id/destinationInputFragment"
-        android:name="com.example.smspark.views.DestinationInputFragment"
-        android:label="DestinationInputFragment" >
-        <action
-            android:id="@+id/action_destinationInputFragment_to_wayPointInputFragment"
-            app:destination="@id/wayPointInputFragment" />
-        <argument
-            android:name="fromArg"
-            app:argType="string"
-            android:defaultValue=" " />
     </fragment>
 </navigation>
