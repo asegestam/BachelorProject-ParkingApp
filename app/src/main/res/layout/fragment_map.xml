@@ -12,11 +12,26 @@
         android:id="@+id/mapView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        mapbox:layout_constraintBottom_toBottomOf="parent"
+        mapbox:layout_constraintEnd_toEndOf="parent"
+        mapbox:layout_constraintStart_toStartOf="parent"
+        mapbox:layout_constraintTop_toTopOf="parent"
         mapbox:mapbox_cameraTargetLat="40.73581"
         mapbox:mapbox_cameraTargetLng="-73.99155"
         mapbox:mapbox_cameraZoom="11">
 
     </com.mapbox.mapboxsdk.maps.MapView>
+
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recycler_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        tools:listitem="@layout/list_item"
+        android:clickable="true"
+        android:focusable="true"
+        android:visibility="gone"/>
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/startNavigationButton"
@@ -41,56 +56,58 @@
         mapbox:layout_dodgeInsetEdges="bottom"
         />
 
-    <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="end|bottom"
-        android:orientation="vertical"
-        android:layout_marginEnd="10dp"
-        mapbox:layout_dodgeInsetEdges="bottom"
-        >
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        mapbox:layout_dodgeInsetEdges="bottom">
+
 
         <Switch
             android:id="@+id/list_switch"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:checked="false"
             android:layout_gravity="center"
-            android:layout_marginBottom="15dp"
-             />
+            android:layout_marginEnd="24dp"
+            android:layout_marginBottom="16dp"
+            android:checked="false"
+            mapbox:layout_constraintBottom_toTopOf="@+id/my_locationFab"
+            mapbox:layout_constraintEnd_toEndOf="parent" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/my_locationFab"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="16dp"
             android:elevation="8dp"
             android:src="@drawable/my_location"
             mapbox:backgroundTint="@color/mapbox_plugins_white"
-            mapbox:rippleColor="@color/colorPrimaryDark"
-            android:layout_marginBottom="20dp"/>
+            mapbox:layout_constraintBottom_toTopOf="@+id/fab"
+            mapbox:layout_constraintEnd_toEndOf="parent"
+            mapbox:rippleColor="@color/colorPrimaryDark" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/fab"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="16dp"
             android:elevation="8dp"
             android:src="@drawable/ic_search_black_24dp"
             mapbox:backgroundTint="@color/mapbox_blue"
-            mapbox:rippleColor="@color/colorPrimaryDark"
-            android:layout_marginBottom="10dp"/>
+            mapbox:layout_constraintBottom_toBottomOf="parent"
+            mapbox:layout_constraintEnd_toEndOf="parent"
+            mapbox:rippleColor="@color/colorPrimaryDark" />
 
 
-    </LinearLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recycler_view"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="top"
-        tools:listitem="@layout/list_item"
-        android:clickable="true"
-        android:focusable="true"
-        android:visibility="gone"/>
+    <include
+        layout="@layout/chosen_zone"
+        mapbox:layout_constraintEnd_toEndOf="parent"
+        mapbox:layout_constraintStart_toStartOf="parent">
+
+    </include>
 
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

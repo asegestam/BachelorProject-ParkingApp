@@ -18,8 +18,9 @@
     <string name="geojson_string">{ \"type\": \"FeatureCollection\", \"features\":</string>
 
     <string name="select_zone">Välj en Zon!</string>
-    <string name="vald_zon">Vald Zon: </string>
+    <string name="vald_zon">Vald Zon</string>
     <string name="start_navigation">START NAVIGATION</string>
+    <string name="zon_kod">Zonkod&#160;</string>
 
     <string name="list_of_zones">List of Zones</string>
 

@@ -15,4 +15,5 @@ class SelectedZoneViewModel(private val repo: ZoneRepository): ViewModel() {
     val selectedListZone: MutableLiveData<Feature> by lazy {
         MutableLiveData<Feature>()
     }
+
 }

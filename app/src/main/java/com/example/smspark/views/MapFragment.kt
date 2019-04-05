@@ -49,12 +49,14 @@ import com.mapbox.mapboxsdk.style.sources.GeoJsonSource
 import com.mapbox.services.android.navigation.ui.v5.route.NavigationMapRoute
 import com.mapbox.services.android.navigation.v5.navigation.NavigationRoute
 import kotlinx.android.synthetic.main.chosen_zone.*
+import kotlinx.android.synthetic.main.chosen_zone.view.*
 import kotlinx.android.synthetic.main.fragment_map.*
 import org.koin.android.viewmodel.ext.android.sharedViewModel
 import org.koin.android.viewmodel.ext.android.viewModel
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import kotlin.math.round
 
 @SuppressLint("LogNotTimber")
 class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener, PermissionsListener {
@@ -95,6 +97,10 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
     private val handicapImage = "handicap-image"
 
     private lateinit var snackbar: Snackbar
+    private lateinit var bottomSheetBehavior: BottomSheetBehavior<View>
+
+    private val COLLAPSED = BottomSheetBehavior.STATE_COLLAPSED
+    private val HIDDEN = BottomSheetBehavior.STATE_HIDDEN
 
     //lazy inject ViewModel
     val zoneViewModel: ZoneViewModel by sharedViewModel()
@@ -138,6 +144,7 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
             initObservers()
         }
         initButtons()
+        initBottomSheet()
     }
 
     /** Initiates ViewModel observers */
@@ -148,8 +155,8 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
         zoneViewModel.handicapPoints.observe(this, Observer { handicapZones -> addMarkersToMap(handicapZones, true) })
         zoneViewModel.zoneFeatures.observe(this, Observer { features -> zoneAdapter.setData(features) })
         //SelectedZoneViewModel observers
-        selectedZoneViewModel.selectedMapZone.observe(this, Observer { zone -> Log.d(TAG, "Zone selected: " + zone )  })
-        selectedZoneViewModel.selectedListZone.observe(this, Observer { zone -> Log.d(TAG, "Zone selected: " + zone )  })
+        selectedZoneViewModel.selectedMapZone.observe(this, Observer { zone -> bottomSheetBehavior.state = COLLAPSED })
+        selectedZoneViewModel.selectedListZone.observe(this, Observer { zone ->  bottomSheetBehavior.state = COLLAPSED})
     }
 
     /** Initiates button clickListeners */
@@ -170,6 +177,9 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
                 recycler_view.visibility = View.GONE
             }
         }
+        sheet_ok_button.setOnClickListener {
+            bottomSheetBehavior.state = HIDDEN
+        }
     }
 
     /**Initiates the RecyclerView with a adapter, clickListener, LayoutManager, Animator, SnapHelper*/
@@ -185,14 +195,22 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
     }
 
     private fun initBottomSheet() {
-        val bottomSheetBehavior = BottomSheetBehavior.from(bottom_sheet)
-        bottomSheetBehavior.isHideable = true
-        bottomSheetBehavior.peekHeight = 150
-        if(bottomSheetBehavior.state == BottomSheetBehavior.STATE_COLLAPSED) {
-            bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
-        } else {
-            bottomSheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
+        bottomSheetBehavior = BottomSheetBehavior.from(bottom_sheet)
+        bottomSheetBehavior.state = HIDDEN
+        val bottomSheetCallback = object: BottomSheetBehavior.BottomSheetCallback() {
+            override fun onStateChanged(bottomSheet: View, newState: Int) {
+                if(newState == COLLAPSED) {
+                    val selectedZone = selectedZoneViewModel.selectedListZone.value
+                    bottomSheet.zoneName.text = selectedZone?.properties?.zoneName
+                    bottomSheet.zoneCode.text = getString(R.string.zon_kod) + selectedZone?.properties?.zonecode.toString()
+                    bottomSheet.zoneOwner.text = selectedZone?.properties?.zoneOwner
+                    bottomSheet.zoneDistance.text = round(selectedZone!!.properties.distance).toString() + " m"
+                }
+            }
+            override fun onSlide(bottomSheet: View, slideOffset: Float) {
+            }
         }
+        bottomSheetBehavior.setBottomSheetCallback(bottomSheetCallback)
     }
 
     @SuppressLint("MissingPermission")
@@ -215,6 +233,7 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
     @SuppressLint("MissingPermission")
     override fun onMapClick(point: LatLng): Boolean {
         val originPoint = getUserLocation()
+        bottomSheetBehavior.state = HIDDEN
         if (destination != null && queryMapClick(point)) {
             val wayPoint = Point.fromLngLat(point.longitude, point.latitude)
             val source = mapboxMap?.style!!.getSourceAs<GeoJsonSource>("map-click-marker")
@@ -234,24 +253,11 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
         if(features !=null && features.size > 0) {
             Log.d(TAG, "features queryed " + features.size)
             val feature = features[0]
-            val isGbgZone = feature.hasProperty("Name")
-            handleChosenZone(feature, Point.fromLngLat(point.longitude, point.latitude), isGbgZone)
+            addMarkerOnMap(Point.fromLngLat(point.longitude, point.latitude), true)
             selectedZoneViewModel.selectedMapZone.value = feature
             return true
         }
         return false
-    }
-
-    private fun handleChosenZone(feature: Feature?, point: Point?, b: Boolean) {
-        val name: CharSequence
-        if(b) {
-            name = getString(R.string.vald_zon) + feature?.getProperty("Name")
-            showSnackBar(name, Snackbar.LENGTH_LONG)
-        } else {
-            name = getString(R.string.vald_zon) + feature?.getProperty("zone_name").toString()
-            showSnackBar(name, Snackbar.LENGTH_LONG)
-        }
-        point?.let { addMarkerOnMap(point, true) }
     }
 
     /** Adds a marker layer to be reused over and over
@@ -388,7 +394,10 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
 
             navigationMapRoute?.updateRouteVisibilityTo(false)
             startNavigationButton.visibility = View.GONE
-            showSnackBar(getString(R.string.select_zone), Snackbar.LENGTH_LONG)
+            snackbar = Snackbar.make(coordinator, R.string.select_zone , Snackbar.LENGTH_LONG)
+            val snackbarView = snackbar.view
+            snackbarView.setBackgroundColor(ContextCompat.getColor(activity!!.applicationContext,R.color.mapbox_blue))
+            snackbar.show()
         }
     }
 
@@ -411,6 +420,7 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
      * @param zone The list items binded object*/
     private fun zoneListItemClicked(zone: com.example.smspark.model.Feature) {
         if(zone != selectedZoneViewModel.selectedListZone.value) {
+            bottomSheetBehavior.state = HIDDEN
             selectedZoneViewModel.selectedListZone.value = zone
             val wayPoint: Point
             if (zone.geometry.type == "Point") {
@@ -424,7 +434,6 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
                 wayPoint = Point.fromLngLat(long, lat)
                 addMarkerOnMap(wayPoint, true)
             }
-            showSnackBar(getString(R.string.vald_zon) + zone.properties.zoneName)
             if(destination != null) {
                 getRoute(getUserLocation(), wayPoint, destination!!)
             }
@@ -441,12 +450,6 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
                 .build()), duration)
     }
 
-    private fun showSnackBar(charSequence: CharSequence, length: Int = Snackbar.LENGTH_LONG) {
-        snackbar = Snackbar.make(coordinator, charSequence, length)
-        val snackbarView = snackbar.view
-        snackbarView.setBackgroundColor(ContextCompat.getColor(activity!!.applicationContext,R.color.colorSuccess))
-        snackbar.show()
-    }
 
     @SuppressLint("MissingPermission")
     private fun getUserLocation(): Point = Point.fromLngLat(locationComponent!!.lastKnownLocation!!.longitude, locationComponent!!.lastKnownLocation!!.latitude)
