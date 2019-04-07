@@ -6,6 +6,7 @@
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="115dp"
+    android:elevation="16dp"
     style="@style/BottomSheet"
     app:layout_behavior="@string/bottom_sheet_behavior"
     >
@@ -96,12 +97,5 @@
         android:textColor="@color/colorSuccess"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
-
-
-
-
-
-
-
 
 </androidx.constraintlayout.widget.ConstraintLayout>

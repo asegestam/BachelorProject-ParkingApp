@@ -7,25 +7,22 @@ import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.core.content.ContextCompat
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
-import androidx.navigation.Navigation
-import com.example.smspark.R
-import com.example.smspark.model.ZoneAdapter
-import com.example.smspark.viewmodels.SelectedZoneViewModel
-import com.example.smspark.viewmodels.ZoneViewModel
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.LinearSnapHelper
 import androidx.recyclerview.widget.RecyclerView
-import com.google.gson.JsonObject
-import com.google.gson.JsonParser
+import com.example.smspark.R
+import com.example.smspark.model.ZoneAdapter
+import com.example.smspark.viewmodels.SelectedZoneViewModel
+import com.example.smspark.viewmodels.ZoneViewModel
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.snackbar.Snackbar
 import com.mapbox.android.core.permissions.PermissionsListener
@@ -42,7 +39,11 @@ import com.mapbox.mapboxsdk.geometry.LatLng
 import com.mapbox.mapboxsdk.location.LocationComponent
 import com.mapbox.mapboxsdk.location.LocationComponentActivationOptions
 import com.mapbox.mapboxsdk.location.modes.CameraMode
-import com.mapbox.mapboxsdk.maps.*
+import com.mapbox.mapboxsdk.location.modes.RenderMode
+import com.mapbox.mapboxsdk.maps.MapView
+import com.mapbox.mapboxsdk.maps.MapboxMap
+import com.mapbox.mapboxsdk.maps.OnMapReadyCallback
+import com.mapbox.mapboxsdk.maps.Style
 import com.mapbox.mapboxsdk.plugins.places.autocomplete.PlaceAutocomplete
 import com.mapbox.mapboxsdk.plugins.places.autocomplete.model.PlaceOptions
 import com.mapbox.mapboxsdk.style.layers.FillLayer
@@ -54,7 +55,6 @@ import com.mapbox.services.android.navigation.ui.v5.route.NavigationMapRoute
 import com.mapbox.services.android.navigation.v5.navigation.NavigationRoute
 import kotlinx.android.synthetic.main.chosen_zone.*
 import kotlinx.android.synthetic.main.chosen_zone.view.*
-import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.fragment_map.*
 import org.koin.android.viewmodel.ext.android.sharedViewModel
 import org.koin.android.viewmodel.ext.android.viewModel
@@ -114,25 +114,20 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         Mapbox.getInstance(requireContext(), getString(R.string.access_token))
+        setHasOptionsMenu(true)
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
-                              savedInstanceState: Bundle?): View? {
-
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_map, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
         if(arguments != null){
-
             val fromPoint = Point.fromJson(arguments!!.getString("fromArg"))
             val destinationPoint = Point.fromJson(arguments!!.getString("destArg"))
-
             NavigationRoute.builder(requireContext())
                     .accessToken(Mapbox.getAccessToken()!!)
                     .origin(fromPoint)
@@ -157,7 +152,6 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
                             }
                             if (currentRoute != null) {
                                 navigationMapRoute!!.addRoute(currentRoute)
-                                startNavigationButton.visibility = View.VISIBLE
                             } else {
                                 Log.e(TAG, "Error, route is null")
                             }
@@ -167,12 +161,12 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
                         }
                     })
         }
-
-
-        mapView = view?.findViewById(R.id.mapView)
+        val activity = activity as MainActivity
+        activity.changeNavBarVisibility(true)
+        mapView = view.findViewById(R.id.mapView)
         mapView!!.onCreate(savedInstanceState)
         mapView!!.getMapAsync(this)
-
+        initBottomSheet()
     }
 
     override fun onMapReady(mapboxMap: MapboxMap) {
@@ -191,7 +185,6 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
             initObservers()
         }
         initButtons()
-        initBottomSheet()
     }
 
     /** Initiates ViewModel observers */
@@ -208,29 +201,18 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
 
     /** Initiates button clickListeners */
     private fun initButtons() {
-        fab.setOnClickListener {
+        fab_search.setOnClickListener {
             startAutoCompleteActivity()
-        }
-        startNavigationButton!!.setOnClickListener {
-            findNavController().navigate(R.id.mapFragment_to_navigation)
         }
         my_locationFab.setOnClickListener {
             moveCameraToLocation()
         }
-        list_switch.setOnCheckedChangeListener { _, isChecked ->
-            if(isChecked) {
-                recycler_view.visibility = View.VISIBLE
-            } else {
-                recycler_view.visibility = View.GONE
-            }
-        }
         sheet_ok_button.setOnClickListener {
             bottomSheetBehavior.state = HIDDEN
         }
-
-        profile_btn.setOnClickListener(Navigation.createNavigateOnClickListener(R.id.action_mapFragment_to_profileFragment))
-        tickets_btn.setOnClickListener(Navigation.createNavigateOnClickListener(R.id.action_mapFragment_to_ticketsFragment))
-        trip_btn.setOnClickListener(Navigation.createNavigateOnClickListener(R.id.action_mapFragment_to_tripFragment2))
+        startNavigationButton!!.setOnClickListener {
+            findNavController().navigate(R.id.mapFragment_to_navigation)
+        }
     }
 
     /**Initiates the RecyclerView with a adapter, clickListener, LayoutManager, Animator, SnapHelper*/
@@ -271,10 +253,13 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
             // Activate the MapboxMap LocationComponent to show user location
             // Adding in LocationComponentOptions is also an optional parameter
             locationComponent = mapboxMap!!.locationComponent
-            locationComponent.activateLocationComponent(requireContext(), loadedMapStyle)
+            locationComponent.activateLocationComponent(LocationComponentActivationOptions.builder(requireContext(), loadedMapStyle)
+                    .useDefaultLocationEngine(true)
+                    .build())
             locationComponent.isLocationComponentEnabled = true
             // Set the component's camera mode
-            locationComponent.cameraMode = CameraMode.NONE_GPS
+            locationComponent.cameraMode = CameraMode.TRACKING_GPS
+            locationComponent.renderMode = RenderMode.COMPASS
         } else {
             permissionsManager = PermissionsManager(this)
             permissionsManager.requestLocationPermissions(requireActivity())
@@ -354,7 +339,6 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
         //Handicap Layer
         loadedMapStyle.addLayer(SymbolLayer(handicapLayer, handicapSource)
                 .withProperties(PropertyFactory.iconImage(handicapImage), iconSize(0.8f)))
-
     }
 
     /** Adds frequently used image sources to the map style
@@ -442,9 +426,9 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
 
             zoneViewModel.getZones()
             zoneViewModel.getHandicapZones()
-
             navigationMapRoute?.updateRouteVisibilityTo(false)
             startNavigationButton.visibility = View.GONE
+            recyclerView.visibility = View.VISIBLE
             snackbar = Snackbar.make(coordinator, R.string.select_zone , Snackbar.LENGTH_LONG)
             val snackbarView = snackbar.view
             snackbarView.setBackgroundColor(ContextCompat.getColor(activity!!.applicationContext,R.color.mapbox_blue))
@@ -522,6 +506,13 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
         } else {
             Toast.makeText(requireContext(), R.string.user_location_permission_not_granted, Toast.LENGTH_LONG).show()
             requireActivity().finish()
+        }
+    }
+
+    private fun toggleListVisibility() {
+        when(recyclerView.visibility) {
+            View.VISIBLE -> recyclerView.visibility = View.GONE
+            View.GONE -> recyclerView.visibility = View.VISIBLE
         }
     }
 

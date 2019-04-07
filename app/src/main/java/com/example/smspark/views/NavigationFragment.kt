@@ -48,6 +48,8 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        val activity = activity as MainActivity
+        activity.changeNavBarVisibility(false)
         navigationView = navigation_view_fragment
         navigationView.onCreate(savedInstanceState)
         navigationView.initialize(this)

@@ -20,7 +20,7 @@
     <style name="BottomSheet">
         <item name="shapeAppearance">?attr/shapeAppearanceLargeComponent</item>
         <item name="backgroundTint">@color/colorPrimaryLight</item>
-        <item name="android:elevation">8dp</item>
+        <item name="android:elevation">16dp</item>
         <item name="behavior_hideable">true</item>
         <item name="behavior_skipCollapsed">false</item>
         <item name="behavior_peekHeight">200dp</item>
