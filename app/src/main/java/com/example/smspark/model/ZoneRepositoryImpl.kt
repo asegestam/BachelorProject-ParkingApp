@@ -13,27 +13,9 @@ class ZoneRepositoryImpl: ZoneRepository, KoinComponent {
 
     private val TAG  = "ZoneRepositoryImpl"
     private val service: ZoneService by inject()
-    val data = MutableLiveData<Zone>()
-    val handicap = MutableLiveData<String>()
+    val zones = MutableLiveData<Zone>()
+    val handicapPoints = MutableLiveData<String>()
 
-    override fun getZones(): LiveData<Zone> {
-        val call = service.getZones()
-        call.enqueue(object : retrofit2.Callback<Zone> {
-            override fun onFailure(call: Call<Zone>, t: Throwable) {
-                Log.e(TAG, t.message)
-            }
-
-            override fun onResponse(call: Call<Zone>, response: Response<Zone>) {
-                if(response.isSuccessful) {
-                    val zones = response.body()
-                    zones?.let {
-                        data.value = zones
-                    }
-                }
-            }
-        })
-        return data
-    }
 
     override fun getHandicapZones(): MutableLiveData<String> {
         val call = service.getHandicapZones()
@@ -78,12 +60,55 @@ class ZoneRepositoryImpl: ZoneRepository, KoinComponent {
                     geojsonString += "]}"
 
                     println("Handicap call to GBGSTAD parsed: " + geojsonString)
-                    handicap.value = geojsonString
+                    handicapPoints.value = geojsonString
                 }
             }
         })
 
-        return handicap
+        return handicapPoints
     }
 
+    override fun getZones(): LiveData<Zone> {
+
+        val call = service.getZones()
+        //val call = service.getZones()
+        call.enqueue(object : retrofit2.Callback<Zone> {
+            override fun onFailure(call: Call<Zone>, t: Throwable) {
+                Log.e(TAG, t.message)
+            }
+
+            override fun onResponse(call: Call<Zone>, response: Response<Zone>) {
+                if(response.isSuccessful) {
+                    val response = response.body()
+                    zones?.let {
+                        zones.value = response
+                    }
+                }
+            }
+        })
+
+        return zones
+    }
+
+    override fun getSpecificZones(latitude: Double, longitude: Double, radius: Int): LiveData<Zone> {
+
+        val call = service.getSpecificZones(latitude, longitude, radius)
+        //val call = service.getZones()
+        call.enqueue(object : retrofit2.Callback<Zone> {
+            override fun onFailure(call: Call<Zone>, t: Throwable) {
+                Log.e(TAG, t.message)
+            }
+
+            override fun onResponse(call: Call<Zone>, response: Response<Zone>) {
+                if(response.isSuccessful) {
+                    val response = response.body()
+                    zones?.let {
+                        zones.value = response
+                    }
+                }
+            }
+        })
+
+        return zones
+    }
 }

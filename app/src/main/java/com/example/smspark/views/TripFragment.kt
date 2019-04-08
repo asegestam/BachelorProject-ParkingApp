@@ -129,7 +129,7 @@ class TripFragment : Fragment(), OnMapReadyCallback {
             }
         }
 
-        Toast.makeText(requireContext(), point.toString(), Toast.LENGTH_LONG).show()
+        //Toast.makeText(requireContext(), point.toString(), Toast.LENGTH_LONG).show()
     }
 
 

@@ -7,8 +7,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 
-val BASE_SMSPARK_URL = "https://api.smspark.se/rest/v2/"
-val BASE_GBGSTAD_URL = "TBD"
+val BASE_SMSPARK_URL = "https://api.smspark.se/rest/v2/features/"
 
 val webserviceModule  = module{
     single {createRetrofitService<ZoneService>()}
