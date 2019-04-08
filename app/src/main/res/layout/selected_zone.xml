@@ -51,7 +51,7 @@
 
 
     <TextView
-        android:id="@+id/zoneCode"
+        android:id="@+id/zoneType"
         android:layout_width="wrap_content"
         android:layout_height="22dp"
         android:layout_marginTop="6dp"
@@ -68,8 +68,8 @@
         android:padding="1dp"
         android:text="EuroPark Svenska AB EPS"
         android:textAppearance="@style/MaterialAlertDialog.MaterialComponents.Body.Text"
-        app:layout_constraintStart_toStartOf="@+id/zoneCode"
-        app:layout_constraintTop_toBottomOf="@+id/zoneCode" />
+        app:layout_constraintStart_toStartOf="@+id/zoneType"
+        app:layout_constraintTop_toBottomOf="@+id/zoneType" />
 
 
     <TextView

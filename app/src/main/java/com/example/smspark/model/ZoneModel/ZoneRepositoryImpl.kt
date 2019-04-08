@@ -1,9 +1,8 @@
-package com.example.smspark.model
+package com.example.smspark.model.ZoneModel
 
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import com.google.gson.GsonBuilder
 import org.koin.core.KoinComponent
 import org.koin.core.inject
 import retrofit2.Call
@@ -13,8 +12,11 @@ class ZoneRepositoryImpl: ZoneRepository, KoinComponent {
 
     private val TAG  = "ZoneRepositoryImpl"
     private val service: ZoneService by inject()
-    val data = MutableLiveData<Zone>()
     val handicap = MutableLiveData<String>()
+    val data:  MutableLiveData<Zone> by lazy {
+        MutableLiveData<Zone>()
+    }
+
 
     override fun getZones(): LiveData<Zone> {
         val call = service.getZones()
@@ -46,6 +48,7 @@ class ZoneRepositoryImpl: ZoneRepository, KoinComponent {
             override fun onResponse(call: Call<List<Handicap>>, response: Response<List<Handicap>>) {
                 if(response.isSuccessful) {
                     val zones = response.body()!!
+                    println(zones)
                     var geojsonString = "{\"type\":\"FeatureCollection\"," +
                                                 "\"features\":["
 
@@ -62,7 +65,7 @@ class ZoneRepositoryImpl: ZoneRepository, KoinComponent {
                                         "}," +
                                     "\"properties\":{" +
                                             "\"Id\":\"${handicap.id}\"," +
-                                            "\"Name\":\"${handicap.name}\"," +
+                                            "Name\":\"${handicap.name}\"," +
                                             "\"Owner\":\"${handicap.owner}\"," +
                                             "\"ParkingSpaces\":${handicap.parkingSpaces}," +
                                             "\"MaxParkingTime\":\"${handicap.maxParkingTime}\"," +

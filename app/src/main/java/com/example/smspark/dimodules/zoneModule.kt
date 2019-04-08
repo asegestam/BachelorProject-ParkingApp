@@ -1,7 +1,7 @@
 package com.example.smspark.dimodules
 
-import com.example.smspark.model.ZoneRepository
-import com.example.smspark.model.ZoneRepositoryImpl
+import com.example.smspark.model.ZoneModel.ZoneRepository
+import com.example.smspark.model.ZoneModel.ZoneRepositoryImpl
 import com.example.smspark.viewmodels.SelectedZoneViewModel
 import com.example.smspark.viewmodels.ZoneViewModel
 import org.koin.android.viewmodel.dsl.viewModel
