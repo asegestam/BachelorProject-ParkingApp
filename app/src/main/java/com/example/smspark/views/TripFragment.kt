@@ -135,12 +135,16 @@ class TripFragment : Fragment(), OnMapReadyCallback {
 
     private fun initButtons() {
         next_btn.setOnClickListener {
-            val bundle = Bundle()
 
-            bundle.putString("fromArg", fromLatLng)
-            bundle.putString("destArg", destinationLatLng)
+            if(fromLatLng != null && destinationLatLng != null){
+                val bundle = Bundle()
 
-            it.findNavController().navigate(R.id.action_tripFragment_to_mapFragment, bundle)
+                bundle.putString("fromArg", fromLatLng)
+                bundle.putString("destArg", destinationLatLng)
+
+                it.findNavController().navigate(R.id.action_tripFragment_to_mapFragment, bundle)
+            } else
+                Toast.makeText(requireContext(), "Choose all required alternatives", Toast.LENGTH_LONG).show()
         }
     }
 
