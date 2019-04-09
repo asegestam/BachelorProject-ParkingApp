@@ -25,10 +25,18 @@ import com.example.smspark.viewmodels.SelectedZoneViewModel
 import com.example.smspark.viewmodels.ZoneViewModel
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.snackbar.Snackbar
+import com.google.gson.GsonBuilder
+import com.google.gson.JsonObject
 import com.mapbox.android.core.permissions.PermissionsListener
 import com.mapbox.android.core.permissions.PermissionsManager
 import com.mapbox.api.directions.v5.models.DirectionsRoute
+import com.example.smspark.model.Zone
+import com.example.smspark.model.ZoneAdapter
 import com.mapbox.geojson.*
+import com.mapbox.geojson.Feature
+import com.mapbox.geojson.FeatureCollection
+import com.mapbox.geojson.GeoJson
+import com.mapbox.geojson.Point
 import com.mapbox.mapboxsdk.Mapbox
 import com.mapbox.mapboxsdk.camera.CameraPosition
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory
@@ -138,23 +146,66 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
             setupZoneLayers(style)
             setupMarkerLayer(style)
             initRecyclerView()
-            if(zoneViewModel.zoneFeatures.value == null) {
-                zoneViewModel.getZones()
-                zoneViewModel.getHandicapZones()
-            }
             initObservers()
+
+
         }
         initButtons()
+
+        if(arguments != null){
+            val fromPoint = Point.fromJson(arguments!!.getString("fromArg"))
+            val destinationPoint = Point.fromJson(arguments!!.getString("destArg"))
+            //zoneViewModel.getSpecificZones(destinationPoint.latitude(), destinationPoint.longitude(), 2000)
+
+            zoneViewModel.getSpecificZones(destinationPoint.latitude(), destinationPoint.longitude(), 500).observe(this, Observer { data ->
+                val gson = GsonBuilder().setLenient().create()
+                //Filter out features that are polygons and points to seperate lists
+                val polygonFeatures = data.features.filter { it.geometry.type == "Polygon" }
+                val pointFeatures = data.features.filter { it.geometry.type == "Point" }
+
+                val polygons = data.copy()
+                val points = data.copy()
+                polygons.features = polygonFeatures
+                points.features = pointFeatures
+
+                addPolygonsToMap(gson.toJson(polygons))
+                addMarkersToMap(gson.toJson(points), false)
+
+                val nearestFeature  = data.features.first()
+                //TODO when the features is set and done convert and get closest parking and send it as waypoint
+                getRoute(fromPoint, destinationPoint, destinationPoint)
+            })
+        }
     }
 
     /** Initiates ViewModel observers */
     private fun initObservers() {
         //ZoneViewModel observers
-        zoneViewModel.zonePolygons.observe(this, Observer { polygons -> addPolygonsToMap(polygons) })
+
+        //zoneViewModel.getHandicapZones().observe(this, Observer { data -> addMarkersToMap(data, true) })
+
+        /*zoneViewModel.getSpecificZones(57.7089,11.9746,  500).observe(this, Observer { data ->
+
+            val gson = GsonBuilder().setLenient().create()
+            //Filter out features that are polygons and points to seperate lists
+            val polygonFeatures = data.features.filter { it.geometry.type == "Polygon" }
+            val pointFeatures = data.features.filter { it.geometry.type == "Point" }
+
+            val polygons = data.copy()
+            val points = data.copy()
+            polygons.features = polygonFeatures
+            points.features = pointFeatures
+
+            addPolygonsToMap(gson.toJson(polygons))
+            addMarkersToMap(gson.toJson(points), false)
+        })*/
+
+        /*zoneViewModel.zonePolygons.observe(this, Observer { polygons -> addPolygonsToMap(polygons) })
         zoneViewModel.zonePoints.observe(this, Observer { points -> addMarkersToMap(points,false) })
         zoneViewModel.handicapPoints.observe(this, Observer { handicapZones -> addMarkersToMap(handicapZones, true) })
-        zoneViewModel.zoneFeatures.observe(this, Observer { features -> zoneAdapter.setData(features) })
-        zoneViewModel.handicapFeatures.observe(this, Observer { features ->  })
+        zoneViewModel.zoneFeatures.observe(this, Observer { features -> zoneAdapter.setData(features) })*/
+
+
         //SelectedZoneViewModel observers
         selectedZoneViewModel.selectedZone.observe(this, Observer { bottomSheetBehavior.state = COLLAPSED})
         routeViewModel.route.observe(this, Observer { route -> handleRoute(route) })
@@ -346,8 +397,6 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
         //if result code is for AutoComplete activity
         if (resultCode == Activity.RESULT_OK && requestCode == REQUEST_CODE_AUTOCOMPLETE) {
             handleAutoCompleteResult(data)
-            zoneViewModel.getZones()
-            zoneViewModel.getHandicapZones()
             navigationMapRoute?.updateRouteVisibilityTo(false)
             startNavigationButton.visibility = View.GONE
             recyclerView.visibility = View.VISIBLE
