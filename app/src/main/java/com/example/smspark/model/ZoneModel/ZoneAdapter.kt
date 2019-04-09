@@ -4,6 +4,7 @@ import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
@@ -29,7 +30,7 @@ class ZoneAdapter(context: Context, private val listener: (com.mapbox.geojson.Fe
         return ZoneViewHolder(cardView)
     }
 
-    override fun getItemCount(): Int = zones.features()!!.size
+    override fun getItemCount(): Int = featureList.size
 
 
     override fun onBindViewHolder(holder: ZoneViewHolder, position: Int) {
@@ -49,6 +50,7 @@ class ZoneAdapter(context: Context, private val listener: (com.mapbox.geojson.Fe
     class ZoneViewHolder(val v: View) : RecyclerView.ViewHolder(v), View.OnClickListener {
 
         val cardView = v.findViewById<CardView>(R.id.card_view)
+        val icon = v.findViewById<ImageView>(R.id.icon)
         val zoneName = v.findViewById<TextView>(R.id.zoneName)
         val zoneType = v.findViewById<TextView>(R.id.zoneType)
         val zoneOwner = v.findViewById<TextView>(R.id.zoneOwner)
@@ -61,12 +63,13 @@ class ZoneAdapter(context: Context, private val listener: (com.mapbox.geojson.Fe
                 zoneName.text = zone.getStringProperty("zone_name")
                 zoneType.text = "Zonkod: " + zone.getNumberProperty("zonecode")
                 zoneOwner.text = zone.getStringProperty("zone_owner")
-                zoneDistance.text = round(zone.getNumberProperty("distance").toDouble()).toString() + " m"
+                zoneDistance.text = zone.getNumberProperty("distance").toInt().toString() + " m"
             } else {
+                icon.setImageResource(R.drawable.handicap_icon)
                 zoneName.text = zone.getStringProperty("Name")
                 zoneType.text = "Typ: HandikappsParkering"
                 zoneOwner.text = zone.getStringProperty("Owner")
-                zoneDistance.text = zone.getNumberProperty("Distance").toString() + " m"
+                zoneDistance.text = zone.getNumberProperty("Distance").toInt().toString() + " m"
             }
             v.setOnClickListener { listner(zone) }
         }

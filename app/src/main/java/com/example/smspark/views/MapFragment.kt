@@ -6,6 +6,7 @@ import android.content.Intent
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -26,17 +27,13 @@ import com.example.smspark.viewmodels.ZoneViewModel
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.snackbar.Snackbar
 import com.google.gson.GsonBuilder
-import com.google.gson.JsonObject
 import com.mapbox.android.core.permissions.PermissionsListener
 import com.mapbox.android.core.permissions.PermissionsManager
 import com.mapbox.api.directions.v5.models.DirectionsRoute
-import com.example.smspark.model.Zone
-import com.example.smspark.model.ZoneAdapter
-import com.mapbox.geojson.*
 import com.mapbox.geojson.Feature
 import com.mapbox.geojson.FeatureCollection
-import com.mapbox.geojson.GeoJson
 import com.mapbox.geojson.Point
+import com.mapbox.geojson.Polygon
 import com.mapbox.mapboxsdk.Mapbox
 import com.mapbox.mapboxsdk.camera.CameraPosition
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory
@@ -57,8 +54,8 @@ import com.mapbox.mapboxsdk.style.layers.PropertyFactory.*
 import com.mapbox.mapboxsdk.style.layers.SymbolLayer
 import com.mapbox.mapboxsdk.style.sources.GeoJsonSource
 import com.mapbox.services.android.navigation.ui.v5.route.NavigationMapRoute
-import kotlinx.android.synthetic.main.selected_zone.*
 import kotlinx.android.synthetic.main.fragment_map.*
+import kotlinx.android.synthetic.main.selected_zone.*
 import kotlinx.android.synthetic.main.selected_zone.view.*
 import org.koin.android.ext.android.inject
 import org.koin.android.viewmodel.ext.android.sharedViewModel
@@ -147,8 +144,6 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
             setupMarkerLayer(style)
             initRecyclerView()
             initObservers()
-
-
         }
         initButtons()
 
@@ -158,55 +153,25 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
             //zoneViewModel.getSpecificZones(destinationPoint.latitude(), destinationPoint.longitude(), 2000)
 
             zoneViewModel.getSpecificZones(destinationPoint.latitude(), destinationPoint.longitude(), 500).observe(this, Observer { data ->
-                val gson = GsonBuilder().setLenient().create()
-                //Filter out features that are polygons and points to seperate lists
-                val polygonFeatures = data.features.filter { it.geometry.type == "Polygon" }
-                val pointFeatures = data.features.filter { it.geometry.type == "Point" }
-
-                val polygons = data.copy()
-                val points = data.copy()
-                polygons.features = polygonFeatures
-                points.features = pointFeatures
-
-                addPolygonsToMap(gson.toJson(polygons))
-                addMarkersToMap(gson.toJson(points), false)
-
-                val nearestFeature  = data.features.first()
-                //TODO when the features is set and done convert and get closest parking and send it as waypoint
-                getRoute(fromPoint, destinationPoint, destinationPoint)
+                routeViewModel.getWayPointRoute(fromPoint, destinationPoint, destinationPoint, "driving")
             })
         }
     }
 
     /** Initiates ViewModel observers */
     private fun initObservers() {
-        //ZoneViewModel observers
-
-        //zoneViewModel.getHandicapZones().observe(this, Observer { data -> addMarkersToMap(data, true) })
-
-        /*zoneViewModel.getSpecificZones(57.7089,11.9746,  500).observe(this, Observer { data ->
-
-            val gson = GsonBuilder().setLenient().create()
-            //Filter out features that are polygons and points to seperate lists
-            val polygonFeatures = data.features.filter { it.geometry.type == "Polygon" }
-            val pointFeatures = data.features.filter { it.geometry.type == "Point" }
-
-            val polygons = data.copy()
-            val points = data.copy()
-            polygons.features = polygonFeatures
-            points.features = pointFeatures
-
-            addPolygonsToMap(gson.toJson(polygons))
-            addMarkersToMap(gson.toJson(points), false)
-        })*/
-
-        /*zoneViewModel.zonePolygons.observe(this, Observer { polygons -> addPolygonsToMap(polygons) })
-        zoneViewModel.zonePoints.observe(this, Observer { points -> addMarkersToMap(points,false) })
-        zoneViewModel.handicapPoints.observe(this, Observer { handicapZones -> addMarkersToMap(handicapZones, true) })
-        zoneViewModel.zoneFeatures.observe(this, Observer { features -> zoneAdapter.setData(features) })*/
-
-
-        //SelectedZoneViewModel observers
+        zoneViewModel.getHandicapZones().observe(this, Observer {
+            addMarkersToMap(it, true)
+            zoneAdapter.setData(it)
+        })
+        zoneViewModel.getSpecificZones().observe(this, Observer { featureCollection -> featureCollection.features()?.let {
+            if(it.size > 0) {
+                addZonesToMap(featureCollection)
+                zoneAdapter.setData(featureCollection)
+            } else {
+                Toast.makeText(requireContext(), "Inga zoner hittades", Toast.LENGTH_LONG).show()
+            }
+        }})
         selectedZoneViewModel.selectedZone.observe(this, Observer { bottomSheetBehavior.state = COLLAPSED})
         routeViewModel.route.observe(this, Observer { route -> handleRoute(route) })
     }
@@ -350,23 +315,39 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
         loadedMapStyle.addImage(handicapImage, BitmapFactory.decodeResource(resources, R.drawable.handicap_icon))
     }
 
+    /** Takes given FeatureCollection filters out Points and Polygons
+     * and calls the appropiate method to add them to the map
+     * @param featureCollection collection of features to be added
+     * */
+    private fun addZonesToMap(featureCollection: FeatureCollection) {
+        Log.d(TAG, "addZonesToMap " + featureCollection.toString())
+        val features = featureCollection.features()
+        //all features that is polygons
+        val polygons = features?.filter { it.geometry() is Polygon}
+        //all features that is points
+        val points = features?.filter { it.geometry() is Point}
+        Log.d(TAG, "Points " + points.toString())
+        polygons?.let { addPolygonsToMap(FeatureCollection.fromFeatures(polygons)) }
+        points?.let { addMarkersToMap(FeatureCollection.fromFeatures(points), false) }
+    }
+
     /** Adds a FillLayer representation of a given JSON String
      * @param json Valid JSON string containing Polygon Features */
-    private fun addPolygonsToMap(json: String) {
+    private fun addPolygonsToMap(featureCollection: FeatureCollection) {
         val source = getMapStyle().getSourceAs<GeoJsonSource>(polygonSource)
-        source?.setGeoJson(json)
+        source?.setGeoJson(featureCollection)
     }
 
     /** Adds a SymbolLayer representation of a given JSON String, where the icon is a Parking Icon
      * @param json Valid JSON string containing Point Features
      * @param isHandicap indicates if the given JSON is handicap zones, used to change marker icon*/
-    private fun addMarkersToMap(json: String, isHandicap: Boolean) {
+    private fun addMarkersToMap(featureCollection: FeatureCollection, isHandicap: Boolean) {
         if(isHandicap) {
             val handicapSource = getMapStyle().getSourceAs<GeoJsonSource>(handicapSource)
-            handicapSource?.setGeoJson(json)
+            handicapSource?.setGeoJson(featureCollection)
         } else {
             val pointSource = getMapStyle().getSourceAs<GeoJsonSource>(pointSource)
-            pointSource?.setGeoJson(json)
+            pointSource?.setGeoJson(featureCollection)
         }
     }
 
@@ -413,8 +394,11 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
         val feature = PlaceAutocomplete.getPlace(data)
         feature?.let {
             destination = feature.geometry() as Point
-            moveCameraToLocation(destination!!, 15.0, 2000)
-            addMarkerOnMap(destination!!, false)
+            destination?.let {
+                moveCameraToLocation(it, 15.0, 2000, zoom = 16.0)
+                addMarkerOnMap(it, false)
+                zoneViewModel.getSpecificZones(latitude = it.latitude(), longitude = it.longitude(), radius = 2000)
+            }
             if (currentRoute != null) {
                 //if there is a previous route, reset it
                 currentRoute = null
@@ -448,11 +432,11 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
         }
     }
 
-    private fun moveCameraToLocation(point: Point? = getUserLocation(), tilt: Double = 0.0, duration: Int = 2000) {
+    private fun moveCameraToLocation(point: Point? = getUserLocation(), tilt: Double = 0.0, duration: Int = 2000, zoom: Double = 14.0) {
         point?.let {
             mapboxMap?.animateCamera(CameraUpdateFactory.newCameraPosition(CameraPosition.Builder()
                     .target(LatLng(point.latitude(), point.longitude()))
-                    .zoom(14.0)
+                    .zoom(zoom)
                     .tilt(tilt)
                     .build()), duration)
         }
@@ -497,9 +481,9 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
                     selectedZone?.let {
                         if(selectedZone.hasProperty("zonecode")) {
                             bottomSheet.zoneName.text = selectedZone.getStringProperty("zone_name")
-                            bottomSheet.zoneType.text = getString(R.string.zon_kod) + selectedZone.getNumberProperty("zonecode")
+                            bottomSheet.zoneType.text = getString(R.string.zon_kod) + selectedZone.getNumberProperty("zonecode").toInt()
                             bottomSheet.zoneOwner.text = selectedZone.getStringProperty("zone_owner")
-                            bottomSheet.zoneDistance.text = round(selectedZone.getNumberProperty("distance")!!.toDouble()).toString() + " m"
+                            bottomSheet.zoneDistance.text = selectedZone.getNumberProperty("distance").toInt().toString() + " m"
                         } else {
                             bottomSheet.zoneName.text = selectedZone.getStringProperty("Name")
                             bottomSheet.zoneType.text = getString(R.string.handicap)

@@ -3,20 +3,49 @@ package com.example.smspark.model.ZoneModel
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import com.google.gson.GsonBuilder
+import com.mapbox.geojson.Feature
+import com.mapbox.geojson.FeatureCollection
+import com.mapbox.geojson.Point
 import org.koin.core.KoinComponent
 import org.koin.core.inject
 import retrofit2.Call
 import retrofit2.Response
+import timber.log.Timber
 
 class ZoneRepositoryImpl: ZoneRepository, KoinComponent {
 
     private val TAG  = "ZoneRepositoryImpl"
     private val service: ZoneService by inject()
-    val zones = MutableLiveData<Zone>()
-    val handicapPoints = MutableLiveData<String>()
+    val zoneFeatures = MutableLiveData<FeatureCollection>()
+    val handicapPoints = MutableLiveData<FeatureCollection>()
 
 
-    override fun getHandicapZones(): MutableLiveData<String> {
+    override fun getSpecificZones(latitude: Double, longitude: Double, radius: Int): LiveData<FeatureCollection> {
+
+        val call = service.getSpecificZones(latitude, longitude, radius)
+        //val call = service.getZones()
+        call.enqueue(object : retrofit2.Callback<Zone> {
+            override fun onFailure(call: Call<Zone>, t: Throwable) {
+                Log.e(TAG, t.message)
+            }
+
+            override fun onResponse(call: Call<Zone>, response: Response<Zone>) {
+                if(response.isSuccessful) {
+                    val zones = response.body()
+                    val gson = GsonBuilder().setLenient().create()
+                    val featuresJson = gson.toJson(zones)
+                    //create a FeatureCollection of the given respone
+                    val featureCollection = FeatureCollection.fromJson(featuresJson)
+                    Timber.d(featureCollection.toString())
+                    zoneFeatures.value = featureCollection
+                }
+            }
+        })
+        return zoneFeatures
+    }
+
+    override fun getHandicapZones(): MutableLiveData<FeatureCollection> {
         val call = service.getHandicapZones()
         call.enqueue(object : retrofit2.Callback<List<Handicap>> {
 
@@ -27,48 +56,32 @@ class ZoneRepositoryImpl: ZoneRepository, KoinComponent {
             override fun onResponse(call: Call<List<Handicap>>, response: Response<List<Handicap>>) {
                 if(response.isSuccessful) {
                     val zones = response.body()!!
-                    println(zones)
-                    var geojsonString = "{\"type\":\"FeatureCollection\"," +
-                                                "\"features\":["
-
-                    var listIterator = zones.listIterator()
-
-                    while (listIterator.hasNext()) {
-                        var handicap = listIterator.next()
-                        geojsonString +=
-                                "{" +
-                                    "\"type\":\"Feature\"," +
-                                    "\"geometry\":{" +
-                                        "\"type\":\"Point\"," +
-                                        "\"coordinates\":[" + "${handicap.long}," + "${handicap.lat}" + "]" +
-                                        "}," +
-                                    "\"properties\":{" +
-                                            "\"Id\":\"${handicap.id}\"," +
-                                            "Name\":\"${handicap.name}\"," +
-                                            "\"Owner\":\"${handicap.owner}\"," +
-                                            "\"ParkingSpaces\":${handicap.parkingSpaces}," +
-                                            "\"MaxParkingTime\":\"${handicap.maxParkingTime}\"," +
-                                            "\"Distance\":${handicap.distance}," +
-                                            "\"WKT\":\"${handicap.WKT}\"" +
-                                        "}" +
-                                "}"
-
-                        if (listIterator.hasNext())
-                            geojsonString += ","
+                    val features = ArrayList<Feature>()
+                    //for each Handicap object, create a feature and add it to a collection
+                    zones.forEach {
+                        val feature = Feature.fromGeometry(Point.fromLngLat(it.long, it.lat))
+                        feature.addStringProperty("Id", it.id)
+                        feature.addStringProperty("Name", it.name)
+                        feature.addStringProperty("Owner", it.owner)
+                        feature.addNumberProperty("ParkingSpaces", it.parkingSpaces)
+                        feature.addStringProperty("MaxParkingTime", it.maxParkingTime)
+                        feature.addStringProperty("MaxParkingTimeLimitation", it.maxParkingTimeLimitation)
+                        feature.addStringProperty("ExtraInfo", it.extraInfo)
+                        feature.addNumberProperty("Distance", it.distance)
+                        feature.addNumberProperty("Lat", it.lat)
+                        feature.addNumberProperty("Long", it.long)
+                        feature.addStringProperty("WKT", it.WKT)
+                        features.add(feature)
                     }
-
-                    geojsonString += "]}"
-
-                    println("Handicap call to GBGSTAD parsed: " + geojsonString)
-                    handicapPoints.value = geojsonString
+                    Timber.d("Handicap call to GBGSTAD parsed: " + handicapPoints.value?.features()?.toString())
+                    handicapPoints.value = FeatureCollection.fromFeatures(features)
                 }
             }
         })
-
         return handicapPoints
     }
 
-    override fun getZones(): LiveData<Zone> {
+    override fun getZones(): LiveData<FeatureCollection> {
 
         val call = service.getZones()
         //val call = service.getZones()
@@ -80,35 +93,9 @@ class ZoneRepositoryImpl: ZoneRepository, KoinComponent {
             override fun onResponse(call: Call<Zone>, response: Response<Zone>) {
                 if(response.isSuccessful) {
                     val response = response.body()
-                    zones?.let {
-                        zones.value = response
-                    }
                 }
             }
         })
-
-        return zones
-    }
-
-    override fun getSpecificZones(latitude: Double, longitude: Double, radius: Int): LiveData<Zone> {
-
-        val call = service.getSpecificZones(latitude, longitude, radius)
-        //val call = service.getZones()
-        call.enqueue(object : retrofit2.Callback<Zone> {
-            override fun onFailure(call: Call<Zone>, t: Throwable) {
-                Log.e(TAG, t.message)
-            }
-
-            override fun onResponse(call: Call<Zone>, response: Response<Zone>) {
-                if(response.isSuccessful) {
-                    val response = response.body()
-                    zones?.let {
-                        zones.value = response
-                    }
-                }
-            }
-        })
-
-        return zones
+        return zoneFeatures
     }
 }
