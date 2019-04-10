@@ -20,7 +20,12 @@ class ZoneRepositoryImpl: ZoneRepository, KoinComponent {
     val zoneFeatures = MutableLiveData<FeatureCollection>()
     val handicapPoints = MutableLiveData<FeatureCollection>()
 
-
+    /** Uses a retrofit service to fetch parking zones near given coordinate and take the response to build a FeatureCollection
+     * @param latitude
+     * @param longitude
+     * @param radius radius from the lat/long to fetch zones
+     *
+     */
     override fun getSpecificZones(latitude: Double, longitude: Double, radius: Int): LiveData<FeatureCollection> {
 
         val call = service.getSpecificZones(latitude, longitude, radius)
