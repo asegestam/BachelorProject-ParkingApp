@@ -1,6 +1,7 @@
 package com.example.smspark.model
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.mapbox.api.directions.v5.models.DirectionsResponse
@@ -63,6 +64,7 @@ class RouteViewModel(val context: Context): ViewModel() {
                                 return
                             }
                             route.value = response.body()!!.routes()[0]
+                            Log.d("Routeviewmodel ahdhehe", route.value.toString())
                         }
 
                         override fun onFailure(call: Call<DirectionsResponse>, throwable: Throwable) {

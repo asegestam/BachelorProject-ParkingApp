@@ -38,6 +38,7 @@ import com.mapbox.mapboxsdk.Mapbox
 import com.mapbox.mapboxsdk.camera.CameraPosition
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory
 import com.mapbox.mapboxsdk.geometry.LatLng
+import com.mapbox.mapboxsdk.geometry.LatLngBounds
 import com.mapbox.mapboxsdk.location.LocationComponent
 import com.mapbox.mapboxsdk.location.LocationComponentActivationOptions
 import com.mapbox.mapboxsdk.location.modes.CameraMode
@@ -144,17 +145,47 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
             setupMarkerLayer(style)
             initRecyclerView()
             initObservers()
+            checkTripFragment()
         }
         initButtons()
+    }
 
-        if(arguments != null){
-            val fromPoint = Point.fromJson(arguments!!.getString("fromArg"))
-            val destinationPoint = Point.fromJson(arguments!!.getString("destArg"))
-            //zoneViewModel.getSpecificZones(destinationPoint.latitude(), destinationPoint.longitude(), 2000)
+    private fun checkTripFragment(){
+            arguments?.let {
+                val fromPoint = Point.fromJson(it.getString("fromArg"))
+                val destinationPoint = Point.fromJson(it.getString("destArg"))
+                val wayPoint = Point.fromJson(it.getString("wayPointArg"))
 
-            zoneViewModel.getSpecificZones(destinationPoint.latitude(), destinationPoint.longitude(), 500).observe(this, Observer { data ->
-                routeViewModel.getWayPointRoute(fromPoint, destinationPoint, destinationPoint, "driving")
-            })
+                zoneViewModel.getSpecificZones(destinationPoint.latitude(), destinationPoint.longitude(), 500).observe(this, Observer { data ->
+                    var wayPoint: Point = destinationPoint
+                    val first = data.features()?.first()
+
+                    //Toast.makeText(requireContext(), "" +first?.getNumberProperty("distance"), Toast.LENGTH_LONG ).show()
+                    first?.let {
+                        if (first.geometry() is Point)
+                            wayPoint = first.geometry() as Point
+                        else {
+                            val  builder  = LatLngBounds.Builder()
+                            val polygon = first.geometry() as Polygon
+
+                            val outer = polygon.outer()
+
+                            outer?.coordinates()?.forEach {
+                                builder.include(LatLng(it.latitude(), it.longitude()))
+                            }
+
+                            val build = builder.build()
+                            val center = build.center
+
+
+                            wayPoint = Point.fromLngLat(center.longitude, center.latitude)
+
+                        }
+                    }
+                    addZonesToMap(data)
+                    routeViewModel.getWayPointRoute(fromPoint, wayPoint, destinationPoint, "driving")
+                })
+
         }
     }
 
@@ -164,14 +195,14 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
             addMarkersToMap(it, true)
             zoneAdapter.setData(it)
         })
-        zoneViewModel.getSpecificZones().observe(this, Observer { featureCollection -> featureCollection.features()?.let {
+       /*zoneViewModel.getSpecificZones().observe(this, Observer { featureCollection -> featureCollection.features()?.let {
             if(it.size > 0) {
                 addZonesToMap(featureCollection)
                 zoneAdapter.setData(featureCollection)
             } else {
                 Toast.makeText(requireContext(), "Inga zoner hittades", Toast.LENGTH_LONG).show()
             }
-        }})
+        }})*/
         selectedZoneViewModel.selectedZone.observe(this, Observer { bottomSheetBehavior.state = COLLAPSED})
         routeViewModel.route.observe(this, Observer { route -> handleRoute(route) })
     }
@@ -352,6 +383,7 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
     }
 
     private fun handleRoute(route: DirectionsRoute) {
+        Log.d(TAG,"Handeling route " + route.geometry())
         if(navigationMapRoute == null) {
             navigationMapRoute = NavigationMapRoute(null, mapView!!, mapboxMap!!, R.style.NavigationMapRoute)
         }
