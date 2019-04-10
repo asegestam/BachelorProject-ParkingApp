@@ -6,7 +6,6 @@ import android.content.Intent
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -26,7 +25,6 @@ import com.example.smspark.viewmodels.SelectedZoneViewModel
 import com.example.smspark.viewmodels.ZoneViewModel
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.snackbar.Snackbar
-import com.google.gson.GsonBuilder
 import com.mapbox.android.core.permissions.PermissionsListener
 import com.mapbox.android.core.permissions.PermissionsManager
 import com.mapbox.api.directions.v5.models.DirectionsRoute
@@ -38,14 +36,12 @@ import com.mapbox.mapboxsdk.Mapbox
 import com.mapbox.mapboxsdk.camera.CameraPosition
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory
 import com.mapbox.mapboxsdk.geometry.LatLng
-import com.mapbox.mapboxsdk.geometry.LatLngBounds
 import com.mapbox.mapboxsdk.location.LocationComponent
 import com.mapbox.mapboxsdk.location.LocationComponentActivationOptions
 import com.mapbox.mapboxsdk.location.modes.CameraMode
 import com.mapbox.mapboxsdk.location.modes.RenderMode
 import com.mapbox.mapboxsdk.maps.MapView
 import com.mapbox.mapboxsdk.maps.MapboxMap
-import com.mapbox.mapboxsdk.maps.OnMapReadyCallback
 import com.mapbox.mapboxsdk.maps.Style
 import com.mapbox.mapboxsdk.plugins.places.autocomplete.PlaceAutocomplete
 import com.mapbox.mapboxsdk.plugins.places.autocomplete.model.PlaceOptions
@@ -63,25 +59,19 @@ import org.koin.android.viewmodel.ext.android.sharedViewModel
 import org.koin.android.viewmodel.ext.android.viewModel
 import org.koin.core.parameter.parametersOf
 import timber.log.Timber
-import kotlin.math.round
 
 class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListener {
 
     // variables for adding location layer
     private lateinit var mapView: MapView
     private lateinit var mapboxMap: MapboxMap
-
     private val REQUEST_CODE_AUTOCOMPLETE = 1
-
     // variables for adding location layer
     private lateinit var permissionsManager: PermissionsManager
     private lateinit var locationComponent: LocationComponent
-
     // variables for calculating and drawing a route
-    private var currentRoute: DirectionsRoute? = null
     private var navigationMapRoute: NavigationMapRoute? = null
     private var destination: Point? = null
-
     //RecyclerView fields
     private lateinit var recyclerView: RecyclerView
     private lateinit var zoneAdapter: ZoneAdapter
@@ -337,9 +327,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
     }
 
     private fun handleRoute(route: DirectionsRoute) {
-        if(navigationMapRoute == null) {
-            navigationMapRoute = NavigationMapRoute(null, mapView, mapboxMap, R.style.NavigationMapRoute)
-        }
+        navigationMapRoute = NavigationMapRoute(null, mapView, mapboxMap, R.style.NavigationMapRoute)
         navigationMapRoute?.addRoute(route)
         startNavigationButton.visibility = View.VISIBLE
     }
@@ -383,10 +371,6 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
                 moveCameraToLocation(it, 15.0, 2000, zoom = 16.0)
                 addMarkerOnMap(it, false)
                 zoneViewModel.getSpecificZones(latitude = it.latitude(), longitude = it.longitude(), radius = 2000)
-            }
-            if (currentRoute != null) {
-                //if there is a previous route, reset it
-                currentRoute = null
             }
         }
     }
@@ -518,9 +502,5 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
     override fun onLowMemory() {
         super.onLowMemory()
         mapView.onLowMemory()
-    }
-
-    companion object {
-        private val TAG = "MapFragment"
     }
 }

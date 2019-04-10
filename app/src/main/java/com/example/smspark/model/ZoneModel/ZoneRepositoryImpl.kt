@@ -85,22 +85,4 @@ class ZoneRepositoryImpl: ZoneRepository, KoinComponent {
         })
         return handicapPoints
     }
-
-    override fun getZones(): LiveData<FeatureCollection> {
-
-        val call = service.getZones()
-        //val call = service.getZones()
-        call.enqueue(object : retrofit2.Callback<Zone> {
-            override fun onFailure(call: Call<Zone>, t: Throwable) {
-                Log.e(TAG, t.message)
-            }
-
-            override fun onResponse(call: Call<Zone>, response: Response<Zone>) {
-                if(response.isSuccessful) {
-                    val response = response.body()
-                }
-            }
-        })
-        return zoneFeatures
-    }
 }

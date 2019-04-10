@@ -11,8 +11,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.smspark.R
 import com.mapbox.geojson.Feature
 import com.mapbox.geojson.FeatureCollection
-import kotlin.math.round
-
 
 class ZoneAdapter(context: Context, private val listener: (com.mapbox.geojson.Feature) -> Unit): RecyclerView.Adapter<ZoneAdapter.ZoneViewHolder>() {
 

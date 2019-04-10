@@ -5,7 +5,6 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
 import android.location.Location
-import android.location.LocationManager
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
@@ -120,11 +119,11 @@ class TripFragment : Fragment(), OnMapReadyCallback {
 
         when(id){
             FROM_TEXT_VIEW -> {
-                textFrom.text = feature?.placeName()
+                textFrom.text = feature.placeName()
                 fromLatLng = point.toJson().toString()
             }
             DESTINATION_TEXT_VIEW -> {
-                textDestination.text = feature?.placeName()
+                textDestination.text = feature.placeName()
                 destinationLatLng = point.toJson().toString()
             }
         }
