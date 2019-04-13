@@ -6,8 +6,6 @@ import com.mapbox.geojson.FeatureCollection
 
 interface ZoneRepository {
 
-    fun getZones() : LiveData<FeatureCollection>
-
     fun getSpecificZones(latitude: Double, longitude: Double, radius: Int): LiveData<FeatureCollection>
 
     fun getHandicapZones(): MutableLiveData<FeatureCollection>

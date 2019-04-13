@@ -6,6 +6,7 @@ import android.content.Intent
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -20,7 +21,6 @@ import androidx.recyclerview.widget.LinearSnapHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.example.smspark.R
 import com.example.smspark.model.RouteViewModel
-import com.example.smspark.model.ZoneModel.ZoneAdapter
 import com.example.smspark.viewmodels.SelectedZoneViewModel
 import com.example.smspark.viewmodels.ZoneViewModel
 import com.google.android.material.bottomsheet.BottomSheetBehavior
@@ -28,18 +28,13 @@ import com.google.android.material.snackbar.Snackbar
 import com.mapbox.android.core.permissions.PermissionsListener
 import com.mapbox.android.core.permissions.PermissionsManager
 import com.mapbox.api.directions.v5.models.DirectionsRoute
-import com.mapbox.geojson.Feature
-import com.mapbox.geojson.FeatureCollection
-import com.mapbox.geojson.Point
-import com.mapbox.geojson.Polygon
+import com.mapbox.geojson.*
 import com.mapbox.mapboxsdk.Mapbox
 import com.mapbox.mapboxsdk.camera.CameraPosition
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory
 import com.mapbox.mapboxsdk.geometry.LatLng
-import com.mapbox.mapboxsdk.location.LocationComponent
 import com.mapbox.mapboxsdk.location.LocationComponentActivationOptions
 import com.mapbox.mapboxsdk.location.modes.CameraMode
-import com.mapbox.mapboxsdk.location.modes.RenderMode
 import com.mapbox.mapboxsdk.maps.MapView
 import com.mapbox.mapboxsdk.maps.MapboxMap
 import com.mapbox.mapboxsdk.maps.Style
@@ -52,6 +47,7 @@ import com.mapbox.mapboxsdk.style.layers.SymbolLayer
 import com.mapbox.mapboxsdk.style.sources.GeoJsonSource
 import com.mapbox.services.android.navigation.ui.v5.route.NavigationMapRoute
 import kotlinx.android.synthetic.main.fragment_map.*
+import kotlinx.android.synthetic.main.list_item.*
 import kotlinx.android.synthetic.main.selected_zone.*
 import kotlinx.android.synthetic.main.selected_zone.view.*
 import org.koin.android.ext.android.inject
@@ -67,8 +63,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
     private lateinit var mapboxMap: MapboxMap
     private val REQUEST_CODE_AUTOCOMPLETE = 1
     // variables for adding location layer
-    private lateinit var permissionsManager: PermissionsManager
-    private lateinit var locationComponent: LocationComponent
+    private var permissionsManager: PermissionsManager = PermissionsManager(this)
     // variables for calculating and drawing a route
     private var navigationMapRoute: NavigationMapRoute? = null
     private var destination: Point? = null
@@ -147,31 +142,31 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
                 Toast.makeText(requireContext(), "Inga zoner hittades", Toast.LENGTH_LONG).show()
             }
         }})
-        selectedZoneViewModel.selectedZone.observe(this, Observer { bottomSheetBehavior.state = COLLAPSED})
+        selectedZoneViewModel.selectedZone.observe(this, Observer {
+            bottomSheetBehavior.state = COLLAPSED
+            val zonePoint = getGeometryPoint(it.geometry())
+            moveCameraToLocation(zonePoint, zoom = 16.0)
+        })
         routeViewModel.route.observe(this, Observer { route -> handleRoute(route) })
     }
 
     /** Initiates button clickListeners */
     private fun initButtons() {
-        fab_search.setOnClickListener {
-            startAutoCompleteActivity()
-        }
-        my_locationFab.setOnClickListener {
-            moveCameraToLocation()
-        }
-        sheet_ok_button.setOnClickListener {
-            bottomSheetBehavior.state = HIDDEN
-        }
-        startNavigationButton!!.setOnClickListener {
-            findNavController().navigate(R.id.mapFragment_to_navigation)
-        }
+        fab_search.setOnClickListener { startAutoCompleteActivity() }
+
+        my_locationFab.setOnClickListener { moveCameraToLocation() }
+
+        sheet_ok_button.setOnClickListener { bottomSheetBehavior.state = HIDDEN }
+
+        startNavigationButton!!.setOnClickListener { findNavController().navigate(R.id.mapFragment_to_navigation) }
     }
 
     /**Initiates the RecyclerView with a adapter, clickListener, LayoutManager, Animator, SnapHelper*/
     private fun initRecyclerView() {
         recyclerView = recycler_view
         recyclerView.setHasFixedSize(true)
-        zoneAdapter = ZoneAdapter(context!!) { zone: Feature -> zoneListItemClicked(zone) }
+        val onItemClickListener = View.OnClickListener { recyclerView.visibility = View.GONE }
+        zoneAdapter = ZoneAdapter(context!!, { zone: Feature -> zoneListItemClicked(zone)}, onItemClickListener)
         recyclerView.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
         recyclerView.itemAnimator = DefaultItemAnimator()
         recyclerView.adapter = zoneAdapter
@@ -189,19 +184,18 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
     @SuppressLint("MissingPermission")
     private fun enableLocationComponent(loadedMapStyle: Style) {
         // Check if permissions are enabled and if not request
-        if (PermissionsManager.areLocationPermissionsGranted(requireContext())) {
+        if (PermissionsManager.areLocationPermissionsGranted(context)) {
             // Activate the MapboxMap LocationComponent to show user location
-            // Adding in LocationComponentOptions is also an optional parameter
-            locationComponent = mapboxMap.locationComponent
-            locationComponent.activateLocationComponent(LocationComponentActivationOptions.builder(requireContext(), loadedMapStyle)
-                    .useDefaultLocationEngine(true)
-                    .build())
-            locationComponent.isLocationComponentEnabled = true
-            // Set the component's camera mode
-            locationComponent.cameraMode = CameraMode.TRACKING_GPS
-            locationComponent.renderMode = RenderMode.COMPASS
-            moveCameraToLocation()
+            mapboxMap.locationComponent.apply {
+                activateLocationComponent(LocationComponentActivationOptions.builder(requireContext(), loadedMapStyle)
+                        .useDefaultLocationEngine(true)
+                        .build())
+                isLocationComponentEnabled = true
+                // Set the component's camera mode
+                cameraMode = CameraMode.TRACKING_GPS
+            }
         } else {
+            Log.d("enableLocationComponent", "Permissions are not granted")
             permissionsManager = PermissionsManager(this)
             permissionsManager.requestLocationPermissions(requireActivity())
         }
@@ -327,7 +321,9 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
     }
 
     private fun handleRoute(route: DirectionsRoute) {
-        navigationMapRoute = NavigationMapRoute(null, mapView, mapboxMap, R.style.NavigationMapRoute)
+        if(navigationMapRoute == null) {
+            navigationMapRoute = NavigationMapRoute(null, mapView, mapboxMap, R.style.NavigationMapRoute)
+        }
         navigationMapRoute?.addRoute(route)
         startNavigationButton.visibility = View.VISIBLE
     }
@@ -383,21 +379,26 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
             selectedZoneViewModel.selectedZone.value = zone
             val geometry = zone.geometry()
             val wayPoint: Point
-            if(geometry is Polygon) {
-                //geometry of clicked zone is polygon, get one of the points to add a marker
-                val polygonCoordinates = geometry.coordinates()
-                wayPoint = polygonCoordinates[0][0]
+            geometry?.let {
+                wayPoint = getGeometryPoint(geometry)
                 addMarkerOnMap(wayPoint, true)
-            } else {
-                //if its not a polygon then its already a point
-                wayPoint = geometry as Point
-                addMarkerOnMap(wayPoint, true)
-            }
-            if(destination != null) {
-                routeViewModel.getWayPointRoute(getUserLocation(), wayPoint, destination!!, "driving")
+                if(destination != null) {
+                    routeViewModel.getWayPointRoute(getUserLocation(), wayPoint, destination!!, "driving")
+                }
             }
         } else {
             Timber.d("Zone is equal to chosen zone")
+        }
+    }
+
+    /**
+     * Returns a point of the given geometry
+     */
+    private fun getGeometryPoint(geometry: Geometry?) : Point {
+        return if (geometry is Polygon) {
+            geometry.coordinates()[0][0]
+        } else {
+            geometry as Point
         }
     }
 
@@ -413,9 +414,12 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
 
     @SuppressLint("MissingPermission")
     private fun getUserLocation(): Point? {
-        if(locationComponent.isLocationComponentEnabled) {
-            val location = locationComponent.lastKnownLocation
-            location?.let { return Point.fromLngLat(it.longitude, it.latitude) }
+        mapboxMap.locationComponent.apply {
+            if(isLocationComponentEnabled) {
+                lastKnownLocation?.let {
+                    return Point.fromLngLat(it.longitude, it.latitude)
+                }
+            }
         }
         return null
     }
@@ -432,6 +436,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
 
     override fun onPermissionResult(granted: Boolean) {
         if (granted) {
+            Log.d("onPermissionResult", "permission granted")
             enableLocationComponent(getMapStyle()!!)
         } else {
             Toast.makeText(requireContext(), R.string.user_location_permission_not_granted, Toast.LENGTH_LONG).show()
@@ -449,16 +454,14 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
                     val selectedZone = selectedZoneViewModel.selectedZone.value
                     selectedZone?.let {
                         if(selectedZone.hasProperty("zonecode")) {
-                            bottomSheet.zoneName.text = selectedZone.getStringProperty("zone_name")
                             bottomSheet.zoneType.text = getString(R.string.zon_kod) + selectedZone.getNumberProperty("zonecode").toInt()
-                            bottomSheet.zoneOwner.text = selectedZone.getStringProperty("zone_owner")
-                            bottomSheet.zoneDistance.text = selectedZone.getNumberProperty("distance").toInt().toString() + " m"
                         } else {
-                            bottomSheet.zoneName.text = selectedZone.getStringProperty("Name")
                             bottomSheet.zoneType.text = getString(R.string.handicap)
-                            bottomSheet.zoneOwner.text = selectedZone.getStringProperty("Owner")
-                            bottomSheet.zoneDistance.text = selectedZone.getNumberProperty("Distance").toInt().toString() + " m"
                         }
+                        //shared properties between the apis
+                        bottomSheet.zoneName.text = selectedZone.getStringProperty("zone_name")
+                        bottomSheet.zoneOwner.text = selectedZone.getStringProperty("zone_owner")
+                        bottomSheet.zoneDistance.text = selectedZone.getNumberProperty("distance").toInt().toString() + " m"
                     }
                 }
             }

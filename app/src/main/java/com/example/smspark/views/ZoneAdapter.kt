@@ -1,31 +1,29 @@
-package com.example.smspark.model.ZoneModel
+package com.example.smspark.views
 
 import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.AdapterView
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.smspark.R
+import com.google.android.material.button.MaterialButton
 import com.mapbox.geojson.Feature
 import com.mapbox.geojson.FeatureCollection
 
-class ZoneAdapter(context: Context, private val listener: (com.mapbox.geojson.Feature) -> Unit): RecyclerView.Adapter<ZoneAdapter.ZoneViewHolder>() {
+class ZoneAdapter(context: Context, private val listener: (com.mapbox.geojson.Feature) -> Unit, private val itemClickListener: View.OnClickListener): RecyclerView.Adapter<ZoneAdapter.ZoneViewHolder>() {
 
     private lateinit var zones: FeatureCollection
     private val featureList: ArrayList<Feature> = ArrayList()
-    private val applicationContext: Context
-
-    init {
-        applicationContext = context
-    }
+    private val applicationContext: Context = context
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ZoneViewHolder {
         val cardView = LayoutInflater.from(parent.context)
                 .inflate(R.layout.list_item, parent, false)
-        return ZoneViewHolder(cardView)
+        return ZoneViewHolder(cardView, itemClickListener)
     }
 
     override fun getItemCount(): Int = featureList.size
@@ -39,37 +37,37 @@ class ZoneAdapter(context: Context, private val listener: (com.mapbox.geojson.Fe
         zonesData.features()?.forEach {
             if(!featureList.contains(it)) featureList.add(it)
         }
+        featureList.sortBy { it.getNumberProperty("distance").toInt()}
         val featureCollection = FeatureCollection.fromFeatures(featureList)
         zones = featureCollection
         notifyDataSetChanged()
     }
 
+    class ZoneViewHolder(private val v: View, private val itemClickListener: View.OnClickListener) : RecyclerView.ViewHolder(v), View.OnClickListener {
 
-    class ZoneViewHolder(val v: View) : RecyclerView.ViewHolder(v), View.OnClickListener {
-
-        val cardView = v.findViewById<CardView>(R.id.card_view)
-        val icon = v.findViewById<ImageView>(R.id.icon)
-        val zoneName = v.findViewById<TextView>(R.id.zoneName)
-        val zoneType = v.findViewById<TextView>(R.id.zoneType)
-        val zoneOwner = v.findViewById<TextView>(R.id.zoneOwner)
-        val zoneDistance = v.findViewById<TextView>(R.id.zoneDistance)
+        private val icon: ImageView = v.findViewById(R.id.icon)
+        private val zoneName: TextView = v.findViewById(R.id.zoneName)
+        private val zoneType: TextView = v.findViewById(R.id.zoneType)
+        private val zoneOwner: TextView = v.findViewById(R.id.zoneOwner)
+        private val zoneDistance: TextView = v.findViewById(R.id.zoneDistance)
+        private val hideButton: MaterialButton = v.findViewById(R.id.hide_list_button)
 
 
         /** Binds the data to the viewholder by setting the text and listener */
         fun bind(zone: com.mapbox.geojson.Feature, listner: (Feature) -> Unit) {
-            if(zone.hasProperty("zone_owner")) {
-                zoneName.text = zone.getStringProperty("zone_name")
+            if(zone.hasProperty("wkt")) {
+                icon.setImageResource(R.drawable.handicap_icon)
+                zoneType.text = "Typ: HandikappsParkering"
+            }
+            else {
+                icon.setImageResource(R.drawable.park_blue)
                 zoneType.text = "Zonkod: " + zone.getNumberProperty("zonecode")
+            }
+                zoneName.text = zone.getStringProperty("zone_name")
                 zoneOwner.text = zone.getStringProperty("zone_owner")
                 zoneDistance.text = zone.getNumberProperty("distance").toInt().toString() + " m"
-            } else {
-                icon.setImageResource(R.drawable.handicap_icon)
-                zoneName.text = zone.getStringProperty("Name")
-                zoneType.text = "Typ: HandikappsParkering"
-                zoneOwner.text = zone.getStringProperty("Owner")
-                zoneDistance.text = zone.getNumberProperty("Distance").toInt().toString() + " m"
-            }
             v.setOnClickListener { listner(zone) }
+            hideButton.setOnClickListener(itemClickListener)
         }
 
 
