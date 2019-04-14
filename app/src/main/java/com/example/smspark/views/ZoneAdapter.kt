@@ -19,6 +19,7 @@ class ZoneAdapter(context: Context, private val listener: (com.mapbox.geojson.Fe
     private lateinit var zones: FeatureCollection
     private val featureList: ArrayList<Feature> = ArrayList()
     private val applicationContext: Context = context
+    private var callCounter: Int = 0
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ZoneViewHolder {
         val cardView = LayoutInflater.from(parent.context)
@@ -34,6 +35,11 @@ class ZoneAdapter(context: Context, private val listener: (com.mapbox.geojson.Fe
     }
 
     fun setData(zonesData: FeatureCollection) {
+        callCounter++
+        if(callCounter == 2) {
+            featureList.clear()
+            callCounter = 0
+        }
         zonesData.features()?.forEach {
             if(!featureList.contains(it)) featureList.add(it)
         }

@@ -34,13 +34,15 @@
 
         <TextView
             android:id="@+id/zoneName"
-            android:layout_width="wrap_content"
+            android:layout_width="250dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:layout_marginTop="8dp"
             android:padding="1dp"
+            android:maxLines="1"
             android:text="Centralstationen (långtid)"
             android:textAppearance="@style/TextAppearance.MaterialComponents.Headline6"
+            android:ellipsize="end"
             app:layout_constraintStart_toEndOf="@+id/icon"
             app:layout_constraintTop_toTopOf="parent" />
 
@@ -91,13 +93,13 @@
             style="@style/Widget.MaterialComponents.Button.TextButton"
             android:layout_width="65dp"
             android:layout_height="35dp"
-            android:layout_marginStart="28dp"
             android:layout_marginTop="4dp"
+            android:layout_marginEnd="8dp"
             android:layout_marginBottom="8dp"
             android:text="GÖM"
             android:textColor="@color/colorPrimary"
             app:layout_constraintBottom_toTopOf="@+id/zoneDistance"
-            app:layout_constraintStart_toEndOf="@+id/zoneName"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintVertical_bias="0.0" />
 

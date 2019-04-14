@@ -133,11 +133,13 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
         zoneViewModel.getHandicapZones().observe(this, Observer {
             addMarkersToMap(it, true)
             zoneAdapter.setData(it)
+            recyclerView.smoothScrollToPosition(0)
         })
         zoneViewModel.getSpecificZones().observe(this, Observer { featureCollection -> featureCollection.features()?.let {
             if(it.size > 0) {
                 addZonesToMap(featureCollection)
                 zoneAdapter.setData(featureCollection)
+                recyclerView.smoothScrollToPosition(0)
             } else {
                 Toast.makeText(requireContext(), "Inga zoner hittades", Toast.LENGTH_LONG).show()
             }
@@ -395,10 +397,10 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
      * Returns a point of the given geometry
      */
     private fun getGeometryPoint(geometry: Geometry?) : Point {
-        return if (geometry is Polygon) {
-            geometry.coordinates()[0][0]
-        } else {
-            geometry as Point
+        return when (geometry) {
+            is Polygon -> geometry.coordinates()[0][0]
+            is MultiPolygon -> geometry.coordinates()[0][0][0]
+            else -> geometry as Point
         }
     }
 
