@@ -24,6 +24,10 @@ class ZoneRepositoryImpl: ZoneRepository, KoinComponent {
         return zoneFeatures
     }
 
+    override fun getObservableHandicapZones(): LiveData<FeatureCollection> {
+        return handicapPoints
+    }
+
     override fun getSpecificZones(latitude: Double, longitude: Double, radius: Int){
 
         val call = service.getSpecificZones(latitude, longitude, radius)
@@ -47,8 +51,8 @@ class ZoneRepositoryImpl: ZoneRepository, KoinComponent {
         })
     }
 
-    override fun getHandicapZones(): MutableLiveData<FeatureCollection> {
-        val call = service.getHandicapZones()
+    override fun getHandicapZones(latitude: Double, longitude: Double, radius: Int) {
+        val call = service.getHandicapZones(latitude, longitude, radius)
         call.enqueue(object : retrofit2.Callback<List<Handicap>> {
 
             override fun onFailure(call: Call<List<Handicap>>, t: Throwable) {
@@ -80,6 +84,5 @@ class ZoneRepositoryImpl: ZoneRepository, KoinComponent {
                 }
             }
         })
-        return handicapPoints
     }
 }

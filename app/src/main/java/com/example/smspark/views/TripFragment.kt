@@ -35,8 +35,8 @@ class TripFragment : Fragment(), OnMapReadyCallback {
 
     val FROM_TEXT_VIEW = 1
     val DESTINATION_TEXT_VIEW = 2
-    lateinit var fromLatLng: String
-    lateinit var destinationLatLng: String
+    var fromLatLng: String? = null
+    var destinationLatLng: String? = null
 
     //lazy inject ViewModel
     private val zoneViewModel: ZoneViewModel by sharedViewModel()
@@ -87,12 +87,11 @@ class TripFragment : Fragment(), OnMapReadyCallback {
 
         initButtons()
         initSpinner()
-        initObservables()
     }
 
     private fun initObservables(){
         zoneViewModel.getObservableZones().observe(this, Observer { data ->
-            val destinationPoint = Point.fromJson(destinationLatLng)
+            val destinationPoint = Point.fromJson(destinationLatLng!!)
             var wayPoint: Point = destinationPoint
             val first = data.features()?.first()
 
@@ -175,12 +174,15 @@ class TripFragment : Fragment(), OnMapReadyCallback {
     }
 
     private fun getNearestParking() {
-        val destinationPoint = Point.fromJson(destinationLatLng)
-        zoneViewModel.getSpecificZones(destinationPoint.latitude(), destinationPoint.longitude(), 500)
+        if (destinationLatLng != null) {
+            initObservables()
+            val destinationPoint = Point.fromJson(destinationLatLng!!)
+            zoneViewModel.getSpecificZones(destinationPoint.latitude(), destinationPoint.longitude(), 500)
+        }
     }
 
     private fun checkArguments(wayPoint : Point){
-        if(!fromLatLng.isEmpty() && !destinationLatLng.isEmpty()){
+        if(fromLatLng != null && destinationLatLng != null){
             val bundle = Bundle()
 
             bundle.putString("fromArg", fromLatLng)

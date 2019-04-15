@@ -129,32 +129,45 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
         initButtons()
         initBottomSheets()
         checkTripFragment()
+
     }
 
-    private fun checkTripFragment(){
-            arguments?.let {
-                val fromPoint = Point.fromJson(it.getString("fromArg"))
-                val destinationPoint = Point.fromJson(it.getString("destArg"))
-                val wayPoint = Point.fromJson(it.getString("wayPointArg"))
-                currentRoute = null
-                zoneViewModel.getSpecificZones(destinationPoint.latitude(), destinationPoint.longitude(), 500)
-                routeViewModel.getWayPointRoute(fromPoint, wayPoint, destinationPoint, "driving")
+    private fun checkTripFragment() {
+        arguments?.let {
+            val fromPoint = Point.fromJson(it.getString("fromArg"))
+            val destinationPoint = Point.fromJson(it.getString("destArg"))
+            val wayPoint = Point.fromJson(it.getString("wayPointArg"))
+            destination = destinationPoint
+            zoneViewModel.getSpecificZones(destinationPoint.latitude(), destinationPoint.longitude(), 500)
+            routeViewModel.getWayPointRoute(fromPoint, wayPoint, destinationPoint, "driving")
         }
+    }
 
     /** Initiates ViewModel observers */
     private fun initObservers() {
-        zoneViewModel.getHandicapZones().observe(this, Observer {
+        /*zoneViewModel.getHandicapZones().observe(this, Observer {
             addMarkersToMap(it, true)
             zoneAdapter.setData(it)
             recyclerView.smoothScrollToPosition(0)
-        })
+        })*/
        zoneViewModel.getObservableZones().observe(this, Observer { featureCollection -> featureCollection.features()?.let {
             if(it.size > 0) {
                 addZonesToMap(featureCollection)
                 zoneAdapter.setData(featureCollection)
                 recyclerView.visibility = View.VISIBLE
+                recyclerView.smoothScrollToPosition(0)
             } else {
                 Toast.makeText(requireContext(), "Inga zoner hittades", Toast.LENGTH_LONG).show()
+            }
+        }})
+        zoneViewModel.getObservableHandicapZones().observe(this, Observer {featureCollection -> featureCollection.features()?.let {
+            if(it.size > 0) {
+                addMarkersToMap(featureCollection, true)
+                zoneAdapter.setData(featureCollection)
+                recyclerView.visibility = View.VISIBLE
+                recyclerView.smoothScrollToPosition(0)
+            } else {
+                Toast.makeText(requireContext(), "Inga handicap-zoner hittades", Toast.LENGTH_LONG).show()
             }
         }})
         selectedZoneViewModel.selectedZone.observe(this, Observer {
@@ -521,5 +534,9 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
     override fun onLowMemory() {
         super.onLowMemory()
         mapView.onLowMemory()
+    }
+
+    companion object {
+        private const val TAG = "MapFragment"
     }
 }
