@@ -8,7 +8,9 @@ interface ZoneRepository {
 
     fun getZones() : LiveData<FeatureCollection>
 
-    fun getSpecificZones(latitude: Double, longitude: Double, radius: Int): LiveData<FeatureCollection>
+    fun getObservableZones() : LiveData<FeatureCollection>
+
+    fun getSpecificZones(latitude: Double, longitude: Double, radius: Int)
 
     fun getHandicapZones(): MutableLiveData<FeatureCollection>
 }

@@ -147,7 +147,7 @@ class TripFragment : Fragment(), OnMapReadyCallback {
 
         val destinationPoint = Point.fromJson(destinationLatLng)
 
-        zoneViewModel.getSpecificZones(destinationPoint.latitude(), destinationPoint.longitude(), 500).observe(this, Observer { data ->
+        zoneViewModel.getObservableZones().observe(this, Observer { data ->
                 var wayPoint: Point = destinationPoint
                 val first = data.features()?.first()
 
@@ -175,6 +175,7 @@ class TripFragment : Fragment(), OnMapReadyCallback {
                 }
             checkArguments(wayPoint)
         })
+        zoneViewModel.getSpecificZones(destinationPoint.latitude(), destinationPoint.longitude(), 500)
     }
 
     private fun checkArguments(wayPoint : Point){

@@ -20,8 +20,11 @@ class ZoneRepositoryImpl: ZoneRepository, KoinComponent {
     val zoneFeatures = MutableLiveData<FeatureCollection>()
     val handicapPoints = MutableLiveData<FeatureCollection>()
 
+    override fun getObservableZones() : MutableLiveData<FeatureCollection>{
+        return zoneFeatures
+    }
 
-    override fun getSpecificZones(latitude: Double, longitude: Double, radius: Int): LiveData<FeatureCollection> {
+    override fun getSpecificZones(latitude: Double, longitude: Double, radius: Int){
 
         val call = service.getSpecificZones(latitude, longitude, radius)
         //val call = service.getZones()
@@ -42,7 +45,6 @@ class ZoneRepositoryImpl: ZoneRepository, KoinComponent {
                 }
             }
         })
-        return zoneFeatures
     }
 
     override fun getHandicapZones(): MutableLiveData<FeatureCollection> {

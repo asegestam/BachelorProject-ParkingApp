@@ -7,8 +7,12 @@ import com.mapbox.geojson.FeatureCollection
 
 class ZoneViewModel(private val repo: ZoneRepository): ViewModel(){
 
-    fun getSpecificZones(latitude: Double = 57.7089, longitude: Double = 11.9746, radius: Int = 500) : LiveData<FeatureCollection> {
-        return repo.getSpecificZones(latitude, longitude, radius)
+    fun getObservableZones() : LiveData<FeatureCollection> {
+        return repo.getObservableZones()
+    }
+
+    fun getSpecificZones(latitude: Double = 57.7089, longitude: Double = 11.9746, radius: Int = 500){
+        repo.getSpecificZones(latitude, longitude, radius)
     }
 
     fun getZones() : LiveData<FeatureCollection> {

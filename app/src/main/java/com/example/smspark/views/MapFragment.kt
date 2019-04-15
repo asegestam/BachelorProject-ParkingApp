@@ -155,37 +155,9 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
                 val fromPoint = Point.fromJson(it.getString("fromArg"))
                 val destinationPoint = Point.fromJson(it.getString("destArg"))
                 val wayPoint = Point.fromJson(it.getString("wayPointArg"))
-
-                zoneViewModel.getSpecificZones(destinationPoint.latitude(), destinationPoint.longitude(), 500).observe(this, Observer { data ->
-                    var wayPoint: Point = destinationPoint
-                    val first = data.features()?.first()
-
-                    //Toast.makeText(requireContext(), "" +first?.getNumberProperty("distance"), Toast.LENGTH_LONG ).show()
-                    first?.let {
-                        if (first.geometry() is Point)
-                            wayPoint = first.geometry() as Point
-                        else {
-                            val  builder  = LatLngBounds.Builder()
-                            val polygon = first.geometry() as Polygon
-
-                            val outer = polygon.outer()
-
-                            outer?.coordinates()?.forEach {
-                                builder.include(LatLng(it.latitude(), it.longitude()))
-                            }
-
-                            val build = builder.build()
-                            val center = build.center
-
-
-                            wayPoint = Point.fromLngLat(center.longitude, center.latitude)
-
-                        }
-                    }
-                    addZonesToMap(data)
-                    routeViewModel.getWayPointRoute(fromPoint, wayPoint, destinationPoint, "driving")
-                })
-
+                currentRoute = null
+                zoneViewModel.getSpecificZones(destinationPoint.latitude(), destinationPoint.longitude(), 500)
+                routeViewModel.getWayPointRoute(fromPoint, wayPoint, destinationPoint, "driving")
         }
     }
 
@@ -195,14 +167,15 @@ class MapFragment : Fragment(), OnMapReadyCallback, MapboxMap.OnMapClickListener
             addMarkersToMap(it, true)
             zoneAdapter.setData(it)
         })
-       /*zoneViewModel.getSpecificZones().observe(this, Observer { featureCollection -> featureCollection.features()?.let {
+       zoneViewModel.getObservableZones().observe(this, Observer { featureCollection -> featureCollection.features()?.let {
             if(it.size > 0) {
                 addZonesToMap(featureCollection)
                 zoneAdapter.setData(featureCollection)
+                recyclerView.visibility = View.VISIBLE
             } else {
                 Toast.makeText(requireContext(), "Inga zoner hittades", Toast.LENGTH_LONG).show()
             }
-        }})*/
+        }})
         selectedZoneViewModel.selectedZone.observe(this, Observer { bottomSheetBehavior.state = COLLAPSED})
         routeViewModel.route.observe(this, Observer { route -> handleRoute(route) })
     }
