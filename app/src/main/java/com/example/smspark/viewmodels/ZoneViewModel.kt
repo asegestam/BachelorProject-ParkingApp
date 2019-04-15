@@ -15,10 +15,6 @@ class ZoneViewModel(private val repo: ZoneRepository): ViewModel(){
         repo.getSpecificZones(latitude, longitude, radius)
     }
 
-    fun getZones() : LiveData<FeatureCollection> {
-        return repo.getZones()
-    }
-
     fun getHandicapZones() : LiveData<FeatureCollection> {
         return repo.getHandicapZones()
     }

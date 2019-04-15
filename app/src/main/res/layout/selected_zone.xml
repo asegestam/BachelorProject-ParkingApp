@@ -15,26 +15,16 @@
         android:id="@+id/vald_zon"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="8dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="48dp"
         android:text="@string/vald_zon"
         android:textAllCaps="true"
         android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"
         android:textColor="@color/colorSuccess"
         android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <View
-        android:id="@+id/view2"
-        android:layout_width="2dp"
-        android:layout_height="match_parent"
-        android:layout_marginStart="12dp"
-        android:background="?android:attr/listDivider"
-        app:layout_constraintStart_toEndOf="@+id/vald_zon"
-        tools:layout_editor_absoluteY="0dp" />
 
     <TextView
         android:id="@+id/zoneName"
@@ -46,7 +36,9 @@
         android:text="Centralstationen (långtid)"
         android:textAlignment="textStart"
         android:textAppearance="@style/TextAppearance.MaterialComponents.Headline6"
-        app:layout_constraintStart_toEndOf="@+id/view2"
+        android:lines="1"
+        android:ellipsize="end"
+        app:layout_constraintStart_toEndOf="@+id/lineDivider"
         app:layout_constraintTop_toTopOf="parent" />
 
 
@@ -79,7 +71,7 @@
         android:layout_marginBottom="8dp"
         android:text="5 km"
         android:textAppearance="@style/NotificationTime"
-        android:textColor="@color/mapbox_blue"
+        android:textColor="@color/colorAccentLight"
         android:textSize="14sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="@+id/zoneOwner"
@@ -94,8 +86,16 @@
         android:layout_marginEnd="12dp"
         android:layout_marginBottom="8dp"
         android:text="OK"
-        android:textColor="@color/colorSuccess"
+        android:textColor="@color/colorAccentLight"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
+    <View
+        android:id="@+id/lineDivider"
+        android:layout_width="2dp"
+        android:layout_height="match_parent"
+        android:layout_marginStart="12dp"
+        android:background="?android:attr/listDivider"
+        app:layout_constraintStart_toEndOf="@+id/vald_zon"
+        tools:layout_editor_absoluteY="0dp" />
 </androidx.constraintlayout.widget.ConstraintLayout>
