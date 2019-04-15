@@ -88,6 +88,39 @@ class TripFragment : Fragment(), OnMapReadyCallback {
 
         initButtons()
         initSpinner()
+        initObservables()
+    }
+
+    private fun initObservables(){
+        zoneViewModel.getObservableZones().observe(this, Observer { data ->
+            val destinationPoint = Point.fromJson(destinationLatLng)
+            var wayPoint: Point = destinationPoint
+            val first = data.features()?.first()
+
+            //Toast.makeText(requireContext(), "" +first?.getNumberProperty("distance"), Toast.LENGTH_LONG ).show()
+            first?.let {
+                if (first.geometry() is Point)
+                    wayPoint = first.geometry() as Point
+                else {
+                    val  builder  = LatLngBounds.Builder()
+                    val polygon = first.geometry() as Polygon
+
+                    val outer = polygon.outer()
+
+                    outer?.coordinates()?.forEach {
+                        builder.include(LatLng(it.latitude(), it.longitude()))
+                    }
+
+                    val build = builder.build()
+                    val center = build.center
+
+
+                    wayPoint = Point.fromLngLat(center.longitude, center.latitude)
+
+                }
+            }
+            checkArguments(wayPoint)
+        })
     }
 
     private fun initSpinner(){
@@ -143,38 +176,7 @@ class TripFragment : Fragment(), OnMapReadyCallback {
     }
 
     private fun getNearestParking() {
-
-
         val destinationPoint = Point.fromJson(destinationLatLng)
-
-        zoneViewModel.getObservableZones().observe(this, Observer { data ->
-                var wayPoint: Point = destinationPoint
-                val first = data.features()?.first()
-
-                //Toast.makeText(requireContext(), "" +first?.getNumberProperty("distance"), Toast.LENGTH_LONG ).show()
-                first?.let {
-                    if (first.geometry() is Point)
-                        wayPoint = first.geometry() as Point
-                    else {
-                        val  builder  = LatLngBounds.Builder()
-                        val polygon = first.geometry() as Polygon
-
-                        val outer = polygon.outer()
-
-                        outer?.coordinates()?.forEach {
-                            builder.include(LatLng(it.latitude(), it.longitude()))
-                        }
-
-                        val build = builder.build()
-                        val center = build.center
-
-
-                        wayPoint = Point.fromLngLat(center.longitude, center.latitude)
-
-                    }
-                }
-            checkArguments(wayPoint)
-        })
         zoneViewModel.getSpecificZones(destinationPoint.latitude(), destinationPoint.longitude(), 500)
     }
 
