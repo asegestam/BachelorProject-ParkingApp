@@ -64,7 +64,6 @@ class RouteViewModel(val context: Context): ViewModel() {
                                 return
                             }
                             route.value = response.body()!!.routes()[0]
-                            Log.d("Routeviewmodel ahdhehe", route.value.toString())
                         }
 
                         override fun onFailure(call: Call<DirectionsResponse>, throwable: Throwable) {

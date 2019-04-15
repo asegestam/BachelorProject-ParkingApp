@@ -33,8 +33,6 @@ import com.mapbox.mapboxsdk.Mapbox
 import com.mapbox.mapboxsdk.camera.CameraPosition
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory
 import com.mapbox.mapboxsdk.geometry.LatLng
-import com.mapbox.mapboxsdk.geometry.LatLngBounds
-import com.mapbox.mapboxsdk.location.LocationComponent
 import com.mapbox.mapboxsdk.location.LocationComponentActivationOptions
 import com.mapbox.mapboxsdk.location.modes.CameraMode
 import com.mapbox.mapboxsdk.maps.MapView
@@ -49,7 +47,6 @@ import com.mapbox.mapboxsdk.style.layers.SymbolLayer
 import com.mapbox.mapboxsdk.style.sources.GeoJsonSource
 import com.mapbox.services.android.navigation.ui.v5.route.NavigationMapRoute
 import kotlinx.android.synthetic.main.fragment_map.*
-import kotlinx.android.synthetic.main.list_item.*
 import kotlinx.android.synthetic.main.selected_zone.*
 import kotlinx.android.synthetic.main.selected_zone.view.*
 import org.koin.android.ext.android.inject
@@ -57,6 +54,8 @@ import org.koin.android.viewmodel.ext.android.sharedViewModel
 import org.koin.android.viewmodel.ext.android.viewModel
 import org.koin.core.parameter.parametersOf
 import timber.log.Timber
+import java.util.*
+import kotlin.concurrent.schedule
 
 class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListener {
 
@@ -124,11 +123,11 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
                 setupMarkerLayer(style)
                 initRecyclerView()
                 initObservers()
+                checkTripFragment()
             }
         }
         initButtons()
         initBottomSheets()
-        checkTripFragment()
 
     }
 
@@ -140,6 +139,8 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
             destination = destinationPoint
             zoneViewModel.getSpecificZones(destinationPoint.latitude(), destinationPoint.longitude(), 500)
             routeViewModel.getWayPointRoute(fromPoint, wayPoint, destinationPoint, "driving")
+            addMarkerOnMap(destinationPoint, false)
+            addMarkerOnMap(wayPoint, true)
         }
     }
 
