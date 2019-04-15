@@ -20,7 +20,7 @@ class ZoneRepositoryImpl: ZoneRepository, KoinComponent {
     val zoneFeatures = MutableLiveData<FeatureCollection>()
     val handicapPoints = MutableLiveData<FeatureCollection>()
 
-    override fun getObservableZones() : MutableLiveData<FeatureCollection>{
+    override fun getObservableZones() : LiveData<FeatureCollection>{
         return zoneFeatures
     }
 

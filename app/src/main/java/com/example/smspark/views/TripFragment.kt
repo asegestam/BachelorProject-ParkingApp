@@ -102,19 +102,13 @@ class TripFragment : Fragment(), OnMapReadyCallback {
                 else {
                     val  builder  = LatLngBounds.Builder()
                     val polygon = first.geometry() as Polygon
-
                     val outer = polygon.outer()
-
                     outer?.coordinates()?.forEach {
                         builder.include(LatLng(it.latitude(), it.longitude()))
                     }
-
                     val build = builder.build()
                     val center = build.center
-
-
                     wayPoint = Point.fromLngLat(center.longitude, center.latitude)
-
                 }
             }
             checkArguments(wayPoint)

@@ -2,12 +2,11 @@
 <resources>
     <color name="colorPrimary">#C62828</color>
     <color name="colorPrimaryDark">#283593</color>
+    <color name="colorPrimaryLight">#FFFFFF</color>
     <color name="colorAccent">#E53935</color>
     <color name="colorAccentLight">#42A5F5</color>
-    <color name="colorPrimaryLight">#FFFFFF</color>
-
+    <color name="colorAccentGrey">#90CAF9</color>
     <color name="colorSuccess">#1BCA2B</color>
-
     <color name="mapbox_blue_light">#02708e</color>
 
 </resources>
