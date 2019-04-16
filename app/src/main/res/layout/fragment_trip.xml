@@ -9,31 +9,30 @@
 
     <TextView
         android:id="@+id/textFrom"
-        android:layout_width="350dp"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="4dp"
         android:layout_marginTop="16dp"
+        android:layout_marginEnd="8dp"
         android:ellipsize="end"
+        android:gravity="center"
         android:hint="From"
         android:maxLines="1"
-        android:textSize="22sp"
-        android:gravity="center"
 
+        android:textSize="22sp"
+        app:layout_constraintEnd_toStartOf="@+id/iv_my_location"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <ImageView
         android:id="@+id/iv_my_location"
-        android:layout_width="30dp"
+        android:layout_width="0dp"
         android:layout_height="30dp"
-        android:layout_marginStart="20dp"
         android:layout_marginTop="16dp"
         android:layout_marginEnd="8dp"
         android:src="@drawable/ic_my_location"
         android:tint="@color/mapbox_blue"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toEndOf="@+id/textFrom"
         app:layout_constraintTop_toTopOf="parent" />
 
     <View
@@ -47,31 +46,30 @@
 
     <TextView
         android:id="@+id/textDestination"
-        android:layout_width="350dp"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
         android:ellipsize="end"
         android:gravity="center"
         android:hint="Destination"
         android:maxLines="1"
         android:textSize="22sp"
+        app:layout_constraintEnd_toStartOf="@+id/iv_swap"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/listDivider" />
 
     <ImageView
         android:id="@+id/iv_swap"
-        android:layout_width="30dp"
+        android:layout_width="0dp"
         android:layout_height="30dp"
         android:layout_gravity="center"
-        android:layout_marginStart="20dp"
         android:layout_marginTop="16dp"
         android:layout_marginEnd="8dp"
         android:src="@drawable/ic_swap"
         android:tint="@color/mapbox_blue"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.8"
-        app:layout_constraintStart_toEndOf="@+id/textDestination"
         app:layout_constraintTop_toBottomOf="@+id/iv_my_location" />
 
 
@@ -97,7 +95,7 @@
 
     <Spinner
         android:id="@+id/spinner"
-        android:layout_width="320dp"
+        android:layout_width="0dp"
         android:layout_height="60dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="28dp"

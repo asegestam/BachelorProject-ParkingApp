@@ -28,16 +28,18 @@
 
     <TextView
         android:id="@+id/zoneName"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:ellipsize="end"
+        android:lines="1"
         android:padding="1dp"
         android:text="Centralstationen (långtid)"
         android:textAlignment="textStart"
         android:textAppearance="@style/TextAppearance.MaterialComponents.Headline6"
-        android:lines="1"
-        android:ellipsize="end"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/lineDivider"
         app:layout_constraintTop_toTopOf="parent" />
 

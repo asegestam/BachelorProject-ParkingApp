@@ -27,6 +27,7 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.snackbar.Snackbar
 import com.mapbox.android.core.permissions.PermissionsListener
 import com.mapbox.android.core.permissions.PermissionsManager
+import com.mapbox.android.gestures.MoveGestureDetector
 import com.mapbox.api.directions.v5.models.DirectionsRoute
 import com.mapbox.geojson.*
 import com.mapbox.mapboxsdk.Mapbox
@@ -55,8 +56,7 @@ import org.koin.android.viewmodel.ext.android.viewModel
 import org.koin.core.parameter.parametersOf
 import timber.log.Timber
 
-class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListener {
-
+class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListener, MapboxMap.OnMoveListener {
     // variables for adding location layer
     private lateinit var mapView: MapView
     private lateinit var mapboxMap: MapboxMap
@@ -115,6 +115,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
             mapboxMap.setStyle(getString(R.string.streets_parking)) {style ->
                 this.mapboxMap = mapboxMap
                 mapboxMap.addOnMapClickListener(this)
+                mapboxMap.addOnMoveListener(this)
                 enableLocationComponent(style)
                 setupImageSource(style)
                 setupZoneLayers(style)
@@ -291,17 +292,20 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
         loadedMapStyle.addSource(GeoJsonSource(polygonSource))
         loadedMapStyle.addSource(GeoJsonSource(pointSource))
         loadedMapStyle.addSource(GeoJsonSource(handicapSource))
-        //Polygon Layer
-        loadedMapStyle.addLayer(FillLayer(polygonLayer, polygonSource)
+        val polygonLayer = FillLayer(polygonLayer, polygonSource)
                 .withProperties(
                         PropertyFactory.fillColor(Color.parseColor("#f42428")),
-                        PropertyFactory.fillOpacity(0.75f)))
-        //Point Layer
-        loadedMapStyle.addLayer(SymbolLayer(pointLayer, pointSource)
-                .withProperties(PropertyFactory.iconImage(parkingImage), iconSize(0.35f)))
-        //Handicap Layer
-        loadedMapStyle.addLayer(SymbolLayer(handicapLayer, handicapSource)
-                .withProperties(PropertyFactory.iconImage(handicapImage), iconSize(0.8f)))
+                        PropertyFactory.fillOpacity(0.75f))
+        val pointLayer = SymbolLayer(pointLayer, pointSource)
+                .withProperties(PropertyFactory.iconImage(parkingImage), iconSize(0.35f))
+        val handicapLayer = SymbolLayer(handicapLayer, handicapSource)
+                        .withProperties(PropertyFactory.iconImage(handicapImage), iconSize(0.8f))
+        polygonLayer.minZoom = 14f
+        pointLayer.minZoom = 14f
+        handicapLayer.minZoom = 14f
+        loadedMapStyle.addLayer(polygonLayer)
+        loadedMapStyle.addLayer(pointLayer)
+        loadedMapStyle.addLayer(handicapLayer)
     }
 
     /** Adds frequently used image sources to the map style
@@ -497,6 +501,19 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
             }
         }
     }
+
+    override fun onMoveBegin(detector: MoveGestureDetector) {
+        if(mapboxMap.cameraPosition.zoom < 14 && zoneViewModel.getObservableZones().value != null) {
+            Toast.makeText(requireContext(), "Zooma in för att se zoner", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    override fun onMove(detector: MoveGestureDetector) {
+    }
+
+    override fun onMoveEnd(detector: MoveGestureDetector) {
+    }
+
 
     /**  ------ LifeCycle Methods ------*/
     override fun onStart() {
