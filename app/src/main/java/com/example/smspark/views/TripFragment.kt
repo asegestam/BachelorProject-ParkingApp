@@ -19,6 +19,10 @@ import androidx.navigation.fragment.findNavController
 import com.example.smspark.R
 import com.example.smspark.viewmodels.ZoneViewModel
 import com.google.android.gms.location.LocationServices
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import com.google.gson.JsonObject
+import com.mapbox.geojson.Feature
 import com.mapbox.geojson.Point
 import com.mapbox.geojson.Polygon
 import com.mapbox.mapboxsdk.geometry.LatLng
@@ -112,7 +116,7 @@ class TripFragment : Fragment(), OnMapReadyCallback {
                     wayPoint = Point.fromLngLat(center.longitude, center.latitude)
                 }
             }
-            wayPoint.let { checkArguments(wayPoint!!) }
+            wayPoint.let { checkArguments(wayPoint!!, first!!) }
         })
     }
 
@@ -175,13 +179,14 @@ class TripFragment : Fragment(), OnMapReadyCallback {
         }
     }
 
-    private fun checkArguments(wayPoint : Point){
+    private fun checkArguments(wayPoint : Point, feature : Feature){
         if(fromLatLng != null && destinationLatLng != null){
             val bundle = Bundle()
 
             bundle.putString("fromArg", fromLatLng)
             bundle.putString("destArg", destinationLatLng)
             bundle.putString("wayPointArg", wayPoint.toJson())
+            bundle.putString("wayPointFeatureArg", feature.toJson())
             //Toast.makeText(requireContext(), wayPoint.toString(), Toast.LENGTH_LONG).show()
 
             findNavController().navigate(R.id.action_tripFragment_to_mapFragment, bundle)

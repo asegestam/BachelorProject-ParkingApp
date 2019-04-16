@@ -135,11 +135,13 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
             val fromPoint = Point.fromJson(it.getString("fromArg"))
             val destinationPoint = Point.fromJson(it.getString("destArg"))
             val wayPoint = Point.fromJson(it.getString("wayPointArg"))
+            val wayPointFeature = Feature.fromJson(it.getString("wayPointFeatureArg"))
             destination = destinationPoint
             zoneViewModel.getSpecificZones(destinationPoint.latitude(), destinationPoint.longitude(), 500)
             routeViewModel.getWayPointRoute(fromPoint, wayPoint, destinationPoint, "driving")
             addMarkerOnMap(destinationPoint, false)
             addMarkerOnMap(wayPoint, true)
+            selectedZoneViewModel.selectedZone.value = wayPointFeature
         }
     }
 
