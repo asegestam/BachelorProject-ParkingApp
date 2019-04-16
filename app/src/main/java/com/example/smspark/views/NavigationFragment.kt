@@ -15,9 +15,14 @@ import com.example.smspark.model.RouteViewModel
 import com.mapbox.api.directions.v5.models.DirectionsResponse
 import com.mapbox.api.directions.v5.models.DirectionsRoute
 import com.mapbox.geojson.Point
+import com.mapbox.mapboxsdk.Mapbox
 import com.mapbox.services.android.navigation.ui.v5.*
 import com.mapbox.services.android.navigation.ui.v5.listeners.NavigationListener
+import com.mapbox.services.android.navigation.ui.v5.listeners.RouteListener
+import com.mapbox.services.android.navigation.v5.navigation.MapboxNavigation
+import com.mapbox.services.android.navigation.v5.navigation.MapboxNavigationOptions
 import com.mapbox.services.android.navigation.v5.navigation.NavigationRoute
+import com.mapbox.services.android.navigation.v5.offroute.OffRouteListener
 import com.mapbox.services.android.navigation.v5.routeprogress.ProgressChangeListener
 import com.mapbox.services.android.navigation.v5.routeprogress.RouteProgress
 import kotlinx.android.synthetic.main.fragment_navigation.*
@@ -29,10 +34,12 @@ import retrofit2.Callback
 import retrofit2.Response
 
 
-class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationListener, ProgressChangeListener {
+class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationListener, ProgressChangeListener, OffRouteListener, RouteListener {
+
     private lateinit var navigationView: NavigationView
-    private var currentRoute: DirectionsRoute? = null
+    private lateinit var currentRoute: DirectionsRoute
     private lateinit var soundButton: NavigationButton
+
 
     private val routeViewModel: RouteViewModel by sharedViewModel { parametersOf(requireContext()) }
 
@@ -65,15 +72,14 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
     }
 
     private fun startNavigation() {
-        if(currentRoute == null) {
-            return
-        }
         val options: NavigationViewOptions = NavigationViewOptions.builder()
                 .directionsRoute(currentRoute)
                 .shouldSimulateRoute(true)
                 .navigationListener(this)
                 .progressChangeListener(this)
+                .routeListener(this)
                 .lightThemeResId(R.style.NavigationViewLight)
+                .waynameChipEnabled(true)
                 .build()
         navigationView.startNavigation(options)
     }
@@ -92,13 +98,36 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
     override fun onProgressChange(location: Location?, routeProgress: RouteProgress?) {
         if(routeProgress != null) {
             val progressFraction = routeProgress.currentLegProgress().fractionTraveled()
-            if(progressFraction >= 0.95f) {
-                navigationView.stopNavigation()
-                Toast.makeText(context, "Närmar dig parkeringen!", Toast.LENGTH_LONG).show()
+            if(progressFraction >= 0.99f) {
+                Toast.makeText(context, "Du är nu framme på parkeringen", Toast.LENGTH_LONG).show()
             }
         }
         Log.d("NavigationFragment", "progress " + routeProgress?.currentLegProgress()?.fractionTraveled())
 
+    }
+
+    override fun onFailedReroute(errorMessage: String?) {
+    }
+
+    override fun allowRerouteFrom(offRoutePoint: Point?): Boolean {
+        return true
+    }
+
+    override fun onRerouteAlong(directionsRoute: DirectionsRoute?) {
+    }
+
+    override fun onOffRoute(offRoutePoint: Point?) {
+    }
+
+    override fun onArrival() {
+        println("HELLO U HAVE ARRIVED1!!")
+        Toast.makeText(context, "Du är nu på parkeringen!", Toast.LENGTH_LONG).show()
+    }
+
+    override fun userOffRoute(location: Location?) {
+        location?.let {
+            allowRerouteFrom(Point.fromLngLat(location.longitude, location.latitude))
+        }
     }
 
     override fun onStart() {

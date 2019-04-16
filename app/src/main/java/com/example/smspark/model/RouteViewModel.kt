@@ -56,6 +56,7 @@ class RouteViewModel(val context: Context): ViewModel() {
                     .addWaypoint(wayPoint)
                     .profile(profile)
                     .destination(destination)
+                    .addWaypointNames("Start", "Parkering", "Destination")
                     .build()
                     .getRoute(object : Callback<DirectionsResponse> {
                         override fun onResponse(call: Call<DirectionsResponse>, response: Response<DirectionsResponse>) {
@@ -64,7 +65,7 @@ class RouteViewModel(val context: Context): ViewModel() {
                                 return
                             }
                             route.value = response.body()!!.routes()[0]
-                            Log.d("Routeviewmodel ahdhehe", route.value.toString())
+                            Log.d("RouteViewModel", route.value.toString())
                         }
 
                         override fun onFailure(call: Call<DirectionsResponse>, throwable: Throwable) {
