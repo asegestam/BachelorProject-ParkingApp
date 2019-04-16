@@ -12,26 +12,17 @@ import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.example.smspark.R
 import com.example.smspark.model.RouteViewModel
-import com.mapbox.api.directions.v5.models.DirectionsResponse
 import com.mapbox.api.directions.v5.models.DirectionsRoute
 import com.mapbox.geojson.Point
-import com.mapbox.mapboxsdk.Mapbox
 import com.mapbox.services.android.navigation.ui.v5.*
 import com.mapbox.services.android.navigation.ui.v5.listeners.NavigationListener
 import com.mapbox.services.android.navigation.ui.v5.listeners.RouteListener
-import com.mapbox.services.android.navigation.v5.navigation.MapboxNavigation
-import com.mapbox.services.android.navigation.v5.navigation.MapboxNavigationOptions
-import com.mapbox.services.android.navigation.v5.navigation.NavigationRoute
 import com.mapbox.services.android.navigation.v5.offroute.OffRouteListener
 import com.mapbox.services.android.navigation.v5.routeprogress.ProgressChangeListener
 import com.mapbox.services.android.navigation.v5.routeprogress.RouteProgress
 import kotlinx.android.synthetic.main.fragment_navigation.*
-import org.koin.android.ext.android.inject
 import org.koin.android.viewmodel.ext.android.sharedViewModel
 import org.koin.core.parameter.parametersOf
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 
 
 class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationListener, ProgressChangeListener, OffRouteListener, RouteListener {
@@ -98,8 +89,10 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
     override fun onProgressChange(location: Location?, routeProgress: RouteProgress?) {
         if(routeProgress != null) {
             val progressFraction = routeProgress.currentLegProgress().fractionTraveled()
-            if(progressFraction >= 0.99f) {
+            if(progressFraction >= 0.99f && routeProgress.remainingWaypoints() == 1) {
                 Toast.makeText(context, "Du är nu framme på parkeringen", Toast.LENGTH_LONG).show()
+            } else if(progressFraction >= 0.99f && routeProgress.remainingWaypoints() == 0) {
+                Toast.makeText(context, "Du är nu på din destination", Toast.LENGTH_LONG).show()
             }
         }
         Log.d("NavigationFragment", "progress " + routeProgress?.currentLegProgress()?.fractionTraveled())
