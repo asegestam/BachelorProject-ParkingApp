@@ -54,8 +54,6 @@ import org.koin.android.viewmodel.ext.android.sharedViewModel
 import org.koin.android.viewmodel.ext.android.viewModel
 import org.koin.core.parameter.parametersOf
 import timber.log.Timber
-import java.util.*
-import kotlin.concurrent.schedule
 
 class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListener {
 
@@ -68,6 +66,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
     // variables for calculating and drawing a route
     private var navigationMapRoute: NavigationMapRoute? = null
     private var destination: Point? = null
+    private var routeMap = HashMap<String, DirectionsRoute>()
     //RecyclerView fields
     private lateinit var recyclerView: RecyclerView
     private lateinit var zoneAdapter: ZoneAdapter
@@ -138,8 +137,11 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
             val wayPointFeature = Feature.fromJson(it.getString("wayPointFeatureArg"))
             destination = destinationPoint
             zoneViewModel.getSpecificZones(destinationPoint.latitude(), destinationPoint.longitude(), 500)
-            routeViewModel.getWayPointRoute(fromPoint, wayPoint, destinationPoint, "driving")
+            routeViewModel.getSimpleRoute(fromPoint, wayPoint, "driving")
+            routeViewModel.getSimpleRoute(wayPoint, destinationPoint, "walking")
+            //routeViewModel.getWayPointRoute(fromPoint, wayPoint, destinationPoint, "driving")
             addMarkerOnMap(destinationPoint, false)
+
             addMarkerOnMap(wayPoint, true)
             selectedZoneViewModel.selectedZone.value = wayPointFeature
         }
@@ -179,7 +181,8 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
             moveCameraToLocation(zonePoint, zoom = 16.0)
         })
         //Observe an requested route, if changed this will add the route to the map
-        routeViewModel.route.observe(this, Observer { route -> addRouteToMap(route) })
+        routeViewModel.route.observe(this, Observer { route ->
+            addRouteToMap(route) })
     }
 
     /** Initiates button clickListeners */
@@ -243,7 +246,9 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
             val wayPoint = Point.fromLngLat(point.longitude, point.latitude)
             val source = mapboxMap.style?.getSourceAs<GeoJsonSource>("map-click-marker")
             source?.setGeoJson(Feature.fromGeometry(wayPoint))
-            routeViewModel.getWayPointRoute(originPoint, wayPoint, destination!!, "driving")
+            //routeViewModel.getWayPointRoute(originPoint, wayPoint, destination!!, "driving")
+            routeViewModel.getSimpleRoute(originPoint!!, wayPoint, "driving")
+            routeViewModel.getSimpleRoute(wayPoint, destination!!, "walking")
         }
         return true
     }
@@ -359,7 +364,10 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
         if(navigationMapRoute == null) {
             navigationMapRoute = NavigationMapRoute(null, mapView, mapboxMap, R.style.NavigationMapRoute)
         }
-        navigationMapRoute?.addRoute(route)
+
+        Log.d(TAG, "" + route.routeOptions()?.profile())
+        routeMap[route.routeOptions()!!.profile()] = route
+        navigationMapRoute?.addRoutes(ArrayList<DirectionsRoute>(routeMap.values))
         startNavigationButton.visibility = View.VISIBLE
     }
 
@@ -384,7 +392,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
             handleAutoCompleteResult(data)
             navigationMapRoute?.updateRouteVisibilityTo(false)
             startNavigationButton.visibility = View.GONE
-            snackbar = Snackbar.make(coordinator, R.string.select_zone , Snackbar.LENGTH_SHORT)
+            snackbar = Snackbar.make(coordinator, R.string.select_zone , Snackbar.LENGTH_LONG)
             val snackbarView = snackbar.view
             snackbarView.setBackgroundColor(ContextCompat.getColor(activity!!.applicationContext,R.color.mapbox_blue))
             snackbar.show()
@@ -417,7 +425,9 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
                 wayPoint = getGeometryPoint(geometry)
                 addMarkerOnMap(wayPoint, true)
                 if(destination != null) {
-                    routeViewModel.getWayPointRoute(getUserLocation(), wayPoint, destination!!, "driving")
+                    //routeViewModel.getWayPointRoute(getUserLocation(), wayPoint, destination!!, "driving")
+                    routeViewModel.getSimpleRoute(getUserLocation()!!, wayPoint, "driving")
+                    routeViewModel.getSimpleRoute(wayPoint, destination!!, "walking")
                 }
             }
         } else {
