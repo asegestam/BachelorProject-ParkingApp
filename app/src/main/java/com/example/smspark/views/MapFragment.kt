@@ -55,6 +55,8 @@ import org.koin.android.viewmodel.ext.android.sharedViewModel
 import org.koin.android.viewmodel.ext.android.viewModel
 import org.koin.core.parameter.parametersOf
 import timber.log.Timber
+import java.util.*
+import kotlin.concurrent.schedule
 
 class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListener, MapboxMap.OnMoveListener {
     // variables for adding location layer
@@ -122,11 +124,11 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
                 setupMarkerLayer(style)
                 initRecyclerView()
                 initObservers()
+                checkTripFragment()
             }
         }
         initButtons()
         initBottomSheets()
-        checkTripFragment()
     }
 
     private fun checkTripFragment() {
@@ -134,9 +136,13 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
             val fromPoint = Point.fromJson(it.getString("fromArg"))
             val destinationPoint = Point.fromJson(it.getString("destArg"))
             val wayPoint = Point.fromJson(it.getString("wayPointArg"))
+            val wayPointFeature = Feature.fromJson(it.getString("wayPointFeatureArg"))
             destination = destinationPoint
             zoneViewModel.getSpecificZones(destinationPoint.latitude(), destinationPoint.longitude(), 500)
             routeViewModel.getWayPointRoute(fromPoint, wayPoint, destinationPoint, "driving")
+            addMarkerOnMap(destinationPoint, false)
+            addMarkerOnMap(wayPoint, true)
+            selectedZoneViewModel.selectedZone.value = wayPointFeature
         }
     }
 
