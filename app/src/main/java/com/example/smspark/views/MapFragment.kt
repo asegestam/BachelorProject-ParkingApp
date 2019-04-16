@@ -128,7 +128,6 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
         }
         initButtons()
         initBottomSheets()
-
     }
 
     private fun checkTripFragment() {
@@ -146,11 +145,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
 
     /** Initiates ViewModel observers */
     private fun initObservers() {
-        /*zoneViewModel.getHandicapZones().observe(this, Observer {
-            addMarkersToMap(it, true)
-            zoneAdapter.setData(it)
-            recyclerView.smoothScrollToPosition(0)
-        })*/
+        //Observe parking zones, if changed, add them to the map and to the list.
        zoneViewModel.getObservableZones().observe(this, Observer { featureCollection -> featureCollection.features()?.let {
             if(it.size > 0) {
                 addZonesToMap(featureCollection)
@@ -161,6 +156,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
                 Toast.makeText(requireContext(), "Inga zoner hittades", Toast.LENGTH_LONG).show()
             }
         }})
+        //Observe handicap parking zones, if changed, add them to the map and to the list.
         zoneViewModel.getObservableHandicapZones().observe(this, Observer {featureCollection -> featureCollection.features()?.let {
             if(it.size > 0) {
                 addMarkersToMap(featureCollection, true)
@@ -171,17 +167,24 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
                 Toast.makeText(requireContext(), "Inga handicap-zoner hittades", Toast.LENGTH_LONG).show()
             }
         }})
+        /*
+        Observe the selected zone, can be one from the map or the list,
+        will open up BottomSheet to show zone info and move camera to its location
+         */
         selectedZoneViewModel.selectedZone.observe(this, Observer {
             bottomSheetBehavior.state = COLLAPSED
             val zonePoint = getGeometryPoint(it.geometry())
             moveCameraToLocation(zonePoint, zoom = 16.0)
         })
-        routeViewModel.route.observe(this, Observer { route -> handleRoute(route) })
+        //Observe an requested route, if changed this will add the route to the map
+        routeViewModel.route.observe(this, Observer { route -> addRouteToMap(route) })
     }
 
     /** Initiates button clickListeners */
     private fun initButtons() {
-        fab_search.setOnClickListener { startAutoCompleteActivity() }
+        fab_search.setOnClickListener {
+            recyclerView.visibility = View.GONE
+            startAutoCompleteActivity() }
 
         my_locationFab.setOnClickListener { moveCameraToLocation() }
 
@@ -349,7 +352,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
         }
     }
 
-    private fun handleRoute(route: DirectionsRoute) {
+    private fun addRouteToMap(route: DirectionsRoute) {
         Log.d(TAG,"Handeling route " + route.geometry())
         if(navigationMapRoute == null) {
             navigationMapRoute = NavigationMapRoute(null, mapView, mapboxMap, R.style.NavigationMapRoute)
@@ -379,7 +382,6 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
             handleAutoCompleteResult(data)
             navigationMapRoute?.updateRouteVisibilityTo(false)
             startNavigationButton.visibility = View.GONE
-            recyclerView.visibility = View.VISIBLE
             snackbar = Snackbar.make(coordinator, R.string.select_zone , Snackbar.LENGTH_SHORT)
             val snackbarView = snackbar.view
             snackbarView.setBackgroundColor(ContextCompat.getColor(activity!!.applicationContext,R.color.mapbox_blue))

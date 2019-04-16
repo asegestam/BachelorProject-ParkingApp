@@ -11,6 +11,7 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.example.smspark.R
+import com.example.smspark.model.RouteViewModel
 import com.mapbox.api.directions.v5.models.DirectionsResponse
 import com.mapbox.api.directions.v5.models.DirectionsRoute
 import com.mapbox.geojson.Point
@@ -20,6 +21,9 @@ import com.mapbox.services.android.navigation.v5.navigation.NavigationRoute
 import com.mapbox.services.android.navigation.v5.routeprogress.ProgressChangeListener
 import com.mapbox.services.android.navigation.v5.routeprogress.RouteProgress
 import kotlinx.android.synthetic.main.fragment_navigation.*
+import org.koin.android.ext.android.inject
+import org.koin.android.viewmodel.ext.android.sharedViewModel
+import org.koin.core.parameter.parametersOf
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -28,14 +32,9 @@ import retrofit2.Response
 class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationListener, ProgressChangeListener {
     private lateinit var navigationView: NavigationView
     private var currentRoute: DirectionsRoute? = null
-
-    private val ORIGIN_LONGITUDE = -3.714873
-    private val ORIGIN_LATITUDE = 40.397389
-    private val WP_LONGITUDE = -3.712331
-    private val WP_LATITUDE = 40.401686
-    private val DESTINATION_LONGITUDE = -3.713873
-    private val DESTINATION_LATITUDE = 40.399389
     private lateinit var soundButton: NavigationButton
+
+    private val routeViewModel: RouteViewModel by sharedViewModel { parametersOf(requireContext()) }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View? {
@@ -58,31 +57,11 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
     }
 
     override fun onNavigationReady(isRunning: Boolean) {
-        val origin = Point.fromLngLat(ORIGIN_LONGITUDE, ORIGIN_LATITUDE)
-        val destination = Point.fromLngLat(DESTINATION_LONGITUDE, DESTINATION_LATITUDE)
-        val waypoint = Point.fromLngLat(WP_LONGITUDE, WP_LATITUDE)
-        fetchRoute(origin, waypoint, destination)
-    }
-
-    private fun fetchRoute(origin: Point, waypoint: Point,destination: Point) {
-        NavigationRoute.builder(context)
-                .accessToken(getString(R.string.access_token))
-                .origin(origin)
-                .addWaypoint(waypoint)
-                .destination(destination)
-                .addWaypointNames("Start", "Parkering", "Destination")
-                .alternatives(true)
-                .enableRefresh(true)
-                .build()
-                .getRoute(object : Callback<DirectionsResponse> {
-                    override fun onResponse(call: Call<DirectionsResponse>, response: Response<DirectionsResponse>) {
-                        currentRoute = response.body()?.routes()?.get(0)
-                        startNavigation()
-                    }
-
-                    override fun onFailure(call: Call<DirectionsResponse>, throwable: Throwable) {
-                    }
-                })
+        val route = routeViewModel.route.value
+        route?.let {
+            currentRoute = route
+            startNavigation()
+        }
     }
 
     private fun startNavigation() {
