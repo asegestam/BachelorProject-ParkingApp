@@ -1,6 +1,5 @@
 package com.example.smspark.views
 
-
 import android.location.Location
 import android.os.Bundle
 import android.util.Log

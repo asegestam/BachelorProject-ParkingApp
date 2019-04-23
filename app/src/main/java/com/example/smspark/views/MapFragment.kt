@@ -34,6 +34,7 @@ import com.mapbox.mapboxsdk.Mapbox
 import com.mapbox.mapboxsdk.camera.CameraPosition
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory
 import com.mapbox.mapboxsdk.geometry.LatLng
+import com.mapbox.mapboxsdk.geometry.LatLngBounds
 import com.mapbox.mapboxsdk.location.LocationComponentActivationOptions
 import com.mapbox.mapboxsdk.location.modes.CameraMode
 import com.mapbox.mapboxsdk.maps.MapView
@@ -42,7 +43,6 @@ import com.mapbox.mapboxsdk.maps.Style
 import com.mapbox.mapboxsdk.plugins.places.autocomplete.PlaceAutocomplete
 import com.mapbox.mapboxsdk.plugins.places.autocomplete.model.PlaceOptions
 import com.mapbox.mapboxsdk.style.layers.FillLayer
-import com.mapbox.mapboxsdk.style.layers.PropertyFactory
 import com.mapbox.mapboxsdk.style.layers.PropertyFactory.*
 import com.mapbox.mapboxsdk.style.layers.SymbolLayer
 import com.mapbox.mapboxsdk.style.sources.GeoJsonSource
@@ -55,8 +55,6 @@ import org.koin.android.viewmodel.ext.android.sharedViewModel
 import org.koin.android.viewmodel.ext.android.viewModel
 import org.koin.core.parameter.parametersOf
 import timber.log.Timber
-import java.util.*
-import kotlin.concurrent.schedule
 
 class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListener, MapboxMap.OnMoveListener {
     // variables for adding location layer
@@ -89,8 +87,8 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
     private val handicapImage = "handicap-image"
     private lateinit var snackbar: Snackbar
     private lateinit var bottomSheetBehavior: BottomSheetBehavior<View>
-    private val COLLAPSED = BottomSheetBehavior.STATE_COLLAPSED
-    private val HIDDEN = BottomSheetBehavior.STATE_HIDDEN
+    private val collapsed = BottomSheetBehavior.STATE_COLLAPSED
+    private val hidden = BottomSheetBehavior.STATE_HIDDEN
     //lazy inject ViewModel
     private val zoneViewModel: ZoneViewModel by sharedViewModel()
     val selectedZoneViewModel: SelectedZoneViewModel by viewModel()
@@ -175,7 +173,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
         will open up BottomSheet to show zone info and move camera to its location
          */
         selectedZoneViewModel.selectedZone.observe(this, Observer {
-            bottomSheetBehavior.state = COLLAPSED
+            bottomSheetBehavior.state = collapsed
             val zonePoint = getGeometryPoint(it.geometry())
             moveCameraToLocation(zonePoint, zoom = 16.0)
         })
@@ -191,7 +189,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
 
         my_locationFab.setOnClickListener { moveCameraToLocation() }
 
-        sheet_ok_button.setOnClickListener { bottomSheetBehavior.state = HIDDEN }
+        sheet_ok_button.setOnClickListener { bottomSheetBehavior.state = hidden }
 
         startNavigationButton!!.setOnClickListener { findNavController().navigate(R.id.mapFragment_to_navigation) }
     }
@@ -211,7 +209,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
 
     private fun initBottomSheets() {
         bottomSheetBehavior = BottomSheetBehavior.from(bottom_sheet)
-        bottomSheetBehavior.state = HIDDEN
+        bottomSheetBehavior.state = hidden
         val bottomSheetCallback = getBottomSheetCallback()
         bottomSheetBehavior.setBottomSheetCallback(bottomSheetCallback)
     }
@@ -239,7 +237,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
     @SuppressLint("MissingPermission")
     override fun onMapClick(point: LatLng): Boolean {
         val originPoint = getUserLocation()
-        bottomSheetBehavior.state = HIDDEN
+        bottomSheetBehavior.state = hidden
         if (destination != null && queryMapClick(point)) {
             val wayPoint = Point.fromLngLat(point.longitude, point.latitude)
             val source = mapboxMap.style?.getSourceAs<GeoJsonSource>("map-click-marker")
@@ -257,7 +255,6 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
         val pixel = mapboxMap.projection.toScreenLocation(point)
         val features = mapboxMap.queryRenderedFeatures(pixel, pointLayer, polygonLayer, handicapLayer)
         if(features.size > 0) {
-            Timber.d( "features queryed " + features.size)
             val feature = features[0]
             addMarkerOnMap(Point.fromLngLat(point.longitude, point.latitude), true)
             selectedZoneViewModel.selectedZone.value = feature
@@ -272,7 +269,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
     private fun setupMarkerLayer(loadedMapStyle: Style) {
         loadedMapStyle.addSource(GeoJsonSource(markerSource))
         loadedMapStyle.addLayer(SymbolLayer("marker-layer", markerSource)
-                .withProperties(PropertyFactory.iconImage(markerImage),
+                .withProperties(iconImage(markerImage),
                         iconAllowOverlap(true),
                         iconIgnorePlacement(true)))
     }
@@ -300,12 +297,12 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
         loadedMapStyle.addSource(GeoJsonSource(handicapSource))
         val polygonLayer = FillLayer(polygonLayer, polygonSource)
                 .withProperties(
-                        PropertyFactory.fillColor(Color.parseColor("#f42428")),
-                        PropertyFactory.fillOpacity(0.75f))
+                        fillColor(Color.parseColor("#f42428")),
+                        fillOpacity(0.75f))
         val pointLayer = SymbolLayer(pointLayer, pointSource)
-                .withProperties(PropertyFactory.iconImage(parkingImage), iconSize(0.35f))
+                .withProperties(iconImage(parkingImage), iconSize(0.35f))
         val handicapLayer = SymbolLayer(handicapLayer, handicapSource)
-                        .withProperties(PropertyFactory.iconImage(handicapImage), iconSize(0.8f))
+                        .withProperties(iconImage(handicapImage), iconSize(0.8f))
         polygonLayer.minZoom = 14f
         pointLayer.minZoom = 14f
         handicapLayer.minZoom = 14f
@@ -327,13 +324,11 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
      * @param featureCollection collection of features to be added
      * */
     private fun addZonesToMap(featureCollection: FeatureCollection) {
-        Timber.d("addZonesToMap " + featureCollection.toString())
         val features = featureCollection.features()
         //all features that is polygons
         val polygons = features?.filter { it.geometry() is Polygon}
         //all features that is points
         val points = features?.filter { it.geometry() is Point}
-        Timber.d("Points " + points.toString())
         polygons?.let { addPolygonsToMap(FeatureCollection.fromFeatures(polygons)) }
         points?.let { addMarkersToMap(FeatureCollection.fromFeatures(points), false) }
     }
@@ -359,7 +354,6 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
     }
 
     private fun addRouteToMap(route: DirectionsRoute) {
-        Log.d(TAG,"Handeling route " + route.geometry())
         if(navigationMapRoute == null) {
             navigationMapRoute = NavigationMapRoute(null, mapView, mapboxMap, R.style.NavigationMapRoute)
         }
@@ -413,7 +407,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
      * @param zone The list items binded object*/
     private fun zoneListItemClicked(zone: Feature) {
         if(zone != selectedZoneViewModel.selectedZone.value) {
-            bottomSheetBehavior.state = HIDDEN
+            bottomSheetBehavior.state = hidden
             selectedZoneViewModel.selectedZone.value = zone
             val geometry = zone.geometry()
             val wayPoint: Point
@@ -434,10 +428,21 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
      */
     private fun getGeometryPoint(geometry: Geometry?) : Point {
         return when (geometry) {
-            is Polygon -> geometry.coordinates()[0][0]
-            is MultiPolygon -> geometry.coordinates()[0][0][0]
+            is Polygon -> getPolygonCenter(geometry)
+            is MultiPolygon -> getPolygonCenter(geometry)
             else -> geometry as Point
         }
+    }
+    private fun getPolygonCenter(geometry: Geometry): Point {
+        val  builder  = LatLngBounds.Builder()
+        val polygon = geometry as Polygon
+        val outer = polygon.outer()
+        outer?.coordinates()?.forEach {
+            builder.include(LatLng(it.latitude(), it.longitude()))
+        }
+        val build = builder.build()
+        val center = build.center
+        return Point.fromLngLat(center.longitude, center.latitude)
     }
 
     private fun moveCameraToLocation(point: Point? = getUserLocation(), tilt: Double = 0.0, duration: Int = 2000, zoom: Double = 14.0) {
@@ -488,7 +493,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
     private fun getBottomSheetCallback() : BottomSheetBehavior.BottomSheetCallback {
         return object: BottomSheetBehavior.BottomSheetCallback() {
             override fun onStateChanged(bottomSheet: View, newState: Int) {
-                if(newState == COLLAPSED) {
+                if(newState == collapsed) {
                     val selectedZone = selectedZoneViewModel.selectedZone.value
                     selectedZone?.let {
                         if(selectedZone.hasProperty("zonecode")) {
