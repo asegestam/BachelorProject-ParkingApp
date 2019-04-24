@@ -1,5 +1,6 @@
 package com.example.smspark.views
 
+import android.app.AlertDialog
 import android.location.Location
 import android.os.Bundle
 import android.util.Log
@@ -7,10 +8,14 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
 import com.example.smspark.R
-import com.example.smspark.model.RouteViewModel
+import com.example.smspark.viewmodels.RouteViewModel
+import com.example.smspark.viewmodels.SelectedZoneViewModel
+import com.google.android.material.snackbar.Snackbar
 import com.mapbox.api.directions.v5.models.DirectionsRoute
 import com.mapbox.geojson.Point
 import com.mapbox.services.android.navigation.ui.v5.*
@@ -19,19 +24,21 @@ import com.mapbox.services.android.navigation.ui.v5.listeners.RouteListener
 import com.mapbox.services.android.navigation.v5.offroute.OffRouteListener
 import com.mapbox.services.android.navigation.v5.routeprogress.ProgressChangeListener
 import com.mapbox.services.android.navigation.v5.routeprogress.RouteProgress
+import com.mapbox.services.android.navigation.v5.utils.RouteUtils
 import kotlinx.android.synthetic.main.fragment_navigation.*
 import org.koin.android.viewmodel.ext.android.sharedViewModel
-import org.koin.core.parameter.parametersOf
 
 
 class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationListener, ProgressChangeListener, OffRouteListener, RouteListener {
 
     private lateinit var navigationView: NavigationView
-    private lateinit var currentRoute: DirectionsRoute
     private lateinit var soundButton: NavigationButton
+    private lateinit var currentRoute: DirectionsRoute
+    private lateinit var snackbar: Snackbar
+    private var routingToDestination = false
+    private val routeViewModel: RouteViewModel by sharedViewModel()
+    private val selectedZoneViewModel: SelectedZoneViewModel by sharedViewModel()
 
-
-    private val routeViewModel: RouteViewModel by sharedViewModel { parametersOf(requireContext()) }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View? {
@@ -54,16 +61,15 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
     }
 
     override fun onNavigationReady(isRunning: Boolean) {
-        val route = routeViewModel.route.value
-        route?.let {
-            currentRoute = route
-            startNavigation()
-        }
+        routeViewModel.getRoute().observe(this, Observer {
+            navigationView.drawRoute(it)
+            startNavigation(it)
+        })
     }
 
-    private fun startNavigation() {
+    private fun startNavigation(route: DirectionsRoute) {
         val options: NavigationViewOptions = NavigationViewOptions.builder()
-                .directionsRoute(currentRoute)
+                .directionsRoute(route)
                 .shouldSimulateRoute(true)
                 .navigationListener(this)
                 .progressChangeListener(this)
@@ -86,16 +92,53 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
     }
 
     override fun onProgressChange(location: Location?, routeProgress: RouteProgress?) {
-        if(routeProgress != null) {
-            val progressFraction = routeProgress.currentLegProgress().fractionTraveled()
-            if(progressFraction >= 0.99f && routeProgress.remainingWaypoints() == 1) {
-                Toast.makeText(context, "Du är nu framme på parkeringen", Toast.LENGTH_LONG).show()
-            } else if(progressFraction >= 0.99f && routeProgress.remainingWaypoints() == 0) {
-                Toast.makeText(context, "Du är nu på din destination", Toast.LENGTH_LONG).show()
+            val progressFraction = routeProgress?.currentLegProgress()?.fractionTraveled()
+            val routeUtils = RouteUtils()
+            Log.d("NavigationFragment", routeProgress?.currentState().toString())
+            if(progressFraction!! >= 0.95f && !routingToDestination) {
+                navigationView.stopNavigation()
+                showParkingDialog()
             }
-        }
-        Log.d("NavigationFragment", "progress " + routeProgress?.currentLegProgress()?.fractionTraveled())
+            if (routeUtils.isArrivalEvent(routeProgress)) {
+                navigationView.retrieveMapboxNavigation()?.removeProgressChangeListener(this)
+                showSnackBar(R.string.destination_arrival, R.color.colorAccentLight, Snackbar.LENGTH_INDEFINITE, true)
+            }
+    }
 
+    private fun showParkingDialog() {
+        val builder = AlertDialog.Builder(requireContext(), R.style.AlertDialogCustom)
+            builder.apply {
+                setTitle("Vill du starta parkering?")
+                setMessage("Parkeringen kommer att startas på " + selectedZoneViewModel.selectedZone.value?.getStringProperty("zone_name"))
+                setIcon(R.drawable.park_blue)
+                setPositiveButton("JA") { _, _ ->
+                    showSnackBar(R.string.parking_success, R.color.colorSuccess)
+                    startWalkingDirections()
+                }
+                setNegativeButton("AVBRYT") {_, _ -> showSnackBar(R.string.parking_cancel, R.color.colorPrimary, Snackbar.LENGTH_LONG)}
+                create()
+                show()
+            }
+    }
+
+    private fun startWalkingDirections() {
+        val parking = routeViewModel.routeWayPoint.value
+        val destination = routeViewModel.routeDestination.value
+        Log.d("NavigationFragment", "Destination point " + destination.toString())
+        if(parking != null && destination != null) {
+            routeViewModel.getSimpleRoute(parking, destination, "walking")
+            routingToDestination = true
+        }
+    }
+
+    private fun showSnackBar(text: Int, color: Int, length: Int = Snackbar.LENGTH_SHORT, hasButton: Boolean = false) {
+        snackbar = Snackbar.make(navigation_view_fragment, text, length)
+        val snackbarView = snackbar.view
+        snackbarView.setBackgroundColor(ContextCompat.getColor(requireContext(), color))
+        if(hasButton) {
+            snackbar.setAction("OK") { findNavController().navigate(R.id.navigation_to_map) }
+        }
+        snackbar.show()
     }
 
     override fun onFailedReroute(errorMessage: String?) {
@@ -112,8 +155,7 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
     }
 
     override fun onArrival() {
-        println("HELLO U HAVE ARRIVED1!!")
-        Toast.makeText(context, "Du är nu på parkeringen!", Toast.LENGTH_LONG).show()
+        Log.d("NavigationFragment", "Arrived")
     }
 
     override fun userOffRoute(location: Location?) {

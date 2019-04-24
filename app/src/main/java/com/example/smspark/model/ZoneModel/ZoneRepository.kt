@@ -1,7 +1,6 @@
-package com.example.smspark.model.ZoneModel
+package com.example.smspark.model.zonemodel
 
 import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import com.mapbox.geojson.FeatureCollection
 
 interface ZoneRepository {

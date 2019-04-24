@@ -1,4 +1,4 @@
-package com.example.smspark.model.ZoneModel
+package com.example.smspark.model.zonemodel
 
 import com.google.gson.annotations.SerializedName
 

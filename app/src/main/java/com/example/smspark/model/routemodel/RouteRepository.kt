@@ -1,20 +1,19 @@
-package com.example.smspark.model
+package com.example.smspark.model.routemodel
 
 import android.content.Context
-import android.util.Log
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
 import com.mapbox.api.directions.v5.models.DirectionsResponse
 import com.mapbox.api.directions.v5.models.DirectionsRoute
 import com.mapbox.geojson.Point
 import com.mapbox.mapboxsdk.Mapbox
 import com.mapbox.services.android.navigation.v5.navigation.NavigationRoute
+import org.koin.core.KoinComponent
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import timber.log.Timber
 
-class RouteViewModel(val context: Context): ViewModel() {
+class RouteRepository(val context: Context): KoinComponent {
 
     val route: MutableLiveData<DirectionsRoute> by lazy {
         MutableLiveData<DirectionsRoute>()
@@ -42,8 +41,8 @@ class RouteViewModel(val context: Context): ViewModel() {
                     override fun onFailure(call: Call<DirectionsResponse>, throwable: Throwable) {
                     }
                 })
-
     }
+
     /** Returns a route from a origin point, to a destination with a waypoint in between
      * @param origin Start location of the route, usually the user location
      * @param wayPoint A stop point in the route between start and destination
