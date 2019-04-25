@@ -9,12 +9,12 @@ import com.mapbox.geojson.Point
 
 class RouteViewModel(private val repo: RouteRepository) : ViewModel() {
 
-     val routeDestination: MutableLiveData<Point> by lazy {
-        MutableLiveData<Point>()
+     val routeDestination: MutableLiveData<DirectionsRoute> by lazy {
+        MutableLiveData<DirectionsRoute>()
     }
 
-    val routeWayPoint: MutableLiveData<Point> by lazy {
-        MutableLiveData<Point>()
+    val routeWayPoint: MutableLiveData<DirectionsRoute> by lazy {
+        MutableLiveData<DirectionsRoute>()
     }
 
     fun getRoute(): LiveData<DirectionsRoute> {

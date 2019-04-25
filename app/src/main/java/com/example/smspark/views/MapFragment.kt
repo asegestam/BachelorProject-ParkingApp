@@ -66,6 +66,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
     // variables for calculating and drawing a route
     private var navigationMapRoute: NavigationMapRoute? = null
     private var destination: Point? = null
+    private var routeMap = HashMap<String, DirectionsRoute>()
     //RecyclerView fields
     private lateinit var recyclerView: RecyclerView
     private lateinit var zoneAdapter: ZoneAdapter
@@ -137,8 +138,11 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
             val wayPointFeature = Feature.fromJson(it.getString("wayPointFeatureArg"))
             destination = destinationPoint
             zoneViewModel.getSpecificZones(destinationPoint.latitude(), destinationPoint.longitude(), 500)
-            routeViewModel.getWayPointRoute(fromPoint, wayPoint, destinationPoint, "driving")
+            routeViewModel.getSimpleRoute(fromPoint, wayPoint, "driving")
+            routeViewModel.getSimpleRoute(wayPoint, destinationPoint, "walking")
+            //routeViewModel.getWayPointRoute(fromPoint, wayPoint, destinationPoint, "driving")
             addMarkerOnMap(destinationPoint, false)
+
             addMarkerOnMap(wayPoint, true)
             selectedZoneViewModel.selectedZone.value = wayPointFeature
         }
@@ -241,9 +245,8 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
             val wayPoint = Point.fromLngLat(point.longitude, point.latitude)
             val source = mapboxMap?.style?.getSourceAs<GeoJsonSource>("map-click-marker")
             source?.setGeoJson(Feature.fromGeometry(wayPoint))
-            routeViewModel.getWayPointRoute(originPoint, wayPoint, destination!!, "driving")
-            routeViewModel.routeDestination.postValue(destination)
-            routeViewModel.routeWayPoint.postValue(wayPoint)
+            routeViewModel.getSimpleRoute(originPoint!!, wayPoint, "driving")
+            routeViewModel.getSimpleRoute(wayPoint, destination!!, "walking")
         }
         return true
     }
@@ -362,7 +365,17 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
         if(navigationMapRoute == null) {
             navigationMapRoute = NavigationMapRoute(null, mapView, mapboxMap!!, R.style.NavigationMapRoute)
         }
-        navigationMapRoute?.addRoute(route)
+
+        val profile = route.routeOptions()?.profile()
+
+        Log.d(TAG, "" + profile)
+
+        when(profile) {
+            "driving" -> routeViewModel.routeDestination.postValue(route)
+            "walking" -> routeViewModel.routeWayPoint.postValue(route)
+        }
+        routeMap[profile!!] = route
+        navigationMapRoute?.addRoutes(ArrayList<DirectionsRoute>(routeMap.values))
         startNavigationButton.visibility = View.VISIBLE
     }
 
@@ -387,7 +400,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
             handleAutoCompleteResult(data)
             navigationMapRoute?.updateRouteVisibilityTo(false)
             startNavigationButton.visibility = View.GONE
-            snackbar = Snackbar.make(coordinator, R.string.select_zone , Snackbar.LENGTH_SHORT)
+            snackbar = Snackbar.make(coordinator, R.string.select_zone , Snackbar.LENGTH_LONG)
             val snackbarView = snackbar.view
             snackbarView.setBackgroundColor(ContextCompat.getColor(activity!!.applicationContext,R.color.mapbox_blue))
             snackbar.show()
@@ -420,7 +433,9 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
                 wayPoint = getGeometryPoint(geometry)
                 addMarkerOnMap(wayPoint, true)
                 if(destination != null) {
-                    routeViewModel.getWayPointRoute(getUserLocation(), wayPoint, destination!!, "driving")
+                    //routeViewModel.getWayPointRoute(getUserLocation(), wayPoint, destination!!, "driving")
+                    routeViewModel.getSimpleRoute(getUserLocation()!!, wayPoint, "driving")
+                    routeViewModel.getSimpleRoute(wayPoint, destination!!, "walking")
                 }
             }
         } else {
