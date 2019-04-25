@@ -33,7 +33,6 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
 
     private lateinit var navigationView: NavigationView
     private lateinit var soundButton: NavigationButton
-    private lateinit var currentRoute: DirectionsRoute
     private lateinit var snackbar: Snackbar
     private var routingToDestination = false
     private val routeViewModel: RouteViewModel by sharedViewModel()
@@ -122,13 +121,6 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
     }
 
     private fun startWalkingDirections() {
-        /*val parking = routeViewModel.routeWayPoint.value
-        val destination = routeViewModel.routeDestination.value
-        Log.d("NavigationFragment", "Destination point " + destination.toString())
-        if(parking != null && destination != null) {
-            routeViewModel.getSimpleRoute(parking, destination, "walking")
-            routingToDestination = true
-        }*/
         routingToDestination = true
         val route = routeViewModel.routeWayPoint.value!!
         navigationView.drawRoute(route)

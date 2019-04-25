@@ -480,8 +480,8 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
         mapboxMap?.let {
             it.locationComponent.apply {
                 if(isLocationComponentEnabled) {
-                    lastKnownLocation?.let {
-                        return Point.fromLngLat(it.longitude, it.latitude)
+                    lastKnownLocation?.let {location ->
+                        return Point.fromLngLat(location.longitude, location.latitude)
                     }
                 }
             }
