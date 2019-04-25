@@ -245,9 +245,8 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
             val wayPoint = Point.fromLngLat(point.longitude, point.latitude)
             val source = mapboxMap?.style?.getSourceAs<GeoJsonSource>("map-click-marker")
             source?.setGeoJson(Feature.fromGeometry(wayPoint))
-            routeViewModel.getWayPointRoute(originPoint, wayPoint, destination!!, "driving")
-            routeViewModel.routeDestination.postValue(destination)
-            routeViewModel.routeWayPoint.postValue(wayPoint)
+            routeViewModel.getSimpleRoute(originPoint!!, wayPoint, "driving")
+            routeViewModel.getSimpleRoute(wayPoint, destination!!, "walking")
         }
         return true
     }
@@ -367,8 +366,15 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
             navigationMapRoute = NavigationMapRoute(null, mapView, mapboxMap!!, R.style.NavigationMapRoute)
         }
 
-        Log.d(TAG, "" + route.routeOptions()?.profile())
-        routeMap[route.routeOptions()!!.profile()] = route
+        val profile = route.routeOptions()?.profile()
+
+        Log.d(TAG, "" + profile)
+
+        when(profile) {
+            "driving" -> routeViewModel.routeDestination.postValue(route)
+            "walking" -> routeViewModel.routeWayPoint.postValue(route)
+        }
+        routeMap[profile!!] = route
         navigationMapRoute?.addRoutes(ArrayList<DirectionsRoute>(routeMap.values))
         startNavigationButton.visibility = View.VISIBLE
     }

@@ -61,7 +61,7 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
     }
 
     override fun onNavigationReady(isRunning: Boolean) {
-        routeViewModel.getRoute().observe(this, Observer {
+        routeViewModel.routeDestination.observe(this, Observer {
             navigationView.drawRoute(it)
             startNavigation(it)
         })
@@ -95,7 +95,7 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
             val progressFraction = routeProgress?.currentLegProgress()?.fractionTraveled()
             val routeUtils = RouteUtils()
             Log.d("NavigationFragment", routeProgress?.currentState().toString())
-            if(progressFraction!! >= 0.95f && !routingToDestination) {
+            if(progressFraction!! >= 0.98f && !routingToDestination) {
                 navigationView.stopNavigation()
                 showParkingDialog()
             }
@@ -122,13 +122,17 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
     }
 
     private fun startWalkingDirections() {
-        val parking = routeViewModel.routeWayPoint.value
+        /*val parking = routeViewModel.routeWayPoint.value
         val destination = routeViewModel.routeDestination.value
         Log.d("NavigationFragment", "Destination point " + destination.toString())
         if(parking != null && destination != null) {
             routeViewModel.getSimpleRoute(parking, destination, "walking")
             routingToDestination = true
-        }
+        }*/
+        routingToDestination = true
+        val route = routeViewModel.routeWayPoint.value!!
+        navigationView.drawRoute(route)
+        startNavigation(route)
     }
 
     private fun showSnackBar(text: Int, color: Int, length: Int = Snackbar.LENGTH_SHORT, hasButton: Boolean = false) {
