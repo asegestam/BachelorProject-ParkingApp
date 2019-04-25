@@ -1,4 +1,4 @@
-package com.example.smspark.model.ZoneModel
+package com.example.smspark.model.zonemodel
 
 import android.util.Log
 import androidx.lifecycle.LiveData

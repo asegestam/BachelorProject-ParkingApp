@@ -6,22 +6,17 @@ import android.app.Activity
 import android.content.Intent
 import android.location.Location
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.Toast
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
-import androidx.navigation.Navigation.findNavController
-import androidx.navigation.findNavController
 import androidx.navigation.fragment.findNavController
 import com.example.smspark.R
 import com.example.smspark.viewmodels.ZoneViewModel
 import com.google.android.gms.location.LocationServices
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
-import com.google.gson.JsonObject
 import com.mapbox.geojson.Feature
 import com.mapbox.geojson.Point
 import com.mapbox.geojson.Polygon
@@ -37,10 +32,10 @@ import org.koin.android.viewmodel.ext.android.sharedViewModel
 
 class TripFragment : Fragment(), OnMapReadyCallback {
 
-    val FROM_TEXT_VIEW = 1
-    val DESTINATION_TEXT_VIEW = 2
-    var fromLatLng: String? = null
-    var destinationLatLng: String? = null
+    private val FROM_TEXT_VIEW = 1
+    private val DESTINATION_TEXT_VIEW = 2
+    private var fromLatLng: String? = null
+    private var destinationLatLng: String? = null
 
     //lazy inject ViewModel
     private val zoneViewModel: ZoneViewModel by sharedViewModel()
@@ -70,7 +65,7 @@ class TripFragment : Fragment(), OnMapReadyCallback {
                         // Got last known location. In some rare situations this can be null.
                         if ((location != null) && (textDestination.text.toString() != "Current Location")) {
                             textFrom.text = "Current Location"
-                            var point = Point.fromLngLat(location.longitude, location.latitude)
+                            val point = Point.fromLngLat(location.longitude, location.latitude)
                             fromLatLng = point.toJson().toString()
                         }
                     }
@@ -88,40 +83,38 @@ class TripFragment : Fragment(), OnMapReadyCallback {
                 Toast.makeText(requireContext(), "Can´t swap", Toast.LENGTH_LONG).show()
             }
         }
-
         initButtons()
         initSpinner()
         initObservables()
-
     }
 
     private fun initObservables(){
         zoneViewModel.getObservableZones().observe(this, Observer { data ->
-            var wayPoint: Point? = null
-            val first = data.features()?.first()
-
-            //Toast.makeText(requireContext(), "" +first?.getNumberProperty("distance"), Toast.LENGTH_LONG ).show()
-            first?.let {
-                if (first.geometry() is Point)
-                    wayPoint = first.geometry() as Point
+            val wayPoint: Point
+            if(data.features().isNullOrEmpty()) {
+                Toast.makeText(requireContext(), "No zones found near destination", Toast.LENGTH_SHORT).show()
+            } else {
+                val first = data.features()?.first()
+                wayPoint = if (first?.geometry() is Point)
+                    first.geometry() as Point
                 else {
                     val  builder  = LatLngBounds.Builder()
-                    val polygon = first.geometry() as Polygon
+                    val polygon = first?.geometry() as Polygon
                     val outer = polygon.outer()
                     outer?.coordinates()?.forEach {
                         builder.include(LatLng(it.latitude(), it.longitude()))
                     }
                     val build = builder.build()
                     val center = build.center
-                    wayPoint = Point.fromLngLat(center.longitude, center.latitude)
+                    Point.fromLngLat(center.longitude, center.latitude)
                 }
+                checkArguments(wayPoint, first)
             }
-            wayPoint.let { checkArguments(wayPoint!!, first!!) }
         })
     }
 
     private fun initSpinner(){
-        var arrayAdapter = ArrayAdapter<String>(requireContext(),
+        val arrayAdapter = ArrayAdapter<String>(requireContext(),
                 R.layout.support_simple_spinner_dropdown_item,
                 resources.getStringArray(R.array.vehicles))
 

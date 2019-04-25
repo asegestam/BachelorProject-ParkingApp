@@ -31,6 +31,10 @@
     <string name="map">Map</string>
     <string name="handicap">Handikappsparkering</string>
 
+    <string name="parking_success">Parkering startad!</string>
+    <string name="parking_cancel">Parkering ej startad..</string>
+    <string name="destination_arrival">Du är nu vid din destination!</string>
+
 
 
     //Spinner

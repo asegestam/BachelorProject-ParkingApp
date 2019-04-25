@@ -25,4 +25,23 @@
         <item name="behavior_skipCollapsed">false</item>
         <item name="behavior_peekHeight">200dp</item>
     </style>
+
+    <style name="AlertDialogCustom" parent="Theme.AppCompat.Light.Dialog.Alert">
+        <item name="android:buttonBarNegativeButtonStyle">@style/NegativeButtonStyle</item>
+        <item name="android:buttonBarPositiveButtonStyle">@style/PositiveButtonStyle</item>
+        <!--title and message color-->
+        <item name="android:textColorPrimary">@color/colorAccentLight</item>
+        <!--dialog background-->
+        <item name="android:background">@color/colorPrimaryLight</item>
+    </style>
+
+    <style name="NegativeButtonStyle" parent="Widget.AppCompat.Button.ButtonBar.AlertDialog">
+        <item name="android:textColor">#f00</item>
+        <item name="android:backgroundTint">@color/colorPrimaryLight</item>
+    </style>
+
+    <style name="PositiveButtonStyle" parent="Widget.AppCompat.Button.ButtonBar.AlertDialog">
+        <item name="android:textColor">@color/colorAccentLight</item>
+        <item name="android:backgroundTint">@color/colorPrimaryLight</item>
+    </style>
 </resources>

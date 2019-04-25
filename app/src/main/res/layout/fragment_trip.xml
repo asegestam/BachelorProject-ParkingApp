@@ -18,6 +18,7 @@
         android:gravity="center"
         android:hint="From"
         android:maxLines="1"
+
         android:textSize="22sp"
         app:layout_constraintEnd_toStartOf="@+id/iv_my_location"
         app:layout_constraintStart_toStartOf="parent"
@@ -26,15 +27,13 @@
 
     <ImageView
         android:id="@+id/iv_my_location"
-        android:layout_width="30dp"
+        android:layout_width="0dp"
         android:layout_height="30dp"
-        android:layout_marginStart="20dp"
         android:layout_marginTop="16dp"
         android:layout_marginEnd="8dp"
         android:src="@drawable/ic_my_location"
         android:tint="@color/mapbox_blue"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintTop_toTopOf="parent" />
 
     <View
@@ -64,7 +63,7 @@
 
     <ImageView
         android:id="@+id/iv_swap"
-        android:layout_width="30dp"
+        android:layout_width="0dp"
         android:layout_height="30dp"
         android:layout_gravity="center"
         android:layout_marginTop="16dp"

@@ -29,7 +29,7 @@ class MainActivity : AppCompatActivity() {
         return super.onCreateOptionsMenu(menu)
     }
 
-    public fun changeNavBarVisibility(visible: Boolean) {
+    fun changeNavBarVisibility(visible: Boolean) {
         when(visible) {
             true -> navigationView.visibility = View.VISIBLE
             false -> navigationView.visibility = View.GONE
