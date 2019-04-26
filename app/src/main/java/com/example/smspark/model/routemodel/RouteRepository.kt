@@ -54,6 +54,5 @@ class RouteRepository(val context: Context): KoinComponent {
         getSimpleRoute(origin, wayPoint, "driving")
         //Create simple route from the parking (wayPoint) to the final destination (destination)
         getSimpleRoute(wayPoint, destination, "walking")
-
     }
 }
