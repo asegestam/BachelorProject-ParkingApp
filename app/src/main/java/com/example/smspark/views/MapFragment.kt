@@ -57,6 +57,9 @@ import org.koin.android.viewmodel.ext.android.sharedViewModel
 import org.koin.android.viewmodel.ext.android.viewModel
 import org.koin.core.parameter.parametersOf
 import timber.log.Timber
+import java.math.BigDecimal
+import java.math.RoundingMode
+import java.util.concurrent.TimeUnit
 
 class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListener, MapboxMap.OnMoveListener {
     // variables for adding location layer
@@ -138,17 +141,14 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
 
     private fun checkTripFragment() {
         arguments?.let {
-            val fromPoint = Point.fromJson(it.getString("fromArg"))
-            val destinationPoint = Point.fromJson(it.getString("destArg"))
-            val wayPoint = Point.fromJson(it.getString("wayPointArg"))
-            val wayPointFeature = Feature.fromJson(it.getString("wayPointFeatureArg"))
+            val fromPoint = Point.fromJson(it?.getString("fromArg"))
+            val destinationPoint = Point.fromJson(it?.getString("destArg"))
+            val wayPoint = Point.fromJson(it?.getString("wayPointArg"))
+            val wayPointFeature = Feature.fromJson(it?.getString("wayPointFeatureArg"))
             destination = destinationPoint
-            zoneViewModel.getSpecificZones(destinationPoint.latitude(), destinationPoint.longitude(), 500)
-            routeViewModel.getSimpleRoute(fromPoint, wayPoint, "driving")
-            routeViewModel.getSimpleRoute(wayPoint, destinationPoint, "walking")
-            //routeViewModel.getWayPointRoute(fromPoint, wayPoint, destinationPoint, "driving")
+            zoneViewModel.getSpecificZones(destinationPoint.latitude(), destinationPoint.longitude(), 1000)
+            routeViewModel.getWayPointRoute(fromPoint, wayPoint, destinationPoint)
             addMarkerOnMap(destinationPoint, false)
-
             addMarkerOnMap(wayPoint, true)
             selectedZoneViewModel.selectedZone.value = wayPointFeature
         }
@@ -185,7 +185,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
         selectedZoneViewModel.selectedZone.observe(this, Observer {
             bottomSheetBehavior.state = collapsed
             val zonePoint = getGeometryPoint(it.geometry())
-            moveCameraToLocation(zonePoint, zoom = 16.0)
+            moveCameraToLocation(zonePoint, zoom = 14.0)
         })
         //Observe an requested route, if changed this will add the route to the map
         routeViewModel.getRoute().observe(this, Observer { route -> addRouteToMap(route) })
@@ -255,8 +255,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
             val wayPoint = Point.fromLngLat(point.longitude, point.latitude)
             val source = mapboxMap?.style?.getSourceAs<GeoJsonSource>("map-click-marker")
             source?.setGeoJson(Feature.fromGeometry(wayPoint))
-            routeViewModel.getSimpleRoute(originPoint!!, wayPoint, "driving")
-            routeViewModel.getSimpleRoute(wayPoint, destination!!, "walking")
+            routeViewModel.getWayPointRoute(originPoint!!, wayPoint, destination!!)
         }
         return true
     }
@@ -321,9 +320,9 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
                 .withProperties(iconImage(parkingImage), iconSize(0.35f))
         val handicapLayer = SymbolLayer(handicapLayer, handicapSource)
                         .withProperties(iconImage(handicapImage), iconSize(0.8f))
-        polygonLayer.minZoom = 14f
-        pointLayer.minZoom = 14f
-        handicapLayer.minZoom = 14f
+        polygonLayer.minZoom = 13f
+        pointLayer.minZoom = 13f
+        handicapLayer.minZoom = 13f
         loadedMapStyle.addLayerAbove(polygonLayer, "road-street")
         loadedMapStyle.addLayer(pointLayer)
         loadedMapStyle.addLayer(handicapLayer)
@@ -424,9 +423,9 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
         feature?.let {
             destination = feature.geometry() as Point
             destination?.let {
-                moveCameraToLocation(it, 15.0, 2000, zoom = 16.0)
+                moveCameraToLocation(it, 15.0, 2000, zoom = 12.0)
                 addMarkerOnMap(it, false)
-                zoneViewModel.getSpecificZones(latitude = it.latitude(), longitude = it.longitude(), radius = 2000)
+                zoneViewModel.getSpecificZones(latitude = it.latitude(), longitude = it.longitude(), radius = 1000)
             }
         }
     }
@@ -443,9 +442,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
                 wayPoint = getGeometryPoint(geometry)
                 addMarkerOnMap(wayPoint, true)
                 if(destination != null) {
-                    //routeViewModel.getWayPointRoute(getUserLocation(), wayPoint, destination!!, "driving")
-                    routeViewModel.getSimpleRoute(getUserLocation()!!, wayPoint, "driving")
-                    routeViewModel.getSimpleRoute(wayPoint, destination!!, "walking")
+                    routeViewModel.getWayPointRoute(getUserLocation()!!, wayPoint, destination!!)
                 }
             }
         } else {
@@ -484,7 +481,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
         return Point.fromLngLat(center.longitude, center.latitude)
     }
 
-    private fun moveCameraToLocation(point: Point? = getUserLocation(), tilt: Double = 0.0, duration: Int = 2000, zoom: Double = 14.0) {
+    private fun moveCameraToLocation(point: Point? = getUserLocation(), tilt: Double = 0.0, duration: Int = 2000, zoom: Double = 12.0) {
         point?.let {
             mapboxMap?.moveCamera(CameraUpdateFactory.newCameraPosition(CameraPosition.Builder()
                     .target(LatLng(point.latitude(), point.longitude()))
@@ -538,14 +535,17 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
                     val selectedZone = selectedZoneViewModel.selectedZone.value
                     selectedZone?.let {
                         if(selectedZone.hasProperty("zonecode")) {
-                            bottomSheet.zoneType.text = getString(R.string.zon_kod) + selectedZone.getNumberProperty("zonecode").toInt()
+                            bottomSheet.zoneId.text = selectedZone.getNumberProperty("zonecode").toInt().toString()
                         } else {
                             bottomSheet.zoneType.text = getString(R.string.handicap)
                         }
                         //shared properties between the apis
                         bottomSheet.zoneName.text = selectedZone.getStringProperty("zone_name")
                         bottomSheet.zoneOwner.text = selectedZone.getStringProperty("zone_owner")
-                        bottomSheet.zoneDistance.text = selectedZone.getNumberProperty("distance").toInt().toString() + " m"
+                        bottomSheet.parkingDistance.text = selectedZone.getNumberProperty("distance").toInt().toString() + " m"
+                        bottomSheet.travelTime.text = calcEstimatedTravelTime().toString() + " min"
+                        bottomSheet.travelLength.text = calcEstimatedTravelLength().toString() + " km"
+
                     }
                 }
             }
@@ -554,9 +554,25 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
         }
     }
 
+    private fun calcEstimatedTravelTime(): String {
+        var totalTime = .0
+        ArrayList<DirectionsRoute>(routeMap.values).forEach{
+            totalTime += it.duration()!!
+        }
+        return TimeUnit.SECONDS.toMinutes(totalTime.toLong()).toInt().toString()
+    }
+
+    private fun calcEstimatedTravelLength() : String {
+        var totalLength = .0
+        ArrayList<DirectionsRoute>(routeMap.values).forEach{
+            totalLength += it.distance()!!
+        }
+        return "%.2f".format(totalLength/1000)
+    }
+
     override fun onMoveBegin(detector: MoveGestureDetector) {
         mapboxMap?.let {
-            if(it.cameraPosition.zoom < 14 && zoneViewModel.getObservableZones().value != null) {
+            if(it.cameraPosition.zoom < 13 && zoneViewModel.getObservableZones().value != null) {
                 Toast.makeText(requireContext(), "Zooma in för att se zoner", Toast.LENGTH_SHORT).show()
             }
         }

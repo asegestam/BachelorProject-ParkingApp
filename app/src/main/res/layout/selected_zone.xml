@@ -3,25 +3,26 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/bottom_sheet"
-    android:orientation="vertical"
-    android:layout_width="match_parent"
-    android:layout_height="115dp"
-    android:elevation="16dp"
     style="@style/BottomSheet"
-    app:layout_behavior="@string/bottom_sheet_behavior"
-    >
+    android:layout_width="match_parent"
+    android:layout_height="175dp"
+    android:elevation="16dp"
+    android:orientation="vertical"
+    app:layout_behavior="@string/bottom_sheet_behavior">
 
     <TextView
         android:id="@+id/vald_zon"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
-        android:layout_marginTop="48dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
         android:text="@string/vald_zon"
         android:textAllCaps="true"
         android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"
         android:textColor="@color/colorSuccess"
         android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -50,7 +51,7 @@
         android:layout_height="22dp"
         android:layout_marginTop="6dp"
         android:padding="1dp"
-        android:text="Zonkod: 3071"
+        android:text="Zonkod:"
         android:textAppearance="@style/MaterialAlertDialog.MaterialComponents.Body.Text"
         app:layout_constraintStart_toStartOf="@+id/zoneName"
         app:layout_constraintTop_toBottomOf="@+id/zoneName" />
@@ -59,6 +60,7 @@
         android:id="@+id/zoneOwner"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
         android:padding="1dp"
         android:text="EuroPark Svenska AB EPS"
         android:textAppearance="@style/MaterialAlertDialog.MaterialComponents.Body.Text"
@@ -70,15 +72,12 @@
         android:id="@+id/zoneDistance"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
-        android:text="5 km"
-        android:textAppearance="@style/NotificationTime"
-        android:textColor="@color/colorAccentLight"
+        android:layout_marginTop="8dp"
+        android:text="Avstånd:"
+        android:textAppearance="@style/MaterialAlertDialog.MaterialComponents.Body.Text"
         android:textSize="14sp"
-        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="@+id/zoneOwner"
-        app:layout_constraintTop_toBottomOf="@+id/zoneOwner"
-        app:layout_constraintVertical_bias="0.0" />
+        app:layout_constraintTop_toBottomOf="@+id/zoneOwner" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/sheet_ok_button"
@@ -100,4 +99,67 @@
         android:background="?android:attr/listDivider"
         app:layout_constraintStart_toEndOf="@+id/vald_zon"
         tools:layout_editor_absoluteY="0dp" />
+
+    <TextView
+        android:id="@+id/textView2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Restid:"
+        app:layout_constraintStart_toStartOf="@+id/zoneDistance"
+        app:layout_constraintTop_toBottomOf="@+id/zoneDistance" />
+
+    <TextView
+        android:id="@+id/textView3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        android:text="Resans längd:"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="@+id/textView2"
+        app:layout_constraintTop_toBottomOf="@+id/textView2"
+        app:layout_constraintVertical_bias="0.272" />
+
+    <TextView
+        android:id="@+id/parkingDistance"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        android:layout_marginTop="8dp"
+        android:text="TextView"
+        app:layout_constraintStart_toEndOf="@+id/zoneDistance"
+        app:layout_constraintTop_toBottomOf="@+id/zoneOwner" />
+
+    <TextView
+        android:id="@+id/travelTime"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:text="TextView"
+        app:layout_constraintStart_toEndOf="@+id/textView2"
+        app:layout_constraintTop_toBottomOf="@+id/parkingDistance" />
+
+    <TextView
+        android:id="@+id/travelLength"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        android:layout_marginTop="24dp"
+        android:layout_marginBottom="2dp"
+        android:text="TextView"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/textView3"
+        app:layout_constraintTop_toTopOf="@+id/travelTime" />
+
+    <TextView
+        android:id="@+id/zoneId"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        android:layout_marginTop="8dp"
+        android:text="TextView"
+        app:layout_constraintStart_toEndOf="@+id/zoneType"
+        app:layout_constraintTop_toBottomOf="@+id/zoneName" />
 </androidx.constraintlayout.widget.ConstraintLayout>

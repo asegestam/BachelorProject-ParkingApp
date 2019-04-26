@@ -93,8 +93,7 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
     override fun onProgressChange(location: Location?, routeProgress: RouteProgress?) {
             val progressFraction = routeProgress?.currentLegProgress()?.fractionTraveled()
             val routeUtils = RouteUtils()
-            Log.d("NavigationFragment", routeProgress?.currentState().toString())
-            if(progressFraction!! >= 0.98f && !routingToDestination) {
+            if(progressFraction!! >= 0.99f && !routingToDestination) {
                 navigationView.stopNavigation()
                 showParkingDialog()
             }

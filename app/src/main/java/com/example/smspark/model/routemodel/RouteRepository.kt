@@ -23,11 +23,13 @@ class RouteRepository(val context: Context): KoinComponent {
      * @param origin Start location of the route, usually the user location
      * @param destination Final destination of the route*/
     fun getSimpleRoute(origin: Point, destination: Point, profile: String) {
+        val wayPointName: String = if(profile == "walking") "Destination" else "Parking"
         NavigationRoute.builder(context)
                 .accessToken(Mapbox.getAccessToken()!!)
                 .origin(origin)
                 .profile(profile)
                 .destination(destination)
+                .addWaypointNames("Start", wayPointName)
                 .build()
                 .getRoute(object : Callback<DirectionsResponse> {
                     override fun onResponse(call: Call<DirectionsResponse>, response: Response<DirectionsResponse>) {
@@ -47,29 +49,10 @@ class RouteRepository(val context: Context): KoinComponent {
      * @param origin Start location of the route, usually the user location
      * @param wayPoint A stop point in the route between start and destination
      * @param destination Final destination of the route*/
-    fun getWayPointRoute(origin: Point?, wayPoint: Point, destination: Point, profile: String) {
-        if (origin != null) {
-            NavigationRoute.builder(context)
-                    .accessToken(Mapbox.getAccessToken()!!)
-                    .origin(origin)
-                    .addWaypoint(wayPoint)
-                    .profile(profile)
-                    .destination(destination)
-                    .addWaypointNames("Start", "Parkering", "Destination")
-                    .build()
-                    .getRoute(object : Callback<DirectionsResponse> {
-                        override fun onResponse(call: Call<DirectionsResponse>, response: Response<DirectionsResponse>) {
-                            if (response.body() == null) {
-                                Timber.e("No routes found")
-                                return
-                            }
-                            route.value = response.body()!!.routes()[0]
-                        }
-
-                        override fun onFailure(call: Call<DirectionsResponse>, throwable: Throwable) {
-                        }
-                    })
-
-        }
+    fun getWayPointRoute(origin: Point, wayPoint: Point, destination: Point) {
+        //Create simple route from the users location (origin) to the parking (wayPoint)
+        getSimpleRoute(origin, wayPoint, "driving")
+        //Create simple route from the parking (wayPoint) to the final destination (destination)
+        getSimpleRoute(wayPoint, destination, "walking")
     }
 }
