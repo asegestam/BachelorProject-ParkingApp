@@ -28,4 +28,5 @@ class RouteViewModel(private val repo: RouteRepository) : ViewModel() {
     fun getWayPointRoute(origin: Point, wayPoint: Point, destination: Point) {
         return repo.getWayPointRoute(origin, wayPoint, destination)
     }
+
 }
