@@ -94,8 +94,7 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
     override fun onProgressChange(location: Location?, routeProgress: RouteProgress?) {
             val progressFraction = routeProgress?.currentLegProgress()?.fractionTraveled()
             val routeUtils = RouteUtils()
-            Log.d("NavigationFragment", routeProgress?.currentState().toString())
-            if(progressFraction!! >= 0.98f && !routingToDestination) {
+            if(progressFraction!! >= 0.99f && !routingToDestination) {
                 navigationView.stopNavigation()
                 showParkingDialog()
             }
@@ -122,13 +121,6 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
     }
 
     private fun startWalkingDirections() {
-        /*val parking = routeViewModel.routeWayPoint.value
-        val destination = routeViewModel.routeDestination.value
-        Log.d("NavigationFragment", "Destination point " + destination.toString())
-        if(parking != null && destination != null) {
-            routeViewModel.getSimpleRoute(parking, destination, "walking")
-            routingToDestination = true
-        }*/
         routingToDestination = true
         val route = routeViewModel.routeWayPoint.value!!
         navigationView.drawRoute(route)
