@@ -132,17 +132,14 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
 
     private fun checkTripFragment() {
         arguments?.let {
-            val fromPoint = Point.fromJson(it.getString("fromArg"))
-            val destinationPoint = Point.fromJson(it.getString("destArg"))
-            val wayPoint = Point.fromJson(it.getString("wayPointArg"))
-            val wayPointFeature = Feature.fromJson(it.getString("wayPointFeatureArg"))
+            val fromPoint = Point.fromJson(it?.getString("fromArg"))
+            val destinationPoint = Point.fromJson(it?.getString("destArg"))
+            val wayPoint = Point.fromJson(it?.getString("wayPointArg"))
+            val wayPointFeature = Feature.fromJson(it?.getString("wayPointFeatureArg"))
             destination = destinationPoint
             zoneViewModel.getSpecificZones(destinationPoint.latitude(), destinationPoint.longitude(), 500)
-            routeViewModel.getSimpleRoute(fromPoint, wayPoint, "driving")
-            routeViewModel.getSimpleRoute(wayPoint, destinationPoint, "walking")
-            //routeViewModel.getWayPointRoute(fromPoint, wayPoint, destinationPoint, "driving")
+            routeViewModel.getWayPointRoute(fromPoint, wayPoint, destinationPoint)
             addMarkerOnMap(destinationPoint, false)
-
             addMarkerOnMap(wayPoint, true)
             selectedZoneViewModel.selectedZone.value = wayPointFeature
         }
@@ -245,8 +242,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
             val wayPoint = Point.fromLngLat(point.longitude, point.latitude)
             val source = mapboxMap?.style?.getSourceAs<GeoJsonSource>("map-click-marker")
             source?.setGeoJson(Feature.fromGeometry(wayPoint))
-            routeViewModel.getSimpleRoute(originPoint!!, wayPoint, "driving")
-            routeViewModel.getSimpleRoute(wayPoint, destination!!, "walking")
+            routeViewModel.getWayPointRoute(originPoint!!, wayPoint, destination!!)
         }
         return true
     }
@@ -433,9 +429,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
                 wayPoint = getGeometryPoint(geometry)
                 addMarkerOnMap(wayPoint, true)
                 if(destination != null) {
-                    //routeViewModel.getWayPointRoute(getUserLocation(), wayPoint, destination!!, "driving")
-                    routeViewModel.getSimpleRoute(getUserLocation()!!, wayPoint, "driving")
-                    routeViewModel.getSimpleRoute(wayPoint, destination!!, "walking")
+                    routeViewModel.getWayPointRoute(getUserLocation()!!, wayPoint, destination!!)
                 }
             }
         } else {
