@@ -141,10 +141,10 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
 
     private fun checkTripFragment() {
         arguments?.let {
-            val fromPoint = Point.fromJson(it?.getString("fromArg"))
-            val destinationPoint = Point.fromJson(it?.getString("destArg"))
-            val wayPoint = Point.fromJson(it?.getString("wayPointArg"))
-            val wayPointFeature = Feature.fromJson(it?.getString("wayPointFeatureArg"))
+            val fromPoint = Point.fromJson(it.getString("fromArg"))
+            val destinationPoint = Point.fromJson(it.getString("destArg"))
+            val wayPoint = Point.fromJson(it.getString("wayPointArg"))
+            val wayPointFeature = Feature.fromJson(it.getString("wayPointFeatureArg"))
             destination = destinationPoint
             zoneViewModel.getSpecificZones(destinationPoint.latitude(), destinationPoint.longitude(), 1000)
             routeViewModel.getWayPointRoute(fromPoint, wayPoint, destinationPoint)
@@ -342,7 +342,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
      * */
     private fun addZonesToMap(featureCollection: FeatureCollection) {
         val features = featureCollection.features()
-        //all features that is polygonsgfyft
+        //all features that is polygons
         val polygons = features?.filter { it.geometry() is Polygon}
         //all features that is points
         val points = features?.filter { it.geometry() is Point}
@@ -374,18 +374,16 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
         if(navigationMapRoute == null) {
             navigationMapRoute = NavigationMapRoute(null, mapView, mapboxMap!!, R.style.NavigationMapRoute)
         }
-
         val profile = route.routeOptions()?.profile()
-
-        Log.d(TAG, "" + profile)
-
-        when(profile) {
-            "driving" -> routeViewModel.routeDestination.postValue(route)
-            "walking" -> routeViewModel.routeWayPoint.postValue(route)
+        profile?.let {
+            when(it) {
+                "driving" -> routeViewModel.routeDestination.postValue(route)
+                "walking" -> routeViewModel.routeWayPoint.postValue(route)
+            }
+            routeMap[it] = route
+            navigationMapRoute?.addRoutes(ArrayList<DirectionsRoute>(routeMap.values))
+            startNavigationButton.visibility = View.VISIBLE
         }
-        routeMap[profile!!] = route
-        navigationMapRoute?.addRoutes(ArrayList<DirectionsRoute>(routeMap.values))
-        startNavigationButton.visibility = View.VISIBLE
     }
 
     /** Starts a Search AutoComplete activity for searching locations */
@@ -423,7 +421,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
         feature?.let {
             destination = feature.geometry() as Point
             destination?.let {
-                moveCameraToLocation(it, 15.0, 2000, zoom = 12.0)
+                moveCameraToLocation(it, 15.0, 2000, zoom = 14.0)
                 addMarkerOnMap(it, false)
                 zoneViewModel.getSpecificZones(latitude = it.latitude(), longitude = it.longitude(), radius = 1000)
             }
@@ -481,7 +479,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
         return Point.fromLngLat(center.longitude, center.latitude)
     }
 
-    private fun moveCameraToLocation(point: Point? = getUserLocation(), tilt: Double = 0.0, duration: Int = 2000, zoom: Double = 12.0) {
+    private fun moveCameraToLocation(point: Point? = getUserLocation(), tilt: Double = 0.0, duration: Int = 2000, zoom: Double = 14.0) {
         point?.let {
             mapboxMap?.moveCamera(CameraUpdateFactory.newCameraPosition(CameraPosition.Builder()
                     .target(LatLng(point.latitude(), point.longitude()))
@@ -543,8 +541,8 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
                         bottomSheet.zoneName.text = selectedZone.getStringProperty("zone_name")
                         bottomSheet.zoneOwner.text = selectedZone.getStringProperty("zone_owner")
                         bottomSheet.parkingDistance.text = selectedZone.getNumberProperty("distance").toInt().toString() + " m"
-                        bottomSheet.travelTime.text = calcEstimatedTravelTime().toString() + " min"
-                        bottomSheet.travelLength.text = calcEstimatedTravelLength().toString() + " km"
+                        bottomSheet.travelTime.text = calcEstimatedTravelTime() + " min"
+                        bottomSheet.travelLength.text = calcEstimatedTravelLength() + " km"
 
                     }
                 }
@@ -559,7 +557,8 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
         ArrayList<DirectionsRoute>(routeMap.values).forEach{
             totalTime += it.duration()!!
         }
-        return TimeUnit.SECONDS.toMinutes(totalTime.toLong()).toInt().toString()
+        val timeInMinutes = TimeUnit.SECONDS.toMinutes(totalTime.toLong()).toDouble()
+        return "%.2f".format(timeInMinutes)
     }
 
     private fun calcEstimatedTravelLength() : String {
