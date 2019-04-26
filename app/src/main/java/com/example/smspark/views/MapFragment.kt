@@ -6,6 +6,7 @@ import android.content.Intent
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.os.Bundle
+import android.os.Handler
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -36,6 +37,7 @@ import com.mapbox.mapboxsdk.camera.CameraUpdateFactory
 import com.mapbox.mapboxsdk.geometry.LatLng
 import com.mapbox.mapboxsdk.geometry.LatLngBounds
 import com.mapbox.mapboxsdk.location.LocationComponentActivationOptions
+import com.mapbox.mapboxsdk.location.LocationComponentOptions
 import com.mapbox.mapboxsdk.location.modes.CameraMode
 import com.mapbox.mapboxsdk.maps.MapView
 import com.mapbox.mapboxsdk.maps.MapboxMap
@@ -124,6 +126,10 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
                 initRecyclerView()
                 initObservers()
                 checkTripFragment()
+                moveCameraToLocation()
+                Handler().postDelayed({
+                    moveCameraToLocation()
+                }, 1000)
             }
         }
         initButtons()
@@ -223,17 +229,21 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
         // Check if permissions are enabled and if not request
         if (PermissionsManager.areLocationPermissionsGranted(context)) {
             // Activate the MapboxMap LocationComponent to show user location
+            val locationComponentOptions = LocationComponentOptions.builder(requireContext())
+                    .trackingGesturesManagement(false)
+                    .build()
             mapboxMap!!.locationComponent.apply {
                 activateLocationComponent(LocationComponentActivationOptions.builder(requireContext(), loadedMapStyle)
+                        .locationComponentOptions(locationComponentOptions)
                         .useDefaultLocationEngine(true)
                         .build())
                 isLocationComponentEnabled = true
                 // Set the component's camera mode
-                cameraMode = CameraMode.TRACKING_GPS
+                cameraMode = CameraMode.NONE_GPS
             }
         } else {
             permissionsManager = PermissionsManager(this)
-            permissionsManager.requestLocationPermissions(requireActivity())
+            permissionsManager.requestLocationPermissions(activity as MainActivity)
         }
     }
 
@@ -314,7 +324,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
         polygonLayer.minZoom = 14f
         pointLayer.minZoom = 14f
         handicapLayer.minZoom = 14f
-        loadedMapStyle.addLayer(polygonLayer)
+        loadedMapStyle.addLayerAbove(polygonLayer, "road-street")
         loadedMapStyle.addLayer(pointLayer)
         loadedMapStyle.addLayer(handicapLayer)
     }
@@ -333,7 +343,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
      * */
     private fun addZonesToMap(featureCollection: FeatureCollection) {
         val features = featureCollection.features()
-        //all features that is polygons
+        //all features that is polygonsgfyft
         val polygons = features?.filter { it.geometry() is Polygon}
         //all features that is points
         val points = features?.filter { it.geometry() is Point}
@@ -447,7 +457,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
     private fun getGeometryPoint(geometry: Geometry?) : Point {
         return when (geometry) {
             is Polygon -> getPolygonCenter(geometry)
-            is MultiPolygon -> getPolygonCenter(geometry)
+            is MultiPolygon -> getMultiPolygonCenter(geometry)
             else -> geometry as Point
         }
     }
@@ -456,22 +466,31 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
     private fun getPolygonCenter(geometry: Geometry): Point {
         val  builder  = LatLngBounds.Builder()
         val polygon = geometry as Polygon
-        val outer = polygon.outer()
-        outer?.coordinates()?.forEach {
+        polygon.outer()?.coordinates()?.forEach {
             builder.include(LatLng(it.latitude(), it.longitude()))
         }
-        val build = builder.build()
-        val center = build.center
+        val center = builder.build().center
+        return Point.fromLngLat(center.longitude, center.latitude)
+    }
+
+    /** Returns a middle point of a given Geometry, only used for MultiPolygons */
+    private fun getMultiPolygonCenter(geometry: Geometry): Point {
+        val builder = LatLngBounds.Builder()
+        val multiPolygon = geometry as MultiPolygon
+        multiPolygon.coordinates()[0][0].forEach { point ->
+            builder.include(LatLng(point.latitude(), point.longitude()))
+        }
+        val center = builder.build().center
         return Point.fromLngLat(center.longitude, center.latitude)
     }
 
     private fun moveCameraToLocation(point: Point? = getUserLocation(), tilt: Double = 0.0, duration: Int = 2000, zoom: Double = 14.0) {
         point?.let {
-            mapboxMap?.animateCamera(CameraUpdateFactory.newCameraPosition(CameraPosition.Builder()
+            mapboxMap?.moveCamera(CameraUpdateFactory.newCameraPosition(CameraPosition.Builder()
                     .target(LatLng(point.latitude(), point.longitude()))
                     .zoom(zoom)
                     .tilt(tilt)
-                    .build()), duration)
+                    .build()))
         }
     }
 

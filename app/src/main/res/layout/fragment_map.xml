@@ -6,11 +6,13 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:mapbox="http://schemas.android.com/apk/res-auto"
-    tools:context="com.example.smspark.views.MapFragment">
+    tools:context="com.example.smspark.views.MapFragment"
+    mapbox:layout_behavior="android.support.design.widget.BottomSheetBehavior">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        mapbox:layout_insetEdge="bottom">
 
         <com.mapbox.mapboxsdk.maps.MapView
             android:id="@+id/mapView"
@@ -18,7 +20,7 @@
             android:layout_height="0dp"
             mapbox:layout_constraintBottom_toBottomOf="parent"
             mapbox:layout_constraintEnd_toEndOf="parent"
-            mapbox:layout_constraintHorizontal_bias="1.0"
+            mapbox:layout_constraintHorizontal_bias="0.0"
             mapbox:layout_constraintStart_toStartOf="parent"
             mapbox:layout_constraintTop_toTopOf="parent"
             mapbox:layout_constraintVertical_bias="0.0"
@@ -42,7 +44,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:layout_marginEnd="24dp"
-            android:layout_marginBottom="16dp"
+            android:layout_marginBottom="6dp"
             android:elevation="8dp"
             android:src="@drawable/my_location"
             mapbox:backgroundTint="@color/colorPrimaryLight"
@@ -58,7 +60,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginEnd="16dp"
-            android:layout_marginBottom="16dp"
+            android:layout_marginBottom="12dp"
             mapbox:layout_constraintBottom_toBottomOf="@+id/mapView"
             mapbox:layout_constraintEnd_toEndOf="parent"
             android:elevation="8dp"
@@ -87,7 +89,6 @@
             mapbox:layout_dodgeInsetEdges="bottom" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
-
     <include
         layout="@layout/selected_zone"
         />
