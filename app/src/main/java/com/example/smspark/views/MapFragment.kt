@@ -39,6 +39,7 @@ import com.mapbox.mapboxsdk.geometry.LatLngBounds
 import com.mapbox.mapboxsdk.location.LocationComponentActivationOptions
 import com.mapbox.mapboxsdk.location.LocationComponentOptions
 import com.mapbox.mapboxsdk.location.modes.CameraMode
+import com.mapbox.mapboxsdk.location.modes.RenderMode
 import com.mapbox.mapboxsdk.maps.MapView
 import com.mapbox.mapboxsdk.maps.MapboxMap
 import com.mapbox.mapboxsdk.maps.Style
@@ -95,6 +96,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
     private lateinit var bottomSheetBehavior: BottomSheetBehavior<View>
     private val collapsed = BottomSheetBehavior.STATE_COLLAPSED
     private val hidden = BottomSheetBehavior.STATE_HIDDEN
+    private val expanded = BottomSheetBehavior.STATE_EXPANDED
     //lazy inject ViewModel
     private val zoneViewModel: ZoneViewModel by sharedViewModel()
     val selectedZoneViewModel: SelectedZoneViewModel by sharedViewModel()
@@ -198,9 +200,8 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
             startAutoCompleteActivity() }
 
         my_locationFab.setOnClickListener { moveCameraToLocation() }
-
-        sheet_ok_button.setOnClickListener { bottomSheetBehavior.state = hidden }
-
+        expandLess.setOnClickListener { bottomSheetBehavior.state = collapsed }
+        expandMore.setOnClickListener { bottomSheetBehavior.state = expanded }
         startNavigationButton!!.setOnClickListener { findNavController().navigate(R.id.mapFragment_to_navigation) }
     }
 
@@ -239,7 +240,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
                         .build())
                 isLocationComponentEnabled = true
                 // Set the component's camera mode
-                cameraMode = CameraMode.NONE_GPS
+                cameraMode = CameraMode.NONE
             }
         } else {
             permissionsManager = PermissionsManager(this)
@@ -529,23 +530,16 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
     private fun getBottomSheetCallback() : BottomSheetBehavior.BottomSheetCallback {
         return object: BottomSheetBehavior.BottomSheetCallback() {
             override fun onStateChanged(bottomSheet: View, newState: Int) {
-                if(newState == collapsed) {
-                    val selectedZone = selectedZoneViewModel.selectedZone.value
+                val selectedZone = selectedZoneViewModel.selectedZone.value
+                if(newState == collapsed)
                     selectedZone?.let {
-                        if(selectedZone.hasProperty("zonecode")) {
-                            bottomSheet.zoneId.text = selectedZone.getNumberProperty("zonecode").toInt().toString()
-                        } else {
-                            bottomSheet.zoneType.text = getString(R.string.handicap)
-                        }
-                        //shared properties between the apis
+                        bottomSheet.zoneId.text = selectedZone.getNumberProperty("zonecode").toInt().toString()
                         bottomSheet.zoneName.text = selectedZone.getStringProperty("zone_name")
                         bottomSheet.zoneOwner.text = selectedZone.getStringProperty("zone_owner")
-                        bottomSheet.parkingDistance.text = selectedZone.getNumberProperty("distance").toInt().toString() + " m"
-                        bottomSheet.travelTime.text = calcEstimatedTravelTime() + " min"
-                        bottomSheet.travelLength.text = calcEstimatedTravelLength() + " km"
-
+                        bottomSheet.travelLength.text = calcEstimatedTravelLength()
+                        bottomSheet.travelTime.text = calcEstimatedTravelTime()
+                        bottomSheet.parkingDistance.text= selectedZone.getNumberProperty("distance").toInt().toString()
                     }
-                }
             }
             override fun onSlide(bottomSheet: View, slideOffset: Float) {
             }
