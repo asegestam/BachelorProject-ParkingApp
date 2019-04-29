@@ -17,6 +17,9 @@ class RouteViewModel(private val repo: RouteRepository) : ViewModel() {
         MutableLiveData<DirectionsRoute>()
     }
 
+    val destination: MutableLiveData<Point> = repo.routeDestination
+
+
     fun getRoute(): LiveData<DirectionsRoute> {
         return repo.route
     }

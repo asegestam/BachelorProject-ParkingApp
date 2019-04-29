@@ -19,6 +19,10 @@ class RouteRepository(val context: Context): KoinComponent {
         MutableLiveData<DirectionsRoute>()
     }
 
+    val routeDestination: MutableLiveData<Point> by lazy {
+        MutableLiveData<Point>()
+    }
+
     /** Returns a route from a origin point, to a destination with a waypoint in between
      * @param origin Start location of the route, usually the user location
      * @param destination Final destination of the route*/
@@ -54,5 +58,6 @@ class RouteRepository(val context: Context): KoinComponent {
         getSimpleRoute(origin, wayPoint, "driving")
         //Create simple route from the parking (wayPoint) to the final destination (destination)
         getSimpleRoute(wayPoint, destination, "walking")
+        routeDestination.value = destination
     }
 }
