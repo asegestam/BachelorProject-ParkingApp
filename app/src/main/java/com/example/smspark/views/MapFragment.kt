@@ -467,6 +467,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
     /** Called when an item in the RecyclerView is clicked
      * @param zone The list items binded object*/
     private fun zoneListItemClicked(zone: Feature) {
+        bottomSheetBehavior.state = collapsed
         if(zone != selectedZoneViewModel.selectedZone.value) {
             selectedZoneViewModel.selectedZone.value = zone
             val geometry = zone.geometry()
