@@ -61,7 +61,7 @@
         app:layout_constraintTop_toBottomOf="@+id/zoneName" />
 
     <ImageView
-        android:id="@+id/expandMore"
+        android:id="@+id/expand"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
@@ -85,16 +85,14 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/divider"
         app:layout_constraintVertical_bias="0.0"
-        tools:layout_editor_absoluteX="-8dp">
+        tools:layout_editor_absoluteX="-29dp">
 
         <TextView
             android:id="@+id/travelInfo"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
             android:layout_marginTop="8dp"
-            android:layout_marginEnd="8dp"
-            android:text="ReseInformation"
+            android:text="@string/reseinfo"
             android:textAppearance="@style/TextAppearance.AppCompat.Display1"
             android:textColor="@color/colorAccentLight"
             android:textSize="24sp"
@@ -103,73 +101,37 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <TextView
-            android:id="@+id/parkingDistance"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="24dp"
-            android:text="450"
-            app:layout_constraintStart_toEndOf="@+id/walkingImage"
-            app:layout_constraintTop_toBottomOf="@+id/travelLength" />
 
         <TextView
             android:id="@+id/travelTime"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="24dp"
             android:text="15"
+            android:textSize="18sp"
             app:layout_constraintStart_toEndOf="@+id/timeImage"
             app:layout_constraintTop_toBottomOf="@+id/travelInfo" />
-
-        <TextView
-            android:id="@+id/travelLength"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="24dp"
-            android:text="22"
-            app:layout_constraintStart_toEndOf="@+id/carImage"
-            app:layout_constraintTop_toBottomOf="@+id/travelTime" />
-
-        <TextView
-            android:id="@+id/travelLengthUnit"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="24dp"
-            android:text="km"
-            app:layout_constraintStart_toEndOf="@+id/travelLength"
-            app:layout_constraintTop_toBottomOf="@+id/travelTimeUnit" />
 
         <TextView
             android:id="@+id/travelTimeUnit"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="16dp"
+            android:layout_marginStart="2dp"
+            android:layout_marginTop="24dp"
             android:text="@string/min"
+            android:textSize="18sp"
             app:layout_constraintStart_toEndOf="@+id/travelTime"
             app:layout_constraintTop_toBottomOf="@+id/travelInfo" />
 
-        <TextView
-            android:id="@+id/parkingDistanceUnit"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="4dp"
-            android:layout_marginTop="24dp"
-            android:text="m"
-            app:layout_constraintStart_toEndOf="@+id/parkingDistance"
-            app:layout_constraintTop_toBottomOf="@+id/travelLengthUnit" />
 
         <ImageView
             android:id="@+id/timeImage"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginTop="16dp"
-            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginStart="24dp"
+            android:layout_marginTop="24dp"
+            app:layout_constraintStart_toEndOf="@+id/divider2"
             app:layout_constraintTop_toBottomOf="@+id/travelInfo"
             app:srcCompat="@drawable/time" />
 
@@ -177,37 +139,151 @@
             android:id="@+id/carImage"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            app:layout_constraintStart_toStartOf="@+id/timeImage"
-            app:layout_constraintTop_toBottomOf="@+id/timeImage"
+            android:layout_marginStart="28dp"
+            android:layout_marginTop="24dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/travelInfo"
             app:srcCompat="@drawable/ic_directions_car_black_24dp" />
 
         <ImageView
             android:id="@+id/walkingImage"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginTop="16dp"
+            android:layout_marginStart="28dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="24dp"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/carImage"
+            app:layout_constraintVertical_bias="1.0"
             app:srcCompat="@drawable/walking" />
 
-        <ImageView
-            android:id="@+id/expandLess"
+        <TextView
+            android:id="@+id/drivingDistance"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            android:layout_marginEnd="8dp"
-            android:layout_marginBottom="8dp"
+            android:layout_marginTop="28dp"
+            android:text="3"
+            app:layout_constraintStart_toEndOf="@+id/carImage"
+            app:layout_constraintTop_toBottomOf="@+id/travelInfo" />
+
+        <TextView
+            android:id="@+id/walkingDistance"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="16dp"
+            android:text="450"
+            app:layout_constraintStart_toEndOf="@+id/walkingImage"
+            app:layout_constraintTop_toBottomOf="@+id/drivingDistance" />
+
+        <ImageView
+            android:id="@+id/drivingTimeImage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="64dp"
+            android:layout_marginTop="24dp"
+            app:layout_constraintStart_toEndOf="@+id/carImage"
+            app:layout_constraintTop_toBottomOf="@+id/travelInfo"
+            app:srcCompat="@drawable/timer" />
+
+        <ImageView
+            android:id="@+id/walkingTimeImage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="64dp"
+            android:layout_marginTop="8dp"
+            app:layout_constraintStart_toEndOf="@+id/walkingImage"
+            app:layout_constraintTop_toBottomOf="@+id/drivingTimeImage"
+            app:srcCompat="@drawable/timer" />
+
+        <TextView
+            android:id="@+id/drivingTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="28dp"
+            android:text="12 min"
+            app:layout_constraintStart_toEndOf="@+id/drivingTimeImage"
+            app:layout_constraintTop_toBottomOf="@+id/travelInfo" />
+
+        <TextView
+            android:id="@+id/walkingTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="16dp"
+            android:text="3 min"
+            app:layout_constraintStart_toEndOf="@+id/walkingTimeImage"
+            app:layout_constraintTop_toBottomOf="@+id/drivingTime" />
+
+        <View
+            android:id="@+id/divider2"
+            android:layout_width="2dp"
+            android:layout_height="0dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="28dp"
+            android:layout_marginBottom="24dp"
+            android:background="?android:attr/listDivider"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.498"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/walkingImage"
-            app:srcCompat="@drawable/expand_more" />
+            app:layout_constraintStart_toEndOf="@+id/drivingTime"
+            app:layout_constraintTop_toBottomOf="@+id/travelInfo"
+            app:layout_constraintVertical_bias="0.0" />
+
+        <TextView
+            android:id="@+id/drivingDistanceUnit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="2dp"
+            android:layout_marginTop="28dp"
+            android:text="km"
+            app:layout_constraintStart_toEndOf="@+id/drivingDistance"
+            app:layout_constraintTop_toBottomOf="@+id/travelInfo" />
+
+        <TextView
+            android:id="@+id/textView9"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="2dp"
+            android:layout_marginTop="16dp"
+            android:text="m"
+            app:layout_constraintStart_toEndOf="@+id/walkingDistance"
+            app:layout_constraintTop_toBottomOf="@+id/drivingDistanceUnit" />
+
+        <TextView
+            android:id="@+id/ankomst"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="24dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="24dp"
+            android:text="@string/ankomst"
+            android:textAllCaps="false"
+            android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+            android:textSize="18sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/divider2"
+            app:layout_constraintTop_toBottomOf="@+id/timeImage" />
+
+        <TextView
+            android:id="@+id/arrivalTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="24dp"
+            android:text="14:34"
+            android:textAppearance="@style/TextAppearance.AppCompat.Small"
+            android:textSize="18sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/ankomst"
+            app:layout_constraintTop_toBottomOf="@+id/travelTimeUnit" />
+
 
     </androidx.constraintlayout.widget.ConstraintLayout>
     <!-- Expanded layout end !-->
+
 
 
     <!-- Dividers !-->

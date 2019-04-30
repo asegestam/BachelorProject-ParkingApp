@@ -54,7 +54,11 @@ import kotlinx.android.synthetic.main.selected_zone.*
 import kotlinx.android.synthetic.main.selected_zone.view.*
 import org.koin.android.viewmodel.ext.android.sharedViewModel
 import timber.log.Timber
+import java.text.SimpleDateFormat
+import java.util.*
 import java.util.concurrent.TimeUnit
+import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
 
 class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListener, MapboxMap.OnMoveListener {
     // variables for adding location layer
@@ -186,19 +190,19 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
         })
     }
 
-    private fun updateBottomSheet(){
-        bottomSheetBehavior.state = hidden
-        bottomSheetBehavior.state = collapsed
-    }
-
     /** Initiates button clickListeners */
     private fun initButtons() {
         fab_search.setOnClickListener {
             recyclerView.visibility = View.GONE
             startAutoCompleteActivity() }
         my_locationFab.setOnClickListener { moveCameraToLocation() }
-        expandLess.setOnClickListener { bottomSheetBehavior.state = collapsed }
-        expandMore.setOnClickListener { bottomSheetBehavior.state = expanded }
+        expand.setOnClickListener {
+            if(bottomSheetBehavior.state == collapsed) {
+                bottomSheetBehavior.state = expanded
+            } else if(bottomSheetBehavior.state == expanded) {
+                bottomSheetBehavior.state = collapsed
+            }
+        }
         startNavigationButton!!.setOnClickListener { findNavController().navigate(R.id.mapFragment_to_navigation) }
     }
 
@@ -442,6 +446,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
             val snackbarView = snackbar.view
             snackbarView.setBackgroundColor(ContextCompat.getColor(activity!!.applicationContext,R.color.mapbox_blue))
             snackbar.show()
+            bottomSheetBehavior.state = hidden
         }
     }
 
@@ -462,7 +467,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
     /** Called when an item in the RecyclerView is clicked
      * @param zone The list items binded object*/
     private fun zoneListItemClicked(zone: Feature) {
-        if(zone != selectedZoneViewModel.selectedZone.value && selectedZoneViewModel.selectedZone.value != null ) {
+        if(zone != selectedZoneViewModel.selectedZone.value) {
             selectedZoneViewModel.selectedZone.value = zone
             val geometry = zone.geometry()
             val wayPoint: Point
@@ -471,7 +476,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
                 addMarkerOnMap(wayPoint, true)
                 val destination = routeViewModel.destination.value
                 destination?.let {
-                    routeViewModel.getWayPointRoute(getUserLocation()!!, wayPoint, destination!!)
+                    routeViewModel.getWayPointRoute(getUserLocation()!!, wayPoint, destination)
 
                 }
             }
@@ -561,38 +566,85 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
     private fun getBottomSheetCallback() : BottomSheetBehavior.BottomSheetCallback {
         return object: BottomSheetBehavior.BottomSheetCallback() {
             override fun onStateChanged(bottomSheet: View, newState: Int) {
-                val selectedZone = selectedZoneViewModel.selectedZone.value
-                if(newState == collapsed)
-                    selectedZone?.let {
-                        bottomSheet.zoneId.text = selectedZone.getNumberProperty("zonecode").toInt().toString()
-                        bottomSheet.zoneName.text = selectedZone.getStringProperty("zone_name")
-                        bottomSheet.zoneOwner.text = selectedZone.getStringProperty("zone_owner")
-                        bottomSheet.travelLength.text = calcEstimatedTravelLength()
-                        bottomSheet.travelTime.text = calcEstimatedTravelTime()
-                        bottomSheet.parkingDistance.text= selectedZone.getNumberProperty("distance").toInt().toString()
-                    }
+                if(newState == expanded) {
+                    bottomSheet.expand.setImageResource(R.drawable.expand_more)
+                } else if(newState == collapsed) {
+                    bottomSheet.expand.setImageResource(R.drawable.expand_less)
+                }
             }
             override fun onSlide(bottomSheet: View, slideOffset: Float) {
             }
         }
     }
 
-    private fun calcEstimatedTravelTime(): String {
+    private fun updateBottomSheet(){
+        val selectedZone = selectedZoneViewModel.selectedZone.value
+        selectedZone?.let {
+            val totalTime = calcTotalTravelTime()
+            bottom_sheet.zoneId.text = selectedZone.getNumberProperty("zonecode").toInt().toString()
+            bottom_sheet.zoneName.text = selectedZone.getStringProperty("zone_name")
+            bottom_sheet.zoneOwner.text = selectedZone.getStringProperty("zone_owner")
+            bottom_sheet.travelTime.text = totalTime.toString()
+            bottom_sheet.arrivalTime.text = calcArrivalTime(totalTime).toString()
+            bottom_sheet.drivingDistance.text = calcTravelDistance("driving")
+            bottom_sheet.drivingTime.text = calcTravelTime("driving")
+            bottom_sheet.walkingDistance.text= selectedZone.getNumberProperty("distance").toInt().toString()
+            bottom_sheet.walkingTime.text = calcTravelTime("walking")
+            bottomSheetBehavior = BottomSheetBehavior.from(bottom_sheet)
+            bottomSheetBehavior.state = collapsed
+        }
+
+    }
+
+    private fun calcTotalTravelTime(): Int {
         var totalTime = .0
         ArrayList<DirectionsRoute>(routeMap.values).forEach{
             totalTime += it.duration()!!
         }
-        val timeInMinutes = TimeUnit.SECONDS.toMinutes(totalTime.toLong()).toDouble()
-        return "%.2f".format(timeInMinutes)
+        val timeInMinutes = TimeUnit.SECONDS.toMinutes(totalTime.toLong()).toInt()
+        val value = timeInMinutes
+        return value
     }
 
-    private fun calcEstimatedTravelLength() : String {
-        var totalLength = .0
-        ArrayList<DirectionsRoute>(routeMap.values).forEach{
-            totalLength += it.distance()!!
-        }
-        return "%.2f".format(totalLength/1000)
+    private fun calcArrivalTime(time: Int): String {
+        val now = Calendar.getInstance()
+        now.add(Calendar.MINUTE, time)
+        Log.d("CalcArrivalTime", now.time.toString())
+        return SimpleDateFormat("HH:mm").format(now.time)
     }
+
+    private fun calcTravelDistance(profile: String): String {
+        if(routeMap.size < 2) {
+            return ""
+        }
+        var distance = 0.0
+        val route = routeMap[profile]
+        if (route != null) {
+            route.distance()?.let {
+                distance = it
+            }
+        }
+        return "%.1f".format(distance/1000)
+    }
+
+    private fun calcTravelTime(profile: String): String {
+        if(routeMap.size < 2) {
+            return ""
+        }
+        var time = ""
+        val route = routeMap[profile]
+        if (route != null) {
+            route.duration()?.let {
+                time = if(it < 60) {
+                    it.toString() + "s"
+                } else {
+                    TimeUnit.SECONDS.toMinutes(it.toLong()).toInt().toString() + "min"
+                }
+            }
+        }
+        return time
+    }
+
 
     override fun onMoveBegin(detector: MoveGestureDetector) {
         mapboxMap?.let {
