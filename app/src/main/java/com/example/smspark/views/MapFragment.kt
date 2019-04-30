@@ -183,12 +183,19 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
         will open up BottomSheet to show zone info and move camera to its location
          */
         selectedZoneViewModel.selectedZone.observe(this, Observer {
-            bottomSheetBehavior.state = collapsed
             val zonePoint = getGeometryPoint(it.geometry())
             moveCameraToLocation(zonePoint, zoom = 14.0)
         })
         //Observe an requested route, if changed this will add the route to the map
-        routeViewModel.getRoute().observe(this, Observer { route -> addRouteToMap(route) })
+        routeViewModel.getRoute().observe(this, Observer { route ->
+            addRouteToMap(route)
+            updateBottomSheet()
+        })
+    }
+
+    private fun updateBottomSheet(){
+        bottomSheetBehavior.state = hidden
+        bottomSheetBehavior.state = collapsed
     }
 
     /** Initiates button clickListeners */
@@ -250,7 +257,6 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
     @SuppressLint("MissingPermission")
     override fun onMapClick(point: LatLng): Boolean {
         val originPoint = getUserLocation()
-        bottomSheetBehavior.state = hidden
         if (destination != null && queryMapClick(point)) {
             val wayPoint = Point.fromLngLat(point.longitude, point.latitude)
             val source = mapboxMap?.style?.getSourceAs<GeoJsonSource>("map-click-marker")
@@ -432,7 +438,6 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
      * @param zone The list items binded object*/
     private fun zoneListItemClicked(zone: Feature) {
         if(zone != selectedZoneViewModel.selectedZone.value) {
-            bottomSheetBehavior.state = hidden
             selectedZoneViewModel.selectedZone.value = zone
             val geometry = zone.geometry()
             val wayPoint: Point

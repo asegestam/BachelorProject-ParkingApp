@@ -49,7 +49,7 @@
         android:id="@+id/zoneType"
         android:layout_width="wrap_content"
         android:layout_height="22dp"
-        android:layout_marginTop="6dp"
+        android:layout_marginTop="8dp"
         android:padding="1dp"
         android:text="Zonkod:"
         android:textAppearance="@style/MaterialAlertDialog.MaterialComponents.Body.Text"
@@ -145,13 +145,14 @@
         android:id="@+id/travelLength"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="4dp"
-        android:layout_marginTop="24dp"
-        android:layout_marginBottom="2dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
         android:text="TextView"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toEndOf="@+id/textView3"
-        app:layout_constraintTop_toTopOf="@+id/travelTime" />
+        app:layout_constraintTop_toBottomOf="@+id/travelTime"
+        app:layout_constraintVertical_bias="0.333" />
 
     <TextView
         android:id="@+id/zoneId"
