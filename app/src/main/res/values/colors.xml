@@ -1,6 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#A50202</color>
-    <color name="colorPrimaryDark">#000000</color>
-    <color name="colorAccent">#D81B1B</color>
+    <color name="colorPrimary">#C62828</color>
+    <color name="colorPrimaryDark">#2A7FC7</color>
+    <color name="colorPrimaryLight">#FFFFFF</color>
+    <color name="colorAccent">#E53935</color>
+    <color name="colorAccentLight">#42A5F5</color>
+    <color name="colorAccentGrey">#90CAF9</color>
+    <color name="colorSuccess">#1BCA2B</color>
+    <color name="mapbox_blue_light">#02708e</color>
+
 </resources>

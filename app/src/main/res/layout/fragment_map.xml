@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    android:id="@+id/coordinator"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:mapbox="http://schemas.android.com/apk/res-auto"
+    tools:context="com.example.smspark.views.MapFragment"
+    >
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent">
+        <com.mapbox.mapboxsdk.maps.MapView
+            android:id="@+id/mapView"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            mapbox:layout_constraintBottom_toBottomOf="parent"
+            mapbox:layout_constraintEnd_toEndOf="parent"
+            mapbox:layout_constraintHorizontal_bias="0.0"
+            mapbox:layout_constraintStart_toStartOf="parent"
+            mapbox:layout_constraintTop_toTopOf="parent"
+            mapbox:layout_constraintVertical_bias="0.0"
+            mapbox:mapbox_cameraZoom="11" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recycler_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top"
+            android:layout_marginTop="8dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:visibility="gone"
+            mapbox:layout_constraintTop_toTopOf="@id/mapView"
+            tools:listitem="@layout/list_item" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        mapbox:layout_dodgeInsetEdges="all">
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/my_locationFab"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="24dp"
+            android:layout_marginBottom="16dp"
+            android:elevation="8dp"
+            android:src="@drawable/my_location"
+            mapbox:backgroundTint="@color/colorPrimaryLight"
+            mapbox:fabSize="mini"
+            mapbox:layout_constraintBottom_toTopOf="@+id/fab_search"
+            mapbox:layout_constraintEnd_toEndOf="parent"
+            mapbox:layout_constraintStart_toStartOf="@+id/fab_search"
+            mapbox:layout_dodgeInsetEdges="all"
+            mapbox:rippleColor="@color/colorPrimaryDark" />
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fab_search"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="12dp"
+            android:elevation="8dp"
+            android:src="@drawable/ic_search_black_24dp"
+            mapbox:backgroundTint="@color/colorPrimaryLight"
+            mapbox:layout_constraintBottom_toBottomOf="parent"
+            mapbox:layout_constraintEnd_toEndOf="parent"
+            mapbox:layout_dodgeInsetEdges="all"
+            mapbox:rippleColor="@color/colorPrimaryDark" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/startNavigationButton"
+            style="@style/Widget.MaterialComponents.Button.Icon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginBottom="12dp"
+            mapbox:layout_constraintBottom_toBottomOf="parent"
+            mapbox:layout_constraintStart_toStartOf="parent"
+            mapbox:rippleColor="@color/colorPrimaryDark"
+            mapbox:elevation="8dp"
+            mapbox:cornerRadius="20dp"
+            android:backgroundTint="@color/colorAccentLight"
+            android:text="@string/startNavigation"
+            mapbox:icon="@drawable/navigation_icon"
+            android:visibility="gone"/>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <include
+        layout="@layout/selected_zone"
+        mapbox:layout_insetEdge="bottom"
+        />
+
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

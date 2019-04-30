@@ -1,49 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout
+<RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:mapbox="http://schemas.android.com/apk/res-auto"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/drawerLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.example.smspark.MainActivity">
+    android:fitsSystemWindows="true">
 
-    <com.mapbox.mapboxsdk.maps.MapView
-        android:id="@+id/mapView"
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        mapbox:mapbox_cameraTargetLat="40.73581"
-        mapbox:mapbox_cameraTargetLng="-73.99155"
-        mapbox:mapbox_cameraZoom="11" />
+        android:layout_above="@id/navigationView">
+        <fragment
+            android:id="@+id/nav_host_fragment"
+            android:name="androidx.navigation.fragment.NavHostFragment"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:defaultNavHost="true"
+            app:navGraph="@navigation/navigation_graph" />
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
-    <Button
-        android:id="@+id/startNavigationButton"
-        android:layout_width="184dp"
+
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/navigationView"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="24dp"
-        android:layout_marginEnd="24dp"
-        android:layout_marginBottom="24dp"
-        android:background="@color/mapbox_blue"
-        android:elevation="5dp"
-        android:enabled="false"
-        android:text="@string/startNavigation"
-        android:visibility="visible"
-        mapbox:layout_anchor="@+id/mapView"
-        mapbox:layout_anchorGravity="bottom|center"
-        mapbox:layout_constraintBottom_toBottomOf="parent"
-        mapbox:layout_constraintEnd_toEndOf="parent"
-        mapbox:layout_constraintStart_toStartOf="parent"
-        mapbox:cornerRadius="5dp"/>
+        android:layout_gravity="bottom"
+        android:layout_alignParentBottom="true"
+        app:backgroundTint="@color/colorAccentLight"
+        app:itemIconTint="@color/colorPrimaryLight"
+        app:itemTextColor="@color/colorPrimaryLight"
+        app:menu="@menu/bottom_bar_menu">
+    </com.google.android.material.bottomnavigation.BottomNavigationView>
 
-
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fab"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="end|bottom"
-        android:src="@drawable/ic_search_black_24dp"
-        mapbox:rippleColor="@color/colorPrimaryDark"
-        android:backgroundTint="@color/colorAccent"
-        android:elevation="8dp"
-        android:layout_margin="16dp" />
-
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+</RelativeLayout>
