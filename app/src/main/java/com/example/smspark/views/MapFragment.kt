@@ -52,13 +52,8 @@ import com.mapbox.services.android.navigation.ui.v5.route.NavigationMapRoute
 import kotlinx.android.synthetic.main.fragment_map.*
 import kotlinx.android.synthetic.main.selected_zone.*
 import kotlinx.android.synthetic.main.selected_zone.view.*
-import org.koin.android.ext.android.inject
 import org.koin.android.viewmodel.ext.android.sharedViewModel
-import org.koin.android.viewmodel.ext.android.viewModel
-import org.koin.core.parameter.parametersOf
 import timber.log.Timber
-import java.math.BigDecimal
-import java.math.RoundingMode
 import java.util.concurrent.TimeUnit
 
 class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListener, MapboxMap.OnMoveListener {
@@ -70,7 +65,6 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
     private var permissionsManager: PermissionsManager = PermissionsManager(this)
     // variables for calculating and drawing a route
     private var navigationMapRoute: NavigationMapRoute? = null
-    private var destination: Point? = null
     private var routeMap = HashMap<String, DirectionsRoute>()
     //RecyclerView fields
     private lateinit var recyclerView: RecyclerView
@@ -95,6 +89,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
     private lateinit var bottomSheetBehavior: BottomSheetBehavior<View>
     private val collapsed = BottomSheetBehavior.STATE_COLLAPSED
     private val hidden = BottomSheetBehavior.STATE_HIDDEN
+    private val expanded = BottomSheetBehavior.STATE_EXPANDED
     //lazy inject ViewModel
     private val zoneViewModel: ZoneViewModel by sharedViewModel()
     val selectedZoneViewModel: SelectedZoneViewModel by sharedViewModel()
@@ -126,26 +121,24 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
                 setupImageSource(style)
                 setupZoneLayers(style)
                 setupMarkerLayer(style)
+                checkTripFragment()
                 initRecyclerView()
                 initObservers()
-                checkTripFragment()
-                moveCameraToLocation()
-                Handler().postDelayed({
-                    moveCameraToLocation()
-                }, 1000)
+                initCamera()
+                initSelectedZone()
             }
         }
         initButtons()
-        initBottomSheets()
+        initBottomSheet()
     }
 
+    /**Checks if there is an argument bundle from TripFragment, if it exists fetch zones and a route */
     private fun checkTripFragment() {
         arguments?.let {
             val fromPoint = Point.fromJson(it.getString("fromArg"))
             val destinationPoint = Point.fromJson(it.getString("destArg"))
             val wayPoint = Point.fromJson(it.getString("wayPointArg"))
             val wayPointFeature = Feature.fromJson(it.getString("wayPointFeatureArg"))
-            destination = destinationPoint
             zoneViewModel.getSpecificZones(destinationPoint.latitude(), destinationPoint.longitude(), 1000)
             routeViewModel.getWayPointRoute(fromPoint, wayPoint, destinationPoint)
             addMarkerOnMap(destinationPoint, false)
@@ -203,11 +196,9 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
         fab_search.setOnClickListener {
             recyclerView.visibility = View.GONE
             startAutoCompleteActivity() }
-
         my_locationFab.setOnClickListener { moveCameraToLocation() }
-
-        sheet_ok_button.setOnClickListener { bottomSheetBehavior.state = hidden }
-
+        expandLess.setOnClickListener { bottomSheetBehavior.state = collapsed }
+        expandMore.setOnClickListener { bottomSheetBehavior.state = expanded }
         startNavigationButton!!.setOnClickListener { findNavController().navigate(R.id.mapFragment_to_navigation) }
     }
 
@@ -224,7 +215,38 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
         snapHelper.attachToRecyclerView(recyclerView)
     }
 
-    private fun initBottomSheets() {
+    /** If there is routes and a selected zone stored in the ViewModels
+     * add the routes and markers to the map
+     */
+    private fun initSelectedZone() {
+        val destinationRoute = routeViewModel.routeDestination.value
+        val wayPointRoute = routeViewModel.routeWayPoint.value
+        val zone = selectedZoneViewModel.selectedZone.value
+        if (destinationRoute != null && wayPointRoute != null) {
+            addRouteToMap(destinationRoute)
+            addRouteToMap(wayPointRoute)
+        }
+        zone?.let { addMarkerOnMap(getGeometryPoint(it.geometry()), true) }
+    }
+
+    /** Moves camera to either the user's location or to a selected zone, if it exists */
+    private fun initCamera() {
+        selectedZoneViewModel.selectedZone.value?.let {
+            val zonePoint = getGeometryPoint(it.geometry())
+            Handler().postDelayed({
+                moveCameraToLocation(zonePoint , zoom = 14.0)
+            }, 1000)
+            return
+        }
+        Handler().postDelayed({
+            moveCameraToLocation()
+        }, 1000)
+    }
+
+    /** Initiates the BottomSheet with the view, BottomSheetBehaviour to control its state
+     * and add a BottomSheetCallback to it.
+     */
+    private fun initBottomSheet() {
         bottomSheetBehavior = BottomSheetBehavior.from(bottom_sheet)
         bottomSheetBehavior.state = hidden
         val bottomSheetCallback = getBottomSheetCallback()
@@ -246,7 +268,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
                         .build())
                 isLocationComponentEnabled = true
                 // Set the component's camera mode
-                cameraMode = CameraMode.NONE_GPS
+                cameraMode = CameraMode.NONE
             }
         } else {
             permissionsManager = PermissionsManager(this)
@@ -257,11 +279,14 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
     @SuppressLint("MissingPermission")
     override fun onMapClick(point: LatLng): Boolean {
         val originPoint = getUserLocation()
-        if (destination != null && queryMapClick(point)) {
-            val wayPoint = Point.fromLngLat(point.longitude, point.latitude)
-            val source = mapboxMap?.style?.getSourceAs<GeoJsonSource>("map-click-marker")
-            source?.setGeoJson(Feature.fromGeometry(wayPoint))
-            routeViewModel.getWayPointRoute(originPoint!!, wayPoint, destination!!)
+        val destination = routeViewModel.destination.value
+        destination?.let {
+            if (queryMapClick(point)) {
+                val wayPoint = Point.fromLngLat(point.longitude, point.latitude)
+                val source = mapboxMap?.style?.getSourceAs<GeoJsonSource>("map-click-marker")
+                source?.setGeoJson(Feature.fromGeometry(wayPoint))
+                routeViewModel.getWayPointRoute(originPoint!!, wayPoint, destination)
+            }
         }
         return true
     }
@@ -305,9 +330,9 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
         val source = getMapStyle()?.getSourceAs<GeoJsonSource>(markerSource)
         if(source != null) {
             if(isWayPoint) {
-                source.setGeoJson(FeatureCollection.fromFeatures(listOf(Feature.fromGeometry(destination), Feature.fromGeometry(point))))
+                source.setGeoJson(FeatureCollection.fromFeatures(listOf(Feature.fromGeometry(routeViewModel.destination.value), Feature.fromGeometry(point))))
             } else {
-                source.setGeoJson(destination)
+                source.setGeoJson(routeViewModel.destination.value)
             }
         }
     }
@@ -425,8 +450,8 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
         //Gets the place data from searched position
         val feature = PlaceAutocomplete.getPlace(data)
         feature?.let {
-            destination = feature.geometry() as Point
-            destination?.let {
+            routeViewModel.destination.value = feature.geometry() as Point
+            routeViewModel.destination.value?.let {
                 moveCameraToLocation(it, 15.0, 2000, zoom = 14.0)
                 addMarkerOnMap(it, false)
                 zoneViewModel.getSpecificZones(latitude = it.latitude(), longitude = it.longitude(), radius = 1000)
@@ -437,15 +462,17 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
     /** Called when an item in the RecyclerView is clicked
      * @param zone The list items binded object*/
     private fun zoneListItemClicked(zone: Feature) {
-        if(zone != selectedZoneViewModel.selectedZone.value) {
+        if(zone != selectedZoneViewModel.selectedZone.value && selectedZoneViewModel.selectedZone.value != null ) {
             selectedZoneViewModel.selectedZone.value = zone
             val geometry = zone.geometry()
             val wayPoint: Point
             geometry?.let {
                 wayPoint = getGeometryPoint(geometry)
                 addMarkerOnMap(wayPoint, true)
-                if(destination != null) {
+                val destination = routeViewModel.destination.value
+                destination?.let {
                     routeViewModel.getWayPointRoute(getUserLocation()!!, wayPoint, destination!!)
+
                 }
             }
         } else {
@@ -534,23 +561,16 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
     private fun getBottomSheetCallback() : BottomSheetBehavior.BottomSheetCallback {
         return object: BottomSheetBehavior.BottomSheetCallback() {
             override fun onStateChanged(bottomSheet: View, newState: Int) {
-                if(newState == collapsed) {
-                    val selectedZone = selectedZoneViewModel.selectedZone.value
+                val selectedZone = selectedZoneViewModel.selectedZone.value
+                if(newState == collapsed)
                     selectedZone?.let {
-                        if(selectedZone.hasProperty("zonecode")) {
-                            bottomSheet.zoneId.text = selectedZone.getNumberProperty("zonecode").toInt().toString()
-                        } else {
-                            bottomSheet.zoneType.text = getString(R.string.handicap)
-                        }
-                        //shared properties between the apis
+                        bottomSheet.zoneId.text = selectedZone.getNumberProperty("zonecode").toInt().toString()
                         bottomSheet.zoneName.text = selectedZone.getStringProperty("zone_name")
                         bottomSheet.zoneOwner.text = selectedZone.getStringProperty("zone_owner")
-                        bottomSheet.parkingDistance.text = selectedZone.getNumberProperty("distance").toInt().toString() + " m"
-                        bottomSheet.travelTime.text = calcEstimatedTravelTime() + " min"
-                        bottomSheet.travelLength.text = calcEstimatedTravelLength() + " km"
-
+                        bottomSheet.travelLength.text = calcEstimatedTravelLength()
+                        bottomSheet.travelTime.text = calcEstimatedTravelTime()
+                        bottomSheet.parkingDistance.text= selectedZone.getNumberProperty("distance").toInt().toString()
                     }
-                }
             }
             override fun onSlide(bottomSheet: View, slideOffset: Float) {
             }
@@ -602,6 +622,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
 
     override fun onPause() {
         super.onPause()
+
         mapView.onPause()
     }
 
