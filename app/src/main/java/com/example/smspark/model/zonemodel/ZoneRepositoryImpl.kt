@@ -28,6 +28,11 @@ class ZoneRepositoryImpl: ZoneRepository, KoinComponent {
         return handicapPoints
     }
 
+    /** Fetches zones from an REST API around a specific LatLong with a fixes radius
+     * @param latitude latitude
+     * @param longitude longitude
+     * @param radius radius from the LatLong to fetch zones
+     * */
     override fun getSpecificZones(latitude: Double, longitude: Double, radius: Int){
 
         val call = service.getSpecificZones(latitude, longitude, radius)
@@ -51,6 +56,11 @@ class ZoneRepositoryImpl: ZoneRepository, KoinComponent {
         })
     }
 
+    /** Fetches zones from an REST API around a specific LatLong with a fixes radius
+     * @param latitude latitude
+     * @param longitude longitude
+     * @param radius radius from the LatLong to fetch zones
+     * */
     override fun getHandicapZones(latitude: Double, longitude: Double, radius: Int) {
         val call = service.getHandicapZones(latitude, longitude, radius)
         call.enqueue(object : retrofit2.Callback<List<Handicap>> {
