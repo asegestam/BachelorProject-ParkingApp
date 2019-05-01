@@ -15,6 +15,6 @@ val zoneModule = module {
     //ZoneViewModel ViewModel
     viewModel { ZoneViewModel(get()) }
     //SelectedZoneViewModel ViewModel
-    viewModel { SelectedZoneViewModel(get()) }
+    viewModel { SelectedZoneViewModel() }
 
 }

@@ -15,6 +15,7 @@ import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModel
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -23,6 +24,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.smspark.R
 import com.example.smspark.viewmodels.RouteViewModel
 import com.example.smspark.viewmodels.SelectedZoneViewModel
+import com.example.smspark.viewmodels.TravelViewModel
 import com.example.smspark.viewmodels.ZoneViewModel
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.snackbar.Snackbar
@@ -53,6 +55,7 @@ import kotlinx.android.synthetic.main.fragment_map.*
 import kotlinx.android.synthetic.main.selected_zone.*
 import kotlinx.android.synthetic.main.selected_zone.view.*
 import org.koin.android.viewmodel.ext.android.sharedViewModel
+import org.koin.android.viewmodel.ext.android.viewModel
 import timber.log.Timber
 import java.text.SimpleDateFormat
 import java.util.*
@@ -96,8 +99,9 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
     private val expanded = BottomSheetBehavior.STATE_EXPANDED
     //lazy inject ViewModel
     private val zoneViewModel: ZoneViewModel by sharedViewModel()
-    val selectedZoneViewModel: SelectedZoneViewModel by sharedViewModel()
+    private val selectedZoneViewModel: SelectedZoneViewModel by sharedViewModel()
     private val routeViewModel: RouteViewModel by sharedViewModel()
+    private val travelViewModel: TravelViewModel by viewModel()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -577,80 +581,37 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
             }
         }
     }
-
+    /** Updates the contents of the BottomSheet with the information about the routes in routeMap
+     * and zone in the ViewModel */
     private fun updateBottomSheet(){
         val selectedZone = selectedZoneViewModel.selectedZone.value
-        selectedZone?.let {
-            val totalTime = calcTotalTravelTime()
-            bottom_sheet.zoneId.text = selectedZone.getNumberProperty("zonecode").toInt().toString()
-            bottom_sheet.zoneName.text = selectedZone.getStringProperty("zone_name")
-            bottom_sheet.zoneOwner.text = selectedZone.getStringProperty("zone_owner")
-            bottom_sheet.travelTime.text = totalTime.toString()
-            bottom_sheet.arrivalTime.text = calcArrivalTime(totalTime).toString()
-            bottom_sheet.drivingDistance.text = calcTravelDistance("driving")
-            bottom_sheet.drivingTime.text = calcTravelTime("driving")
-            bottom_sheet.walkingDistance.text= selectedZone.getNumberProperty("distance").toInt().toString()
-            bottom_sheet.walkingTime.text = calcTravelTime("walking")
-            bottomSheetBehavior = BottomSheetBehavior.from(bottom_sheet)
-            bottomSheetBehavior.state = collapsed
-        }
-
-    }
-
-    private fun calcTotalTravelTime(): Int {
-        var totalTime = .0
-        ArrayList<DirectionsRoute>(routeMap.values).forEach{
-            totalTime += it.duration()!!
-        }
-        val timeInMinutes = TimeUnit.SECONDS.toMinutes(totalTime.toLong()).toInt()
-        val value = timeInMinutes
-        return value
-    }
-
-    private fun calcArrivalTime(time: Int): String {
-        val now = Calendar.getInstance()
-        now.add(Calendar.MINUTE, time)
-        Log.d("CalcArrivalTime", now.time.toString())
-        return SimpleDateFormat("HH:mm").format(now.time)
-    }
-
-    private fun calcTravelDistance(profile: String): String {
-        if(routeMap.size < 2) {
-            return ""
-        }
-        var distance = 0.0
-        val route = routeMap[profile]
-        if (route != null) {
-            route.distance()?.let {
-                distance = it
-            }
-        }
-        return "%.1f".format(distance/1000)
-    }
-
-    private fun calcTravelTime(profile: String): String {
-        if(routeMap.size < 2) {
-            return ""
-        }
-        var time = ""
-        val route = routeMap[profile]
-        if (route != null) {
-            route.duration()?.let {
-                time = if(it < 60) {
-                    it.toString() + "s"
-                } else {
-                    TimeUnit.SECONDS.toMinutes(it.toLong()).toInt().toString() + "min"
+        if(routeMap.size >= 2) {
+            selectedZone?.let {
+                val drivingRouteDistance = routeMap["driving"]?.distance()
+                val drivingDuration = routeMap["driving"]?.duration()
+                val walkingRouteDistance = routeMap["walking"]?.distance()
+                val walkingDuration = routeMap["walking"]?.duration()
+                bottom_sheet.apply {
+                    zoneId.text = selectedZone.getNumberProperty("zonecode").toInt().toString()
+                    zoneName.text = selectedZone.getStringProperty("zone_name")
+                    zoneOwner.text = selectedZone.getStringProperty("zone_owner")
+                    travelTime.text = travelViewModel.getTotalTravelTime(drivingDuration!!, walkingDuration!!)
+                    arrivalTime.text = travelViewModel.getArrivalTime(drivingDuration, walkingDuration)
+                    drivingDistance.text = travelViewModel.getDrivingDistance(drivingRouteDistance!!)
+                    drivingTime.text = travelViewModel.getDrivingTime(drivingDuration)
+                    walkingDistance.text= travelViewModel.getWalkingDistance(walkingRouteDistance!!)
+                    walkingTime.text = travelViewModel.getWalkingTime(walkingDuration)
                 }
+                bottomSheetBehavior = BottomSheetBehavior.from(bottom_sheet)
+                bottomSheetBehavior.state = collapsed
             }
         }
-        return time
     }
-
 
     override fun onMoveBegin(detector: MoveGestureDetector) {
         mapboxMap?.let {
-            if(it.cameraPosition.zoom < 13 && zoneViewModel.getObservableZones().value != null) {
-                Toast.makeText(requireContext(), "Zooma in för att se zoner", Toast.LENGTH_SHORT).show()
+            if(it.cameraPosition.zoom < 13 && zoneViewModel.getObservableZones().value != null && selectedZoneViewModel.selectedZone.value == null) {
+                Toast.makeText(requireContext(), "Zooma in mer för att se fler zoner", Toast.LENGTH_SHORT).show()
             }
         }
     }
