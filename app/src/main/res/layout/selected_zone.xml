@@ -94,7 +94,7 @@
             android:layout_marginTop="8dp"
             android:text="@string/reseinfo"
             android:textAppearance="@style/TextAppearance.AppCompat.Display1"
-            android:textColor="@color/colorAccentLight"
+            android:textColor="@color/colorPrimaryDark"
             android:textSize="24sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.486"
@@ -108,20 +108,11 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:layout_marginTop="24dp"
-            android:text="15"
+            android:layout_marginBottom="8dp"
+            android:text="15 min"
             android:textSize="18sp"
+            app:layout_constraintBottom_toTopOf="@+id/ankomst"
             app:layout_constraintStart_toEndOf="@+id/timeImage"
-            app:layout_constraintTop_toBottomOf="@+id/travelInfo" />
-
-        <TextView
-            android:id="@+id/travelTimeUnit"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="2dp"
-            android:layout_marginTop="24dp"
-            android:text="@string/min"
-            android:textSize="18sp"
-            app:layout_constraintStart_toEndOf="@+id/travelTime"
             app:layout_constraintTop_toBottomOf="@+id/travelInfo" />
 
 
@@ -131,6 +122,8 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="24dp"
             android:layout_marginTop="24dp"
+            android:layout_marginBottom="8dp"
+            app:layout_constraintBottom_toTopOf="@+id/ankomst"
             app:layout_constraintStart_toEndOf="@+id/divider2"
             app:layout_constraintTop_toBottomOf="@+id/travelInfo"
             app:srcCompat="@drawable/time" />
@@ -141,6 +134,8 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="28dp"
             android:layout_marginTop="24dp"
+            android:layout_marginBottom="16dp"
+            app:layout_constraintBottom_toTopOf="@+id/walkingImage"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/travelInfo"
             app:srcCompat="@drawable/ic_directions_car_black_24dp" />
@@ -150,12 +145,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="28dp"
-            android:layout_marginTop="8dp"
             android:layout_marginBottom="24dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/carImage"
-            app:layout_constraintVertical_bias="1.0"
             app:srcCompat="@drawable/walking" />
 
         <TextView
@@ -164,26 +156,31 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:layout_marginTop="28dp"
-            android:text="3"
+            android:layout_marginBottom="16dp"
+            android:text="3 km"
+            app:layout_constraintBottom_toTopOf="@+id/walkingDistance"
             app:layout_constraintStart_toEndOf="@+id/carImage"
-            app:layout_constraintTop_toBottomOf="@+id/travelInfo" />
+            app:layout_constraintTop_toBottomOf="@+id/travelInfo"
+            app:layout_constraintVertical_bias="0.166" />
 
         <TextView
             android:id="@+id/walkingDistance"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            android:layout_marginTop="16dp"
-            android:text="450"
-            app:layout_constraintStart_toEndOf="@+id/walkingImage"
-            app:layout_constraintTop_toBottomOf="@+id/drivingDistance" />
+            android:layout_marginBottom="24dp"
+            android:text="450 m"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/walkingImage" />
 
         <ImageView
             android:id="@+id/drivingTimeImage"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="64dp"
+            android:layout_marginStart="72dp"
             android:layout_marginTop="24dp"
+            android:layout_marginBottom="16dp"
+            app:layout_constraintBottom_toTopOf="@+id/walkingTimeImage"
             app:layout_constraintStart_toEndOf="@+id/carImage"
             app:layout_constraintTop_toBottomOf="@+id/travelInfo"
             app:srcCompat="@drawable/timer" />
@@ -192,10 +189,10 @@
             android:id="@+id/walkingTimeImage"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="64dp"
-            android:layout_marginTop="8dp"
+            android:layout_marginStart="72dp"
+            android:layout_marginBottom="24dp"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toEndOf="@+id/walkingImage"
-            app:layout_constraintTop_toBottomOf="@+id/drivingTimeImage"
             app:srcCompat="@drawable/timer" />
 
         <TextView
@@ -204,81 +201,70 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:layout_marginTop="28dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="16dp"
             android:text="12 min"
+            app:layout_constraintBottom_toTopOf="@+id/walkingTime"
+            app:layout_constraintEnd_toStartOf="@+id/divider2"
+            app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintStart_toEndOf="@+id/drivingTimeImage"
-            app:layout_constraintTop_toBottomOf="@+id/travelInfo" />
+            app:layout_constraintTop_toBottomOf="@+id/travelInfo"
+            app:layout_constraintVertical_bias="0.166" />
 
         <TextView
             android:id="@+id/walkingTime"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            android:layout_marginTop="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="24dp"
             android:text="3 min"
-            app:layout_constraintStart_toEndOf="@+id/walkingTimeImage"
-            app:layout_constraintTop_toBottomOf="@+id/drivingTime" />
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/divider2"
+            app:layout_constraintHorizontal_bias="0.058"
+            app:layout_constraintStart_toEndOf="@+id/walkingTimeImage" />
 
         <View
             android:id="@+id/divider2"
             android:layout_width="2dp"
             android:layout_height="0dp"
-            android:layout_marginStart="16dp"
+            android:layout_marginStart="172dp"
             android:layout_marginTop="28dp"
             android:layout_marginBottom="24dp"
             android:background="?android:attr/listDivider"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/drivingTime"
+            app:layout_constraintStart_toEndOf="@+id/carImage"
             app:layout_constraintTop_toBottomOf="@+id/travelInfo"
             app:layout_constraintVertical_bias="0.0" />
-
-        <TextView
-            android:id="@+id/drivingDistanceUnit"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="2dp"
-            android:layout_marginTop="28dp"
-            android:text="km"
-            app:layout_constraintStart_toEndOf="@+id/drivingDistance"
-            app:layout_constraintTop_toBottomOf="@+id/travelInfo" />
-
-        <TextView
-            android:id="@+id/textView9"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="2dp"
-            android:layout_marginTop="16dp"
-            android:text="m"
-            app:layout_constraintStart_toEndOf="@+id/walkingDistance"
-            app:layout_constraintTop_toBottomOf="@+id/drivingDistanceUnit" />
 
         <TextView
             android:id="@+id/ankomst"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="24dp"
-            android:layout_marginTop="8dp"
             android:layout_marginBottom="24dp"
             android:text="@string/ankomst"
             android:textAllCaps="false"
             android:textAppearance="@style/TextAppearance.AppCompat.Body1"
             android:textSize="18sp"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/divider2"
-            app:layout_constraintTop_toBottomOf="@+id/timeImage" />
+            app:layout_constraintStart_toEndOf="@+id/divider2" />
 
         <TextView
             android:id="@+id/arrivalTime"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            android:layout_marginTop="8dp"
+            android:layout_marginEnd="8dp"
             android:layout_marginBottom="24dp"
             android:text="14:34"
             android:textAppearance="@style/TextAppearance.AppCompat.Small"
+            android:textColor="@color/colorPrimaryDark"
             android:textSize="18sp"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/ankomst"
-            app:layout_constraintTop_toBottomOf="@+id/travelTimeUnit" />
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.076"
+            app:layout_constraintStart_toEndOf="@+id/ankomst" />
 
 
     </androidx.constraintlayout.widget.ConstraintLayout>

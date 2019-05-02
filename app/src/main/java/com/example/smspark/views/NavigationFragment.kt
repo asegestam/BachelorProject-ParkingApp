@@ -66,6 +66,7 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
         })
     }
 
+    /** Starts the navigation and sets up the correct Listeners */
     private fun startNavigation(route: DirectionsRoute) {
         val options: NavigationViewOptions = NavigationViewOptions.builder()
                 .directionsRoute(route)
@@ -90,35 +91,38 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
         findNavController().navigate(R.id.navigation_to_map)
     }
 
+    /** Handles Progress Change along the route */
     override fun onProgressChange(location: Location?, routeProgress: RouteProgress?) {
-            val progressFraction = routeProgress?.currentLegProgress()?.fractionTraveled()
-            val routeUtils = RouteUtils()
-            if(progressFraction!! >= 0.99f && !routingToDestination) {
-                navigationView.stopNavigation()
-                showParkingDialog()
-            }
-            if (routeUtils.isArrivalEvent(routeProgress)) {
-                navigationView.retrieveMapboxNavigation()?.removeProgressChangeListener(this)
-                showSnackBar(R.string.destination_arrival, R.color.colorAccentLight, Snackbar.LENGTH_INDEFINITE, true)
-            }
+        val progressFraction = routeProgress?.currentLegProgress()?.fractionTraveled()
+        val routeUtils = RouteUtils()
+        if (progressFraction!! >= 0.99f && !routingToDestination) {
+            navigationView.stopNavigation()
+            showParkingDialog()
+        }
+        if (routeUtils.isArrivalEvent(routeProgress)) {
+            navigationView.retrieveMapboxNavigation()?.removeProgressChangeListener(this)
+            showSnackBar(R.string.destination_arrival, R.color.colorAccentLight, Snackbar.LENGTH_INDEFINITE, true)
+        }
     }
 
+    /** Shows a dialog to the user asking for confirmation to start a parking at the parking zone */
     private fun showParkingDialog() {
         val builder = AlertDialog.Builder(requireContext(), R.style.AlertDialogCustom)
-            builder.apply {
-                setTitle("Vill du starta parkering?")
-                setMessage("Parkeringen kommer att startas på " + selectedZoneViewModel.selectedZone.value?.getStringProperty("zone_name"))
-                setIcon(R.drawable.park_blue)
-                setPositiveButton("JA") { _, _ ->
-                    showSnackBar(R.string.parking_success, R.color.colorSuccess)
-                    startWalkingDirections()
-                }
-                setNegativeButton("AVBRYT") {_, _ -> showSnackBar(R.string.parking_cancel, R.color.colorPrimary, Snackbar.LENGTH_LONG)}
-                create()
-                show()
+        builder.apply {
+            setTitle("Vill du starta parkering?")
+            setMessage("Parkeringen kommer att startas på " + selectedZoneViewModel.selectedZone.value?.getStringProperty("zone_name"))
+            setIcon(R.drawable.park_blue)
+            setPositiveButton("JA") { _, _ ->
+                showSnackBar(R.string.parking_success, R.color.colorSuccess)
+                startWalkingDirections()
             }
+            setNegativeButton("AVBRYT") { _, _ -> showSnackBar(R.string.parking_cancel, R.color.colorPrimary, Snackbar.LENGTH_LONG) }
+            create()
+            show()
+        }
     }
 
+    /** Starts an navigation from the parking zone to the destination as a walking route */
     private fun startWalkingDirections() {
         routingToDestination = true
         val route = routeViewModel.routeWayPoint.value!!
@@ -126,11 +130,12 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
         startNavigation(route)
     }
 
+    /** Shows a SnackBar with the given parameters */
     private fun showSnackBar(text: Int, color: Int, length: Int = Snackbar.LENGTH_SHORT, hasButton: Boolean = false) {
         snackbar = Snackbar.make(navigation_view_fragment, text, length)
         val snackbarView = snackbar.view
         snackbarView.setBackgroundColor(ContextCompat.getColor(requireContext(), color))
-        if(hasButton) {
+        if (hasButton) {
             snackbar.setAction("OK") { findNavController().navigate(R.id.navigation_to_map) }
         }
         snackbar.show()
@@ -196,7 +201,7 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
 
     override fun onViewStateRestored(savedInstanceState: Bundle?) {
         super.onViewStateRestored(savedInstanceState)
-        if(savedInstanceState != null) {
+        if (savedInstanceState != null) {
             navigationView.onRestoreInstanceState(savedInstanceState)
         }
     }

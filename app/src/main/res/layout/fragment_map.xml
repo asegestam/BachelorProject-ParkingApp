@@ -22,7 +22,9 @@
             mapbox:layout_constraintStart_toStartOf="parent"
             mapbox:layout_constraintTop_toTopOf="parent"
             mapbox:layout_constraintVertical_bias="0.0"
-            mapbox:mapbox_cameraZoom="11" />
+            mapbox:mapbox_cameraZoom="8"
+            mapbox:mapbox_cameraTargetLat="57.6710"
+            mapbox:mapbox_cameraTargetLng="12.0056"/>
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recycler_view"
@@ -31,8 +33,8 @@
             android:layout_gravity="top"
             android:layout_marginTop="8dp"
             android:clickable="true"
-            android:focusable="true"
             android:visibility="gone"
+            android:focusable="true"
             mapbox:layout_constraintTop_toTopOf="@id/mapView"
             tools:listitem="@layout/list_item" />
     </androidx.constraintlayout.widget.ConstraintLayout>

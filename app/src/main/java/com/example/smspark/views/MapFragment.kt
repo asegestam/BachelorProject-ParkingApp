@@ -15,6 +15,7 @@ import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModel
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -23,6 +24,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.smspark.R
 import com.example.smspark.viewmodels.RouteViewModel
 import com.example.smspark.viewmodels.SelectedZoneViewModel
+import com.example.smspark.viewmodels.TravelViewModel
 import com.example.smspark.viewmodels.ZoneViewModel
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.snackbar.Snackbar
@@ -53,6 +55,7 @@ import kotlinx.android.synthetic.main.fragment_map.*
 import kotlinx.android.synthetic.main.selected_zone.*
 import kotlinx.android.synthetic.main.selected_zone.view.*
 import org.koin.android.viewmodel.ext.android.sharedViewModel
+import org.koin.android.viewmodel.ext.android.viewModel
 import timber.log.Timber
 import java.text.SimpleDateFormat
 import java.util.*
@@ -96,8 +99,9 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
     private val expanded = BottomSheetBehavior.STATE_EXPANDED
     //lazy inject ViewModel
     private val zoneViewModel: ZoneViewModel by sharedViewModel()
-    val selectedZoneViewModel: SelectedZoneViewModel by sharedViewModel()
+    private val selectedZoneViewModel: SelectedZoneViewModel by sharedViewModel()
     private val routeViewModel: RouteViewModel by sharedViewModel()
+    private val travelViewModel: TravelViewModel by viewModel()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -117,7 +121,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
         mapView = view.findViewById(R.id.mapView)
         mapView.onCreate(savedInstanceState)
         mapView.getMapAsync { mapboxMap ->
-            mapboxMap.setStyle(getString(R.string.streets_parking)) {style ->
+            mapboxMap.setStyle(getString(R.string.streets_parking)) { style ->
                 this.mapboxMap = mapboxMap
                 mapboxMap.addOnMapClickListener(this)
                 mapboxMap.addOnMoveListener(this)
@@ -154,27 +158,31 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
     /** Initiates ViewModel observers */
     private fun initObservers() {
         //Observe parking zones, if changed, add them to the map and to the list.
-       zoneViewModel.getObservableZones().observe(this, Observer { featureCollection -> featureCollection.features()?.let {
-            if(it.size > 0) {
-                addZonesToMap(featureCollection)
-                zoneAdapter.setData(featureCollection)
-                recyclerView.visibility = View.VISIBLE
-                recyclerView.smoothScrollToPosition(0)
-            } else {
-                Toast.makeText(requireContext(), "Inga zoner hittades", Toast.LENGTH_LONG).show()
+        zoneViewModel.getObservableZones().observe(this, Observer { featureCollection ->
+            featureCollection.features()?.let {
+                if (it.size > 0) {
+                    addZonesToMap(featureCollection)
+                    zoneAdapter.setData(featureCollection)
+                    recyclerView.visibility = View.VISIBLE
+                    recyclerView.smoothScrollToPosition(0)
+                } else {
+                    Toast.makeText(requireContext(), "Inga zoner hittades", Toast.LENGTH_LONG).show()
+                }
             }
-        }})
+        })
         //Observe handicap parking zones, if changed, add them to the map and to the list.
-        zoneViewModel.getObservableHandicapZones().observe(this, Observer {featureCollection -> featureCollection.features()?.let {
-            if(it.size > 0) {
-                addMarkersToMap(featureCollection, true)
-                zoneAdapter.setData(featureCollection)
-                recyclerView.visibility = View.VISIBLE
-                recyclerView.smoothScrollToPosition(0)
-            } else {
-                Toast.makeText(requireContext(), "Inga handikapp-zoner hittades", Toast.LENGTH_LONG).show()
+        zoneViewModel.getObservableHandicapZones().observe(this, Observer { featureCollection ->
+            featureCollection.features()?.let {
+                if (it.size > 0) {
+                    addMarkersToMap(featureCollection, true)
+                    zoneAdapter.setData(featureCollection)
+                    recyclerView.visibility = View.VISIBLE
+                    recyclerView.smoothScrollToPosition(0)
+                } else {
+                    Toast.makeText(requireContext(), "Inga handikapp-zoner hittades", Toast.LENGTH_LONG).show()
+                }
             }
-        }})
+        })
         /*
         Observe the selected zone, can be one from the map or the list,
         will open up BottomSheet to show zone info and move camera to its location
@@ -194,12 +202,13 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
     private fun initButtons() {
         fab_search.setOnClickListener {
             recyclerView.visibility = View.GONE
-            startAutoCompleteActivity() }
+            startAutoCompleteActivity()
+        }
         my_locationFab.setOnClickListener { moveCameraToLocation() }
         expand.setOnClickListener {
-            if(bottomSheetBehavior.state == collapsed) {
+            if (bottomSheetBehavior.state == collapsed) {
                 bottomSheetBehavior.state = expanded
-            } else if(bottomSheetBehavior.state == expanded) {
+            } else if (bottomSheetBehavior.state == expanded) {
                 bottomSheetBehavior.state = collapsed
             }
         }
@@ -211,7 +220,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
         recyclerView = recycler_view
         recyclerView.setHasFixedSize(true)
         val onItemClickListener = View.OnClickListener { recyclerView.visibility = View.GONE }
-        zoneAdapter = ZoneAdapter(context!!, { zone: Feature -> zoneListItemClicked(zone)}, onItemClickListener)
+        zoneAdapter = ZoneAdapter(context!!, { zone: Feature -> zoneListItemClicked(zone) }, onItemClickListener)
         recyclerView.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
         recyclerView.itemAnimator = DefaultItemAnimator()
         recyclerView.adapter = zoneAdapter
@@ -238,7 +247,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
         selectedZoneViewModel.selectedZone.value?.let {
             val zonePoint = getGeometryPoint(it.geometry())
             Handler().postDelayed({
-                moveCameraToLocation(zonePoint , zoom = 14.0)
+                moveCameraToLocation(zonePoint, zoom = 14.0)
             }, 1000)
             return
         }
@@ -304,7 +313,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
         pixel?.let {
             val features = mapboxMap?.queryRenderedFeatures(pixel, pointLayer, polygonLayer, handicapLayer)
             features?.let {
-                if(features.size > 0) {
+                if (features.size > 0) {
                     val feature = features[0]
                     addMarkerOnMap(Point.fromLngLat(point.longitude, point.latitude), true)
                     selectedZoneViewModel.selectedZone.value = feature
@@ -332,8 +341,8 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
      * */
     private fun addMarkerOnMap(point: Point, isWayPoint: Boolean) {
         val source = getMapStyle()?.getSourceAs<GeoJsonSource>(markerSource)
-        if(source != null) {
-            if(isWayPoint) {
+        if (source != null) {
+            if (isWayPoint) {
                 source.setGeoJson(FeatureCollection.fromFeatures(listOf(Feature.fromGeometry(routeViewModel.destination.value), Feature.fromGeometry(point))))
             } else {
                 source.setGeoJson(routeViewModel.destination.value)
@@ -354,7 +363,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
         val pointLayer = SymbolLayer(pointLayer, pointSource)
                 .withProperties(iconImage(parkingImage), iconSize(0.35f))
         val handicapLayer = SymbolLayer(handicapLayer, handicapSource)
-                        .withProperties(iconImage(handicapImage), iconSize(0.8f))
+                .withProperties(iconImage(handicapImage), iconSize(0.8f))
         polygonLayer.minZoom = 13f
         pointLayer.minZoom = 13f
         handicapLayer.minZoom = 13f
@@ -378,9 +387,9 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
     private fun addZonesToMap(featureCollection: FeatureCollection) {
         val features = featureCollection.features()
         //all features that is polygons
-        val polygons = features?.filter { it.geometry() is Polygon}
+        val polygons = features?.filter { it.geometry() is Polygon }
         //all features that is points
-        val points = features?.filter { it.geometry() is Point}
+        val points = features?.filter { it.geometry() is Point }
         polygons?.let { addPolygonsToMap(FeatureCollection.fromFeatures(polygons)) }
         points?.let { addMarkersToMap(FeatureCollection.fromFeatures(points), false) }
     }
@@ -396,7 +405,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
      * @param featureCollection Valid JSON string containing Point Features
      * @param isHandicap indicates if the given JSON is handicap zones, used to change marker icon*/
     private fun addMarkersToMap(featureCollection: FeatureCollection, isHandicap: Boolean) {
-        if(isHandicap) {
+        if (isHandicap) {
             val handicapSource = getMapStyle()?.getSourceAs<GeoJsonSource>(handicapSource)
             handicapSource?.setGeoJson(featureCollection)
         } else {
@@ -405,19 +414,24 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
         }
     }
 
+    /** Adds given route to the HashMap, if the HashMap contains 2 Routes
+     * add them to the Map. */
     private fun addRouteToMap(route: DirectionsRoute) {
-        if(navigationMapRoute == null) {
+        if (navigationMapRoute == null) {
             navigationMapRoute = NavigationMapRoute(null, mapView, mapboxMap!!, R.style.NavigationMapRoute)
         }
+        if (routeMap.size == 2) routeMap.clear()
         val profile = route.routeOptions()?.profile()
         profile?.let {
-            when(it) {
+            when (it) {
                 "driving" -> routeViewModel.routeDestination.postValue(route)
                 "walking" -> routeViewModel.routeWayPoint.postValue(route)
             }
             routeMap[it] = route
-            navigationMapRoute?.addRoutes(ArrayList<DirectionsRoute>(routeMap.values))
-            startNavigationButton.visibility = View.VISIBLE
+            if (routeMap.size == 2) {
+                navigationMapRoute?.addRoutes(ArrayList<DirectionsRoute>(routeMap.values))
+                startNavigationButton.visibility = View.VISIBLE
+            }
         }
     }
 
@@ -434,6 +448,9 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
         startActivityForResult(intent, REQUEST_CODE_AUTOCOMPLETE)
     }
 
+    /** Checks for requestCode for the AutoComplete activity
+     * Shows a snackbar to the user and changes visibility of StartNavigation Button, BottomSheet
+     * and the route to hidden.*/
     @SuppressLint("MissingPermission")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
@@ -442,9 +459,9 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
             handleAutoCompleteResult(data)
             navigationMapRoute?.updateRouteVisibilityTo(false)
             startNavigationButton.visibility = View.GONE
-            snackbar = Snackbar.make(coordinator, R.string.select_zone , Snackbar.LENGTH_LONG)
+            snackbar = Snackbar.make(coordinator, R.string.select_zone, Snackbar.LENGTH_LONG)
             val snackbarView = snackbar.view
-            snackbarView.setBackgroundColor(ContextCompat.getColor(activity!!.applicationContext,R.color.mapbox_blue))
+            snackbarView.setBackgroundColor(ContextCompat.getColor(activity!!.applicationContext, R.color.mapbox_blue))
             snackbar.show()
             bottomSheetBehavior.state = hidden
         }
@@ -468,7 +485,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
      * @param zone The list items binded object*/
     private fun zoneListItemClicked(zone: Feature) {
         bottomSheetBehavior.state = collapsed
-        if(zone != selectedZoneViewModel.selectedZone.value) {
+        if (zone != selectedZoneViewModel.selectedZone.value) {
             selectedZoneViewModel.selectedZone.value = zone
             val geometry = zone.geometry()
             val wayPoint: Point
@@ -487,7 +504,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
     }
 
     /** Returns a point of the given geometry */
-    private fun getGeometryPoint(geometry: Geometry?) : Point {
+    private fun getGeometryPoint(geometry: Geometry?): Point {
         return when (geometry) {
             is Polygon -> getPolygonCenter(geometry)
             is MultiPolygon -> getMultiPolygonCenter(geometry)
@@ -497,7 +514,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
 
     /** Returns a middle point of a given Geometry, only used for polygons */
     private fun getPolygonCenter(geometry: Geometry): Point {
-        val  builder  = LatLngBounds.Builder()
+        val builder = LatLngBounds.Builder()
         val polygon = geometry as Polygon
         polygon.outer()?.coordinates()?.forEach {
             builder.include(LatLng(it.latitude(), it.longitude()))
@@ -517,6 +534,12 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
         return Point.fromLngLat(center.longitude, center.latitude)
     }
 
+    /** Moves the camera to a given Point
+     * @param point point to move the camera to, default is getUserLocation
+     * @param tilt tilt of the map, defualt 0
+     * @param duration how long the animation should take, default 2 sec
+     * @param zoom zoom level of the camera, default 14
+     */
     private fun moveCameraToLocation(point: Point? = getUserLocation(), tilt: Double = 0.0, duration: Int = 2000, zoom: Double = 14.0) {
         point?.let {
             mapboxMap?.moveCamera(CameraUpdateFactory.newCameraPosition(CameraPosition.Builder()
@@ -527,12 +550,13 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
         }
     }
 
+    /** Returns the user's last known location as a Point */
     @SuppressLint("MissingPermission")
     private fun getUserLocation(): Point? {
         mapboxMap?.let {
             it.locationComponent.apply {
-                if(isLocationComponentEnabled) {
-                    lastKnownLocation?.let {location ->
+                if (isLocationComponentEnabled) {
+                    lastKnownLocation?.let { location ->
                         return Point.fromLngLat(location.longitude, location.latitude)
                     }
                 }
@@ -541,7 +565,9 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
         return null
     }
 
+    /** Returns the MapboxMap Style, used for manipulating how the map looks */
     private fun getMapStyle(): Style? = mapboxMap?.style
+
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         permissionsManager.onRequestPermissionsResult(requestCode, permissions, grantResults)
@@ -564,93 +590,52 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
     /** Creates and returns a BottomSheetCallback object
      * Used to set the right information into the BottomSheet depending on the Zone
      */
-    private fun getBottomSheetCallback() : BottomSheetBehavior.BottomSheetCallback {
-        return object: BottomSheetBehavior.BottomSheetCallback() {
+    private fun getBottomSheetCallback(): BottomSheetBehavior.BottomSheetCallback {
+        return object : BottomSheetBehavior.BottomSheetCallback() {
             override fun onStateChanged(bottomSheet: View, newState: Int) {
-                if(newState == expanded) {
+                if (newState == expanded) {
                     bottomSheet.expand.setImageResource(R.drawable.expand_more)
-                } else if(newState == collapsed) {
+                } else if (newState == collapsed) {
                     bottomSheet.expand.setImageResource(R.drawable.expand_less)
                 }
             }
+
             override fun onSlide(bottomSheet: View, slideOffset: Float) {
             }
         }
     }
 
-    private fun updateBottomSheet(){
+    /** Updates the contents of the BottomSheet with the information about the routes in routeMap
+     * and zone in the ViewModel */
+    private fun updateBottomSheet() {
         val selectedZone = selectedZoneViewModel.selectedZone.value
-        selectedZone?.let {
-            val totalTime = calcTotalTravelTime()
-            bottom_sheet.zoneId.text = selectedZone.getNumberProperty("zonecode").toInt().toString()
-            bottom_sheet.zoneName.text = selectedZone.getStringProperty("zone_name")
-            bottom_sheet.zoneOwner.text = selectedZone.getStringProperty("zone_owner")
-            bottom_sheet.travelTime.text = totalTime.toString()
-            bottom_sheet.arrivalTime.text = calcArrivalTime(totalTime).toString()
-            bottom_sheet.drivingDistance.text = calcTravelDistance("driving")
-            bottom_sheet.drivingTime.text = calcTravelTime("driving")
-            bottom_sheet.walkingDistance.text= selectedZone.getNumberProperty("distance").toInt().toString()
-            bottom_sheet.walkingTime.text = calcTravelTime("walking")
-            bottomSheetBehavior = BottomSheetBehavior.from(bottom_sheet)
-            bottomSheetBehavior.state = collapsed
-        }
-
-    }
-
-    private fun calcTotalTravelTime(): Int {
-        var totalTime = .0
-        ArrayList<DirectionsRoute>(routeMap.values).forEach{
-            totalTime += it.duration()!!
-        }
-        val timeInMinutes = TimeUnit.SECONDS.toMinutes(totalTime.toLong()).toInt()
-        val value = timeInMinutes
-        return value
-    }
-
-    private fun calcArrivalTime(time: Int): String {
-        val now = Calendar.getInstance()
-        now.add(Calendar.MINUTE, time)
-        Log.d("CalcArrivalTime", now.time.toString())
-        return SimpleDateFormat("HH:mm").format(now.time)
-    }
-
-    private fun calcTravelDistance(profile: String): String {
-        if(routeMap.size < 2) {
-            return ""
-        }
-        var distance = 0.0
-        val route = routeMap[profile]
-        if (route != null) {
-            route.distance()?.let {
-                distance = it
-            }
-        }
-        return "%.1f".format(distance/1000)
-    }
-
-    private fun calcTravelTime(profile: String): String {
-        if(routeMap.size < 2) {
-            return ""
-        }
-        var time = ""
-        val route = routeMap[profile]
-        if (route != null) {
-            route.duration()?.let {
-                time = if(it < 60) {
-                    it.toString() + "s"
-                } else {
-                    TimeUnit.SECONDS.toMinutes(it.toLong()).toInt().toString() + "min"
+        if (routeMap.size >= 2) {
+            selectedZone?.let {
+                val drivingRouteDistance = routeMap["driving"]?.distance()
+                val drivingDuration = routeMap["driving"]?.duration()
+                val walkingRouteDistance = routeMap["walking"]?.distance()
+                val walkingDuration = routeMap["walking"]?.duration()
+                bottom_sheet.apply {
+                    zoneId.text = selectedZone.getNumberProperty("zonecode").toInt().toString()
+                    zoneName.text = selectedZone.getStringProperty("zone_name")
+                    zoneOwner.text = selectedZone.getStringProperty("zone_owner")
+                    travelTime.text = travelViewModel.getTotalTravelTime(drivingDuration!!, walkingDuration!!)
+                    arrivalTime.text = travelViewModel.getArrivalTime(drivingDuration, walkingDuration)
+                    drivingDistance.text = travelViewModel.getDrivingDistance(drivingRouteDistance!!)
+                    drivingTime.text = travelViewModel.getDrivingTime(drivingDuration)
+                    walkingDistance.text = travelViewModel.getWalkingDistance(walkingRouteDistance!!)
+                    walkingTime.text = travelViewModel.getWalkingTime(walkingDuration)
                 }
+                bottomSheetBehavior = BottomSheetBehavior.from(bottom_sheet)
+                bottomSheetBehavior.state = collapsed
             }
         }
-        return time
     }
-
 
     override fun onMoveBegin(detector: MoveGestureDetector) {
         mapboxMap?.let {
-            if(it.cameraPosition.zoom < 13 && zoneViewModel.getObservableZones().value != null) {
-                Toast.makeText(requireContext(), "Zooma in för att se zoner", Toast.LENGTH_SHORT).show()
+            if (it.cameraPosition.zoom < 13 && zoneViewModel.getObservableZones().value != null && selectedZoneViewModel.selectedZone.value == null) {
+                Toast.makeText(requireContext(), "Zooma in mer för att se fler zoner", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -660,7 +645,6 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
 
     override fun onMoveEnd(detector: MoveGestureDetector) {
     }
-
 
     /**  ------ LifeCycle Methods ------*/
     override fun onStart() {
