@@ -56,6 +56,8 @@ class TripFragment : Fragment(), OnMapReadyCallback {
 
     @SuppressLint("MissingPermission")
     private fun initComponents(){
+
+        /*
         textFrom.setOnClickListener { startAutoCompleteActivity(FROM_TEXT_VIEW) }
         textDestination.setOnClickListener { startAutoCompleteActivity(DESTINATION_TEXT_VIEW) }
         iv_my_location.setOnClickListener {
@@ -83,6 +85,7 @@ class TripFragment : Fragment(), OnMapReadyCallback {
                 Toast.makeText(requireContext(), "Can´t swap", Toast.LENGTH_LONG).show()
             }
         }
+        */
         initButtons()
         initSpinner()
         initObservables()
@@ -120,7 +123,7 @@ class TripFragment : Fragment(), OnMapReadyCallback {
 
         arrayAdapter.setDropDownViewResource(R.layout.support_simple_spinner_dropdown_item)
 
-        spinner.adapter = arrayAdapter
+        //spinner.adapter = arrayAdapter
     }
 
     /** Starts a Search AutoComplete activity for searching locations */
@@ -153,11 +156,11 @@ class TripFragment : Fragment(), OnMapReadyCallback {
 
         when(id){
             FROM_TEXT_VIEW -> {
-                textFrom.text = feature.placeName()
+                //textFrom.text = feature.placeName()
                 fromLatLng = point.toJson().toString()
             }
             DESTINATION_TEXT_VIEW -> {
-                textDestination.text = feature.placeName()
+                //textDestination.text = feature.placeName()
                 destinationLatLng = point.toJson().toString()
             }
         }
