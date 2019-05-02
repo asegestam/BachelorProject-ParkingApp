@@ -27,7 +27,7 @@ class RouteRepository(val context: Context): KoinComponent {
      * @param origin Start location of the route, usually the user location
      * @param destination Final destination of the route*/
     fun getSimpleRoute(origin: Point, destination: Point, profile: String) {
-        val wayPointName: String = if(profile == "walking") "Destination" else "Parking"
+        val wayPointName: String = if(profile == "walking") "Destination" else "Parkering"
         NavigationRoute.builder(context)
                 .accessToken(Mapbox.getAccessToken()!!)
                 .origin(origin)
