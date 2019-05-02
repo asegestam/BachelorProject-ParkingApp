@@ -15,7 +15,6 @@ import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModel
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -57,13 +56,11 @@ import kotlinx.android.synthetic.main.selected_zone.view.*
 import org.koin.android.viewmodel.ext.android.sharedViewModel
 import org.koin.android.viewmodel.ext.android.viewModel
 import timber.log.Timber
-import java.text.SimpleDateFormat
-import java.util.*
-import java.util.concurrent.TimeUnit
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
-class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListener, MapboxMap.OnMoveListener {
+class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLongClickListener, PermissionsListener, MapboxMap.OnMoveListener {
+
     // variables for adding location layer
     private lateinit var mapView: MapView
     private var mapboxMap: MapboxMap? = null
@@ -122,9 +119,11 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
         mapView.onCreate(savedInstanceState)
         mapView.getMapAsync { mapboxMap ->
             mapboxMap.setStyle(getString(R.string.streets_parking)) { style ->
-                this.mapboxMap = mapboxMap
-                mapboxMap.addOnMapClickListener(this)
-                mapboxMap.addOnMoveListener(this)
+                this.mapboxMap = mapboxMap.apply {
+                    addOnMapClickListener(this@MapFragment)
+                    addOnMapLongClickListener(this@MapFragment)
+                    addOnMoveListener(this@MapFragment)
+                }
                 enableLocationComponent(style)
                 setupImageSource(style)
                 setupZoneLayers(style)
@@ -189,7 +188,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
          */
         selectedZoneViewModel.selectedZone.observe(this, Observer {
             val zonePoint = getGeometryPoint(it.geometry())
-            moveCameraToLocation(zonePoint, zoom = 14.0)
+            moveCameraToLocation(zonePoint)
         })
         //Observe an requested route, if changed this will add the route to the map
         routeViewModel.getRoute().observe(this, Observer { route ->
@@ -247,12 +246,12 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
         selectedZoneViewModel.selectedZone.value?.let {
             val zonePoint = getGeometryPoint(it.geometry())
             Handler().postDelayed({
-                moveCameraToLocation(zonePoint, zoom = 14.0)
+                moveCameraToLocation(zonePoint, zoom = 14.0, animate = false)
             }, 1000)
             return
         }
         Handler().postDelayed({
-            moveCameraToLocation()
+            moveCameraToLocation(zoom = 14.0, animate = false)
         }, 1000)
     }
 
@@ -300,6 +299,16 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
                 source?.setGeoJson(Feature.fromGeometry(wayPoint))
                 routeViewModel.getWayPointRoute(originPoint!!, wayPoint, destination)
             }
+        }
+        return true
+    }
+
+    override fun onMapLongClick(point: LatLng): Boolean {
+        routeViewModel.destination.value = Point.fromLngLat(point.longitude, point.latitude)
+        routeViewModel.destination.value?.let {
+            moveCameraToLocation(it, animate = false)
+            addMarkerOnMap(it, false)
+            zoneViewModel.getSpecificZones(latitude = it.latitude(), longitude = it.longitude(), radius = 1000)
         }
         return true
     }
@@ -441,6 +450,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
                 .accessToken(getString(R.string.access_token))
                 .placeOptions(PlaceOptions.builder()
                         .language("sv")
+                        .hint(getString(R.string.search_hint))
                         .country("SE")
                         .proximity(getUserLocation())
                         .build(PlaceOptions.MODE_CARDS))
@@ -495,7 +505,6 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
                 val destination = routeViewModel.destination.value
                 destination?.let {
                     routeViewModel.getWayPointRoute(getUserLocation()!!, wayPoint, destination)
-
                 }
             }
         } else {
@@ -540,13 +549,18 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
      * @param duration how long the animation should take, default 2 sec
      * @param zoom zoom level of the camera, default 14
      */
-    private fun moveCameraToLocation(point: Point? = getUserLocation(), tilt: Double = 0.0, duration: Int = 2000, zoom: Double = 14.0) {
+    private fun moveCameraToLocation(point: Point? = getUserLocation(), tilt: Double = 0.0, duration: Int = 2000, zoom: Double = getZoomLevel(), animate: Boolean = true) {
         point?.let {
-            mapboxMap?.moveCamera(CameraUpdateFactory.newCameraPosition(CameraPosition.Builder()
+            val cameraPosition = CameraPosition.Builder()
                     .target(LatLng(point.latitude(), point.longitude()))
                     .zoom(zoom)
                     .tilt(tilt)
-                    .build()))
+                    .build()
+            if (animate) {
+                mapboxMap?.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition), duration)
+            } else {
+                mapboxMap?.moveCamera(CameraUpdateFactory.newCameraPosition(cameraPosition))
+            }
         }
     }
 
@@ -564,6 +578,9 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, PermissionsListene
         }
         return null
     }
+
+    private fun getZoomLevel(): Double = mapboxMap?.cameraPosition?.zoom ?: 14.0
+
 
     /** Returns the MapboxMap Style, used for manipulating how the map looks */
     private fun getMapStyle(): Style? = mapboxMap?.style

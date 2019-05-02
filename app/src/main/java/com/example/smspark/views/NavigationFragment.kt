@@ -7,7 +7,6 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
@@ -24,7 +23,6 @@ import com.mapbox.services.android.navigation.ui.v5.listeners.RouteListener
 import com.mapbox.services.android.navigation.v5.offroute.OffRouteListener
 import com.mapbox.services.android.navigation.v5.routeprogress.ProgressChangeListener
 import com.mapbox.services.android.navigation.v5.routeprogress.RouteProgress
-import com.mapbox.services.android.navigation.v5.utils.RouteUtils
 import kotlinx.android.synthetic.main.fragment_navigation.*
 import org.koin.android.viewmodel.ext.android.sharedViewModel
 
@@ -93,16 +91,7 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
 
     /** Handles Progress Change along the route */
     override fun onProgressChange(location: Location?, routeProgress: RouteProgress?) {
-        val progressFraction = routeProgress?.currentLegProgress()?.fractionTraveled()
-        val routeUtils = RouteUtils()
-        if (progressFraction!! >= 0.99f && !routingToDestination) {
-            navigationView.stopNavigation()
-            showParkingDialog()
-        }
-        if (routeUtils.isArrivalEvent(routeProgress)) {
-            navigationView.retrieveMapboxNavigation()?.removeProgressChangeListener(this)
-            showSnackBar(R.string.destination_arrival, R.color.colorAccentLight, Snackbar.LENGTH_INDEFINITE, true)
-        }
+
     }
 
     /** Shows a dialog to the user asking for confirmation to start a parking at the parking zone */
@@ -155,6 +144,13 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
     }
 
     override fun onArrival() {
+        if(!routingToDestination) {
+            navigationView.stopNavigation()
+            showParkingDialog()
+        } else {
+            navigationView.stopNavigation()
+            showSnackBar(R.string.destination_arrival, R.color.colorAccentLight, Snackbar.LENGTH_INDEFINITE, true)
+        }
         Log.d("NavigationFragment", "Arrived")
     }
 

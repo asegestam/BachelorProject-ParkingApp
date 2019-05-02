@@ -36,7 +36,7 @@
     <string name="destination_arrival">Du är nu vid din destination!</string>
     <string name="reseinfo">Reseinformation</string>
     <string name="ankomst">Ankomst:</string>
-
+    <string name="search_hint">Sök på en destination..</string>
 
     //Spinner
     <string-array name="vehicles">
