@@ -24,7 +24,10 @@
             mapbox:layout_constraintVertical_bias="0.0"
             mapbox:mapbox_cameraZoom="8"
             mapbox:mapbox_cameraTargetLat="57.6710"
-            mapbox:mapbox_cameraTargetLng="12.0056"/>
+            mapbox:mapbox_cameraTargetLng="12.0056"
+            mapbox:mapbox_uiCompass="false"
+            mapbox:mapbox_uiLogo="false"
+            mapbox:mapbox_uiAttribution="false"/>
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recycler_view"
