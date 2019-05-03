@@ -4,10 +4,8 @@ import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.AdapterView
 import android.widget.ImageView
 import android.widget.TextView
-import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.smspark.R
 import com.google.android.material.button.MaterialButton
@@ -35,11 +33,13 @@ class ZoneAdapter(context: Context, private val listener: (com.mapbox.geojson.Fe
     }
 
     fun setData(zonesData: FeatureCollection) {
+        /*
         callCounter++
         if(callCounter == 2) {
             featureList.clear()
             callCounter = 0
         }
+        */
         zonesData.features()?.forEach {
             if(!featureList.contains(it)) featureList.add(it)
         }
@@ -60,7 +60,7 @@ class ZoneAdapter(context: Context, private val listener: (com.mapbox.geojson.Fe
 
 
         /** Binds the data to the viewholder by setting the text and listener */
-        fun bind(zone: com.mapbox.geojson.Feature, listner: (Feature) -> Unit) {
+        fun bind(zone: Feature, listner: (Feature) -> Unit) {
             if(zone.hasProperty("wkt")) {
                 icon.setImageResource(R.drawable.handicap_icon)
                 zoneType.text = "Typ: HandikappsParkering"
@@ -75,7 +75,6 @@ class ZoneAdapter(context: Context, private val listener: (com.mapbox.geojson.Fe
             v.setOnClickListener { listner(zone) }
             hideButton.setOnClickListener(itemClickListener)
         }
-
 
         override fun onClick(v: View?) {
         }

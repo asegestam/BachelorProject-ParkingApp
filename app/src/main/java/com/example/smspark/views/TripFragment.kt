@@ -13,6 +13,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
 import com.example.smspark.R
+import com.example.smspark.model.GeometryUtils
 import com.example.smspark.viewmodels.RouteViewModel
 import com.example.smspark.viewmodels.SelectedZoneViewModel
 import com.example.smspark.viewmodels.ZoneViewModel
@@ -20,8 +21,6 @@ import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.mapbox.api.geocoding.v5.models.CarmenFeature
 import com.mapbox.geojson.*
-import com.mapbox.mapboxsdk.geometry.LatLng
-import com.mapbox.mapboxsdk.geometry.LatLngBounds
 import com.mapbox.mapboxsdk.plugins.places.autocomplete.model.PlaceOptions
 import com.mapbox.mapboxsdk.plugins.places.autocomplete.ui.PlaceAutocompleteFragment
 import com.mapbox.mapboxsdk.plugins.places.autocomplete.ui.PlaceSelectionListener
@@ -63,23 +62,25 @@ class TripFragment : Fragment() {
                 }
         initComponents()
     }
-
-
-    private fun initAutoComplete(fragment: PlaceAutocompleteFragment, tag: String) {
+    /** Adds a place selected listener to a given PlaceAutoCompleteFragment */
+    private fun addPlaceSelectionListener(fragment: PlaceAutocompleteFragment, tag: String) {
         fragment.setOnPlaceSelectedListener(object : PlaceSelectionListener {
                 override fun onPlaceSelected(carmenFeature: CarmenFeature) {
                     when(tag) {
                         "to" -> handleToLocation(carmenFeature)
                         "from" -> handleFromLocation(carmenFeature)
                     }
+                    //remove fragment when it has done it's job
                     removeAutoCompleteFragment()
                 }
                 override fun onCancel() {
+                    //remove fragment when user cancels the widget
                     removeAutoCompleteFragment()
                 }
             })
     }
 
+    /** Commit a fragment transaction of a PlaceAutocompleteFragment */
     private fun addAutoCompleteFragment(fragment: PlaceAutocompleteFragment, tag: String) {
         activity?.supportFragmentManager?.let {
             if(it.findFragmentByTag(tag) == null) {
@@ -87,13 +88,13 @@ class TripFragment : Fragment() {
                 val transaction = it.beginTransaction()
                 transaction.add(R.id.fragment_container, fragment, tag)
                 transaction.commit()
-                initAutoComplete(fragment, tag)
+                addPlaceSelectionListener(fragment, tag)
             } else {
                 removeAutoCompleteFragment()
             }
         }
     }
-
+    /** Commit a fragment removal transaction of a PlaceAutocompleteFragment */
     private fun removeAutoCompleteFragment() {
         activity?.supportFragmentManager?.let {
             println(it.fragments)
@@ -113,6 +114,9 @@ class TripFragment : Fragment() {
         initObservables()
     }
 
+    /** Handles the from location part of the search
+     * changes the text and showing the correct views
+     * */
     private fun handleFromLocation(carmenFeature: CarmenFeature) {
         fromPoint = carmenFeature.geometry() as Point
         fromLocation.text = carmenFeature.text()
@@ -120,7 +124,9 @@ class TripFragment : Fragment() {
         clearText.visibility = View.VISIBLE
         if(checkInputs()) next_btn.isEnabled = true
     }
-
+    /** Handles the to location part of the search
+     * changes the text
+     * */
     private fun handleToLocation(carmenFeature: CarmenFeature) {
         toPoint = carmenFeature.geometry() as Point
         toLocation.text = carmenFeature.text()
@@ -136,7 +142,7 @@ class TripFragment : Fragment() {
                 if(checkInputs()) {
                     selectedZoneViewModel.selectedZone.value = zone
                     routeViewModel.destination.value = toPoint
-                    routeViewModel.getWayPointRoute(origin = fromPoint, wayPoint = getGeometryPoint(zone?.geometry()), destination = toPoint )
+                    routeViewModel.getWayPointRoute(origin = fromPoint, wayPoint = geometryUtils.getGeometryPoint(zone?.geometry()), destination = toPoint )
                     progressBar.visibility = View.VISIBLE
                 }
             }
@@ -146,41 +152,11 @@ class TripFragment : Fragment() {
         })
     }
 
-    /** Returns a point of the given geometry */
-    private fun getGeometryPoint(geometry: Geometry?): Point {
-        return when (geometry) {
-            is Polygon -> getPolygonCenter(geometry)
-            is MultiPolygon -> getMultiPolygonCenter(geometry)
-            else -> geometry as Point
-        }
-    }
-
-    /** Returns a middle point of a given Geometry, only used for polygons */
-    private fun getPolygonCenter(geometry: Geometry): Point {
-        val builder = LatLngBounds.Builder()
-        val polygon = geometry as Polygon
-        polygon.outer()?.coordinates()?.forEach {
-            builder.include(LatLng(it.latitude(), it.longitude()))
-        }
-        val center = builder.build().center
-        return Point.fromLngLat(center.longitude, center.latitude)
-    }
-
-    /** Returns a middle point of a given Geometry, only used for MultiPolygons */
-    private fun getMultiPolygonCenter(geometry: Geometry): Point {
-        val builder = LatLngBounds.Builder()
-        val multiPolygon = geometry as MultiPolygon
-        multiPolygon.coordinates()[0][0].forEach { point ->
-            builder.include(LatLng(point.latitude(), point.longitude()))
-        }
-        val center = builder.build().center
-        return Point.fromLngLat(center.longitude, center.latitude)
-    }
-
-    private fun getNearestParking() {
+    private fun getZones() {
         if (checkInputs()) zoneViewModel.getSpecificZones(toPoint.latitude(), toPoint.longitude(), 1000)
     }
 
+    /** Initiates the button click listeners */
     private fun initButtons() {
         toLocation.setOnClickListener { addAutoCompleteFragment(autoCompleteFragment, "to") }
         fromLocation.setOnClickListener { addAutoCompleteFragment(autoCompleteFragment, "from") }
@@ -213,11 +189,13 @@ class TripFragment : Fragment() {
         }
         next_btn.setOnClickListener {
             if(checkInputs()) {
-                getNearestParking()
+                getZones()
             } else Toast.makeText(requireContext(), "Choose all required alternatives", Toast.LENGTH_LONG).show()
         }
     }
 
+    /** Swaps the content of the textviews
+     * fromLocation text becomes toLocation text and vice versa*/
     private fun swapLocations() {
         val tempText = fromLocation.text
         val tempPoint = fromPoint
@@ -226,11 +204,12 @@ class TripFragment : Fragment() {
         fromPoint = toPoint
         toPoint = tempPoint
     }
-
+    /** Checks if the TextViews has inputs */
     private fun checkInputs(): Boolean = !toLocation.text.isNullOrEmpty() && !fromLocation.text.isNullOrEmpty()
 
     companion object {
         val TAG : String = "TripFragment"
+        val geometryUtils = GeometryUtils()
     }
 
     override fun onPause() {
