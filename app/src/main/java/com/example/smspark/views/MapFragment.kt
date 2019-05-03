@@ -133,6 +133,9 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
                 initObservers()
                 initCamera()
                 initSelectedZone()
+                Handler().postDelayed({
+                    zoneViewModel.getSpecificZones(getUserLocation()!!.latitude(), getUserLocation()!!.longitude(), 1000)
+                }, 500)
             }
         }
         initButtons()

@@ -41,7 +41,7 @@ class TicketsFragment : Fragment() {
 
         val tickets: ArrayList<String> = ArrayList()
 
-        for (i in 1..100){
+        for (i in 1..20){
             tickets.add("Parking #$i")
         }
 

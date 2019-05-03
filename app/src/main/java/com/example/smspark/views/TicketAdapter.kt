@@ -18,10 +18,10 @@ class TicketAdapter(val tickets: ArrayList<String>) : RecyclerView.Adapter<Ticke
     override fun getItemCount() = tickets.size
 
     override fun onBindViewHolder(holder: TicketAdapter.TicketViewHolder, position: Int) {
-        holder.ticket.text = tickets[position]
+
     }
 
     class TicketViewHolder(itemView : View) : RecyclerView.ViewHolder(itemView) {
-        val ticket: TextView = itemView.findViewById<TextView>(R.id.ticketText)
+
     }
 }
