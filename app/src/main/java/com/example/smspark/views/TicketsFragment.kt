@@ -7,20 +7,26 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.LinearSnapHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.example.smspark.R
+import com.example.smspark.viewmodels.ZoneViewModel
 import com.mapbox.geojson.Feature
 import kotlinx.android.synthetic.main.fragment_map.*
 import kotlinx.android.synthetic.main.fragment_tickets.*
+import org.koin.android.viewmodel.ext.android.sharedViewModel
 
 class TicketsFragment : Fragment() {
 
     //RecyclerView fields
     private lateinit var recyclerView: RecyclerView
     private lateinit var ticketAdapter: TicketAdapter
+
+    //lazy inject ViewModel
+    private val zoneViewModel: ZoneViewModel by sharedViewModel()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,23 +40,18 @@ class TicketsFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        initRecyclerView()
+        zoneViewModel.getObservableZones().observe(this, Observer {
+            initRecyclerView(it.features()!!.toList())
+        })
+        zoneViewModel.getSpecificZones()
     }
 
-    private fun initRecyclerView(){
-
-        val tickets: ArrayList<String> = ArrayList()
-
-        for (i in 1..20){
-            tickets.add("Parking #$i")
-        }
+    private fun initRecyclerView(features : List<Feature>){
 
         recyclerView = ticket_recycler_view
-        ticketAdapter = TicketAdapter(tickets)
+        ticketAdapter = TicketAdapter(features)
         recyclerView.layoutManager = LinearLayoutManager(context, RecyclerView.VERTICAL, false)
         recyclerView.adapter = ticketAdapter
-        val snapHelper = LinearSnapHelper()
-        snapHelper.attachToRecyclerView(recyclerView)
     }
 
     companion object {
