@@ -8,13 +8,13 @@
     tools:context="com.example.smspark.views.TicketsFragment">
 
     <androidx.cardview.widget.CardView
-        android:id="@+id/cardView3"
+        android:id="@+id/parkingCardView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
-        android:backgroundTint="@color/colorPrimaryLight"
+        app:cardBackgroundColor="@color/colorPrimaryLight"
         app:cardCornerRadius="10dp"
         app:cardElevation="8dp"
         app:layout_constraintEnd_toEndOf="parent"
@@ -39,7 +39,7 @@
         android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/cardView3" />
+        app:layout_constraintTop_toBottomOf="@+id/parkingCardView" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/ticket_recycler_view"
