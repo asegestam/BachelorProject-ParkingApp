@@ -1,6 +1,5 @@
 package com.example.smspark.viewmodels
 
-import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.example.smspark.model.routemodel.RouteRepository
@@ -19,17 +18,15 @@ class RouteViewModel(private val repo: RouteRepository) : ViewModel() {
 
     val destination: MutableLiveData<Point> = repo.routeDestination
 
+    val routeMap: MutableLiveData<HashMap<String, DirectionsRoute>> = repo.routeMap
 
-    fun getRoute(): LiveData<DirectionsRoute> {
-        return repo.route
-    }
 
-    fun getSimpleRoute(origin: Point, destination: Point, profile: String) {
-        return repo.getSimpleRoute(origin, destination, profile)
+    fun getRoutes(): MutableLiveData<HashMap<String, DirectionsRoute>> {
+        return repo.routeMap
     }
 
     fun getWayPointRoute(origin: Point, wayPoint: Point, destination: Point) {
-        return repo.getWayPointRoute(origin, wayPoint, destination)
+        return repo.getRoutes(origin, wayPoint, destination)
     }
 
 }

@@ -57,7 +57,6 @@ import org.koin.android.viewmodel.ext.android.sharedViewModel
 import org.koin.android.viewmodel.ext.android.viewModel
 import timber.log.Timber
 import kotlin.collections.ArrayList
-import kotlin.collections.HashMap
 
 class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLongClickListener, PermissionsListener, MapboxMap.OnMoveListener {
 
@@ -69,7 +68,6 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
     private var permissionsManager: PermissionsManager = PermissionsManager(this)
     // variables for calculating and drawing a route
     private var navigationMapRoute: NavigationMapRoute? = null
-    private var routeMap = HashMap<String, DirectionsRoute>()
     //RecyclerView fields
     private lateinit var recyclerView: RecyclerView
     private lateinit var zoneAdapter: ZoneAdapter
@@ -115,6 +113,8 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
         super.onViewCreated(view, savedInstanceState)
         val activity = activity as MainActivity
         activity.changeNavBarVisibility(true)
+        progressBar.visibility = View.VISIBLE
+        initBottomSheet()
         mapView = view.findViewById(R.id.mapView)
         mapView.onCreate(savedInstanceState)
         mapView.getMapAsync { mapboxMap ->
@@ -128,7 +128,6 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
                 setupImageSource(style)
                 setupZoneLayers(style)
                 setupMarkerLayer(style)
-                checkTripFragment()
                 initRecyclerView()
                 initObservers()
                 initCamera()
@@ -136,22 +135,25 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
             }
         }
         initButtons()
-        initBottomSheet()
     }
 
     /**Checks if there is an argument bundle from TripFragment, if it exists fetch zones and a route */
-    private fun checkTripFragment() {
+    private fun checkArguments(): Boolean {
         arguments?.let {
-            val fromPoint = Point.fromJson(it.getString("fromArg"))
-            val destinationPoint = Point.fromJson(it.getString("destArg"))
-            val wayPoint = Point.fromJson(it.getString("wayPointArg"))
-            val wayPointFeature = Feature.fromJson(it.getString("wayPointFeatureArg"))
+            val fromPoint = Point.fromJson(it.getString("fromArg")!!)
+            val destinationPoint = Point.fromJson(it.getString("destArg")!!)
+            val wayPoint = Point.fromJson(it.getString("wayPointArg")!!)
+            val wayPointFeature = Feature.fromJson(it.getString("wayPointFeatureArg")!!)
             zoneViewModel.getSpecificZones(destinationPoint.latitude(), destinationPoint.longitude(), 1000)
             routeViewModel.getWayPointRoute(fromPoint, wayPoint, destinationPoint)
             addMarkerOnMap(destinationPoint, false)
             addMarkerOnMap(wayPoint, true)
+            moveCameraToLocation(destinationPoint, animate = true)
             selectedZoneViewModel.selectedZone.value = wayPointFeature
+            routeViewModel.destination.value = destinationPoint
+            return true
         }
+        return false
     }
 
     /** Initiates ViewModel observers */
@@ -191,9 +193,17 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
             moveCameraToLocation(zonePoint)
         })
         //Observe an requested route, if changed this will add the route to the map
-        routeViewModel.getRoute().observe(this, Observer { route ->
-            addRouteToMap(route)
-            updateBottomSheet()
+        routeViewModel.routeMap.observe(this, Observer {
+            if(it.count() >= 2) {
+                addRoutesToMap(it)
+                updateBottomSheet(it)
+                it.forEach{ entry ->
+                    when(entry.key) {
+                        "driving" -> routeViewModel.routeDestination.value = entry.value
+                        "walking" -> routeViewModel.routeWayPoint.value= entry.value
+                    }
+                }
+            }
         })
     }
 
@@ -231,14 +241,18 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
      * add the routes and markers to the map
      */
     private fun initSelectedZone() {
-        val destinationRoute = routeViewModel.routeDestination.value
-        val wayPointRoute = routeViewModel.routeWayPoint.value
+        val routes = routeViewModel.getRoutes().value
         val zone = selectedZoneViewModel.selectedZone.value
-        if (destinationRoute != null && wayPointRoute != null) {
-            addRouteToMap(destinationRoute)
-            addRouteToMap(wayPointRoute)
+        if (!routes.isNullOrEmpty()) {
+            Log.d(TAG, "adding routes to map")
+            addRoutesToMap(routes)
+            updateBottomSheet(routes)
         }
-        zone?.let { addMarkerOnMap(getGeometryPoint(it.geometry()), true) }
+        zone?.let {
+            Log.d(TAG, zone.getStringProperty("zone_name"))
+            addMarkerOnMap(getGeometryPoint(it.geometry()), true)
+            navigationMapRoute?.updateRouteVisibilityTo(true)
+        }
     }
 
     /** Moves camera to either the user's location or to a selected zone, if it exists */
@@ -247,11 +261,13 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
             val zonePoint = getGeometryPoint(it.geometry())
             Handler().postDelayed({
                 moveCameraToLocation(zonePoint, zoom = 14.0, animate = false)
+                progressBar.visibility = View.GONE
             }, 1000)
             return
         }
         Handler().postDelayed({
             moveCameraToLocation(zoom = 14.0, animate = false)
+            progressBar.visibility = View.GONE
         }, 1000)
     }
 
@@ -298,6 +314,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
                 val source = mapboxMap?.style?.getSourceAs<GeoJsonSource>("map-click-marker")
                 source?.setGeoJson(Feature.fromGeometry(wayPoint))
                 routeViewModel.getWayPointRoute(originPoint!!, wayPoint, destination)
+                progressBar.visibility = View.VISIBLE
             }
         }
         return true
@@ -425,23 +442,13 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
 
     /** Adds given route to the HashMap, if the HashMap contains 2 Routes
      * add them to the Map. */
-    private fun addRouteToMap(route: DirectionsRoute) {
+    private fun addRoutesToMap(routes: HashMap<String, DirectionsRoute>) {
         if (navigationMapRoute == null) {
             navigationMapRoute = NavigationMapRoute(null, mapView, mapboxMap!!, R.style.NavigationMapRoute)
         }
-        if (routeMap.size == 2) routeMap.clear()
-        val profile = route.routeOptions()?.profile()
-        profile?.let {
-            when (it) {
-                "driving" -> routeViewModel.routeDestination.postValue(route)
-                "walking" -> routeViewModel.routeWayPoint.postValue(route)
-            }
-            routeMap[it] = route
-            if (routeMap.size == 2) {
-                navigationMapRoute?.addRoutes(ArrayList<DirectionsRoute>(routeMap.values))
-                startNavigationButton.visibility = View.VISIBLE
-            }
-        }
+        navigationMapRoute?.addRoutes(ArrayList<DirectionsRoute>(routes.values))
+        progressBar.visibility = View.GONE
+        startNavigationButton.visibility = View.VISIBLE
     }
 
     /** Starts a Search AutoComplete activity for searching locations */
@@ -505,6 +512,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
                 val destination = routeViewModel.destination.value
                 destination?.let {
                     routeViewModel.getWayPointRoute(getUserLocation()!!, wayPoint, destination)
+                    progressBar.visibility = View.VISIBLE
                 }
             }
         } else {
@@ -624,84 +632,82 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
 
     /** Updates the contents of the BottomSheet with the information about the routes in routeMap
      * and zone in the ViewModel */
-    private fun updateBottomSheet() {
+    private fun updateBottomSheet(routes: HashMap<String, DirectionsRoute>) {
         val selectedZone = selectedZoneViewModel.selectedZone.value
-        if (routeMap.size >= 2) {
-            selectedZone?.let {
-                val drivingRouteDistance = routeMap["driving"]?.distance()
-                val drivingDuration = routeMap["driving"]?.duration()
-                val walkingRouteDistance = routeMap["walking"]?.distance()
-                val walkingDuration = routeMap["walking"]?.duration()
-                bottom_sheet.apply {
-                    zoneId.text = selectedZone.getNumberProperty("zonecode").toInt().toString()
-                    zoneName.text = selectedZone.getStringProperty("zone_name")
-                    zoneOwner.text = selectedZone.getStringProperty("zone_owner")
-                    travelTime.text = travelViewModel.getTotalTravelTime(drivingDuration!!, walkingDuration!!)
-                    arrivalTime.text = travelViewModel.getArrivalTime(drivingDuration, walkingDuration)
-                    drivingDistance.text = travelViewModel.getDrivingDistance(drivingRouteDistance!!)
-                    drivingTime.text = travelViewModel.getDrivingTime(drivingDuration)
-                    walkingDistance.text = travelViewModel.getWalkingDistance(walkingRouteDistance!!)
-                    walkingTime.text = travelViewModel.getWalkingTime(walkingDuration)
-                }
-                bottomSheetBehavior = BottomSheetBehavior.from(bottom_sheet)
-                bottomSheetBehavior.state = collapsed
+        selectedZone?.let {
+            val drivingRouteDistance = routes["driving"]?.distance()
+            val drivingDuration = routes["driving"]?.duration()
+            val walkingRouteDistance = routes["walking"]?.distance()
+            val walkingDuration = routes["walking"]?.duration()
+            bottom_sheet.apply {
+                zoneId.text = selectedZone.getNumberProperty("zonecode").toInt().toString()
+                zoneName.text = selectedZone.getStringProperty("zone_name")
+                zoneOwner.text = selectedZone.getStringProperty("zone_owner")
+                travelTime.text = travelViewModel.getTotalTravelTime(drivingDuration!!, walkingDuration!!)
+                arrivalTime.text = travelViewModel.getArrivalTime(drivingDuration, walkingDuration)
+                drivingDistance.text = travelViewModel.getDrivingDistance(drivingRouteDistance!!)
+                drivingTime.text = travelViewModel.getDrivingTime(drivingDuration)
+                walkingDistance.text = travelViewModel.getWalkingDistance(walkingRouteDistance!!)
+                walkingTime.text = travelViewModel.getWalkingTime(walkingDuration)
             }
+            bottomSheetBehavior = BottomSheetBehavior.from(bottom_sheet)
+            bottomSheetBehavior.state = collapsed
         }
     }
 
-    override fun onMoveBegin(detector: MoveGestureDetector) {
-        mapboxMap?.let {
-            if (it.cameraPosition.zoom < 13 && zoneViewModel.getObservableZones().value != null && selectedZoneViewModel.selectedZone.value == null) {
-                Toast.makeText(requireContext(), "Zooma in mer för att se fler zoner", Toast.LENGTH_SHORT).show()
-            }
+
+override fun onMoveBegin(detector: MoveGestureDetector) {
+    mapboxMap?.let {
+        if (it.cameraPosition.zoom < 13 && zoneViewModel.getObservableZones().value != null && selectedZoneViewModel.selectedZone.value == null) {
+            Toast.makeText(requireContext(), "Zooma in mer för att se fler zoner", Toast.LENGTH_SHORT).show()
         }
     }
+}
 
-    override fun onMove(detector: MoveGestureDetector) {
-    }
+override fun onMove(detector: MoveGestureDetector) {
+}
 
-    override fun onMoveEnd(detector: MoveGestureDetector) {
-    }
+override fun onMoveEnd(detector: MoveGestureDetector) {
+}
 
-    /**  ------ LifeCycle Methods ------*/
-    override fun onStart() {
-        super.onStart()
-        mapView.onStart()
-    }
+/**  ------ LifeCycle Methods ------*/
+override fun onStart() {
+    super.onStart()
+    mapView.onStart()
+}
 
-    override fun onResume() {
-        super.onResume()
-        mapView.onResume()
-    }
+override fun onResume() {
+    super.onResume()
+    mapView.onResume()
+}
 
-    override fun onPause() {
-        super.onPause()
+override fun onPause() {
+    super.onPause()
+    mapView.onPause()
+}
 
-        mapView.onPause()
-    }
+override fun onStop() {
+    super.onStop()
+    mapView.onStop()
+}
 
-    override fun onStop() {
-        super.onStop()
-        mapView.onStop()
-    }
+override fun onSaveInstanceState(outState: Bundle) {
+    super.onSaveInstanceState(outState)
+    mapView.onSaveInstanceState(outState)
+}
 
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        mapView.onSaveInstanceState(outState)
-    }
+override fun onDestroyView() {
+    super.onDestroyView()
+    mapboxMap?.removeOnMapClickListener(this)
+    mapView.onDestroy()
+}
 
-    override fun onDestroyView() {
-        super.onDestroyView()
-        mapboxMap?.removeOnMapClickListener(this)
-        mapView.onDestroy()
-    }
+override fun onLowMemory() {
+    super.onLowMemory()
+    mapView.onLowMemory()
+}
 
-    override fun onLowMemory() {
-        super.onLowMemory()
-        mapView.onLowMemory()
-    }
-
-    companion object {
-        private const val TAG = "MapFragment"
-    }
+companion object {
+    private const val TAG = "MapFragment"
+}
 }

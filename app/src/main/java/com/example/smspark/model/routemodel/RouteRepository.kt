@@ -1,6 +1,7 @@
 package com.example.smspark.model.routemodel
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import com.mapbox.api.directions.v5.models.DirectionsResponse
 import com.mapbox.api.directions.v5.models.DirectionsRoute
@@ -11,53 +12,76 @@ import org.koin.core.KoinComponent
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import timber.log.Timber
 
 class RouteRepository(val context: Context): KoinComponent {
-
-    val route: MutableLiveData<DirectionsRoute> by lazy {
-        MutableLiveData<DirectionsRoute>()
-    }
 
     val routeDestination: MutableLiveData<Point> by lazy {
         MutableLiveData<Point>()
     }
 
-    /** Returns a route from a origin point, to a destination with a waypoint in between
-     * @param origin Start location of the route, usually the user location
-     * @param destination Final destination of the route*/
-    fun getSimpleRoute(origin: Point, destination: Point, profile: String) {
-        val wayPointName: String = if(profile == "walking") "Destination" else "Parkering"
-        NavigationRoute.builder(context)
-                .accessToken(Mapbox.getAccessToken()!!)
-                .origin(origin)
-                .profile(profile)
-                .destination(destination)
-                .addWaypointNames("Start", wayPointName)
-                .build()
-                .getRoute(object : Callback<DirectionsResponse> {
-                    override fun onResponse(call: Call<DirectionsResponse>, response: Response<DirectionsResponse>) {
-                        if (response.body() == null) {
-                            Timber.e("No routes found")
-                            return
-                        }
-                        route.value = response.body()!!.routes()[0]
-                    }
-
-                    override fun onFailure(call: Call<DirectionsResponse>, throwable: Throwable) {
-                    }
-                })
+    val routeMap: MutableLiveData<HashMap<String, DirectionsRoute>> by lazy {
+        MutableLiveData<HashMap<String, DirectionsRoute>>()
     }
 
-    /** Returns a route from a origin point, to a destination with a waypoint in between
-     * @param origin Start location of the route, usually the user location
-     * @param wayPoint A stop point in the route between start and destination
+
+    /** Returns a route from a start point, to a destination with a waypoint in between
+     * @param start Start location of the route, usually the user location
+     * @param parking A stop point in the route between start and destination
      * @param destination Final destination of the route*/
-    fun getWayPointRoute(origin: Point, wayPoint: Point, destination: Point) {
-        //Create simple route from the users location (origin) to the parking (wayPoint)
-        getSimpleRoute(origin, wayPoint, "driving")
-        //Create simple route from the parking (wayPoint) to the final destination (destination)
-        getSimpleRoute(wayPoint, destination, "walking")
-        routeDestination.value = destination
+    fun getRoutes(start: Point, parking: Point, destination: Point, profile: String = "driving") {
+        getRouteBuilder(start, parking, destination, profile).build().getRoute(object : Callback<DirectionsResponse> {
+            override fun onResponse(call: Call<DirectionsResponse>, response: Response<DirectionsResponse>) {
+                if (response.body() == null) {
+                    Log.e("RouteRepo", "No routes found")
+                    return
+                }
+                if (routeMap.value.isNullOrEmpty()) {
+                    //routeMap is empty, create a HashMap, put in the route and add it to the LiveData
+                    val map = hashMapOf<String, DirectionsRoute>()
+                    map[profile] = response.body()!!.routes()[0]
+                    routeMap.value = map
+                    //one route is fetched, fetch the second route recursivley
+                    getRoutes(start, parking, destination, "walking")
+                }
+                routeMap.value?.let {
+                    if (routeMap.value!!.size == 1) {
+                        //there is one other route in the map, add the second one
+                        it[profile] = response.body()!!.routes()[0]
+                        routeMap.value = it
+                        return
+                    }
+                    else {
+                        //the map is full and is cleared, and then call this method recursivley to fetch the new routes
+                        it.clear()
+                        routeMap.value = it
+                        getRoutes(start, parking, destination)
+                    }
+                }
+            }
+            override fun onFailure(call: Call<DirectionsResponse>, throwable: Throwable) {
+            }
+        })
+
+    }
+
+
+    private fun getRouteBuilder(start: Point, parking: Point, destination: Point, profile: String): NavigationRoute.Builder {
+        val navigationRoute = NavigationRoute.builder(context)
+                .accessToken(Mapbox.getAccessToken()!!)
+                .profile(profile)
+        if (profile == "walking") {
+            navigationRoute.apply {
+                origin(parking)
+                destination(destination)
+                addWaypointNames("Parkering", "Destination")
+            }
+        } else {
+            navigationRoute.apply {
+                origin(start)
+                destination(parking)
+                addWaypointNames("Start", "Parkering")
+            }
+        }
+        return navigationRoute
     }
 }
