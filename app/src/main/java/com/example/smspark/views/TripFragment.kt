@@ -136,6 +136,7 @@ class TripFragment : Fragment() {
     private fun initObservables(){
         zoneViewModel.getObservableZones().observe(this, Observer { data ->
             if(data.features().isNullOrEmpty()) {
+                //TODO showNoZonesDialog() be användaren öka radiusen om de vill hitta zon
                 Toast.makeText(requireContext(), "No zones found near destination", Toast.LENGTH_SHORT).show()
             } else {
                 val zone = data.features()?.first()
@@ -148,7 +149,9 @@ class TripFragment : Fragment() {
             }
         })
         routeViewModel.getRoutes().observe(this, Observer {
-            if(checkInputs()) findNavController().navigate(R.id.action_tripFragment_to_mapFragment)
+            if (it.count() >= 2 && checkInputs()) {
+                findNavController().navigate(R.id.action_tripFragment_to_mapFragment)
+            }
         })
     }
 
