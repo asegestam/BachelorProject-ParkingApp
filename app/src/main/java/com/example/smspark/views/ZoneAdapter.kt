@@ -1,6 +1,5 @@
 package com.example.smspark.views
 
-import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -12,12 +11,10 @@ import com.google.android.material.button.MaterialButton
 import com.mapbox.geojson.Feature
 import com.mapbox.geojson.FeatureCollection
 
-class ZoneAdapter(context: Context, private val listener: (com.mapbox.geojson.Feature) -> Unit, private val itemClickListener: View.OnClickListener): RecyclerView.Adapter<ZoneAdapter.ZoneViewHolder>() {
+class ZoneAdapter(private val listener: (Feature) -> Unit, private val itemClickListener: View.OnClickListener): RecyclerView.Adapter<ZoneAdapter.ZoneViewHolder>() {
 
     private lateinit var zones: FeatureCollection
     private val featureList: ArrayList<Feature> = ArrayList()
-    private val applicationContext: Context = context
-    private var callCounter: Int = 0
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ZoneViewHolder {
         val cardView = LayoutInflater.from(parent.context)
@@ -33,13 +30,7 @@ class ZoneAdapter(context: Context, private val listener: (com.mapbox.geojson.Fe
     }
 
     fun setData(zonesData: FeatureCollection) {
-        /*
-        callCounter++
-        if(callCounter == 2) {
-            featureList.clear()
-            callCounter = 0
-        }
-        */
+        featureList.clear()
         zonesData.features()?.forEach {
             if(!featureList.contains(it)) featureList.add(it)
         }
@@ -62,8 +53,8 @@ class ZoneAdapter(context: Context, private val listener: (com.mapbox.geojson.Fe
         /** Binds the data to the viewholder by setting the text and listener */
         fun bind(zone: Feature, listner: (Feature) -> Unit) {
             if(zone.hasProperty("wkt")) {
-                icon.setImageResource(R.drawable.handicap_icon)
                 zoneType.text = "Typ: HandikappsParkering"
+                icon.setImageResource(R.drawable.accessible_png)
             }
             else {
                 icon.setImageResource(R.drawable.park_blue)

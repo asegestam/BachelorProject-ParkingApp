@@ -17,15 +17,13 @@ class ZoneRepositoryImpl: ZoneRepository, KoinComponent {
 
     private val TAG  = "ZoneRepositoryImpl"
     private val service: ZoneService by inject()
-    val zoneFeatures = MutableLiveData<FeatureCollection>()
-    val handicapPoints = MutableLiveData<FeatureCollection>()
 
-    override fun getObservableZones() : LiveData<FeatureCollection>{
-        return zoneFeatures
+    val allZones: MutableLiveData<HashMap<String,FeatureCollection>> by lazy {
+        MutableLiveData<HashMap<String,FeatureCollection>>()
     }
 
-    override fun getObservableHandicapZones(): LiveData<FeatureCollection> {
-        return handicapPoints
+    override fun getAllZones() : LiveData<HashMap<String,FeatureCollection>>{
+        return allZones
     }
 
     /** Fetches zones from an REST API around a specific LatLong with a fixes radius
@@ -36,7 +34,6 @@ class ZoneRepositoryImpl: ZoneRepository, KoinComponent {
     override fun getSpecificZones(latitude: Double, longitude: Double, radius: Int){
 
         val call = service.getSpecificZones(latitude, longitude, radius)
-        //val call = service.getZones()
         call.enqueue(object : retrofit2.Callback<Zone> {
             override fun onFailure(call: Call<Zone>, t: Throwable) {
                 Log.e(TAG, t.message)
@@ -50,7 +47,27 @@ class ZoneRepositoryImpl: ZoneRepository, KoinComponent {
                     //create a FeatureCollection of the given respone
                     val featureCollection = FeatureCollection.fromJson(featuresJson)
                     Timber.d(featureCollection.toString())
-                    zoneFeatures.value = featureCollection
+                    if(allZones.value.isNullOrEmpty()) {
+                        val map = hashMapOf<String, FeatureCollection>()
+                        map["standard"] = featureCollection
+                        allZones.value = map
+                        getHandicapZones(latitude, longitude, radius)
+                        return
+                    }
+                    allZones.value?.let {
+                        if (it.size == 1 || it.size == 0) {
+                            it["standard"] = featureCollection
+                            allZones.value = it
+                            getHandicapZones(latitude, longitude, radius)
+                            Log.d(TAG, "size of zone hashmap " + allZones?.value?.size)
+                            return
+                        } else {
+                            it.clear()
+                            it["standard"] = featureCollection
+                            allZones.value = it
+                            getHandicapZones(latitude, longitude, radius)
+                        }
+                    }
                 }
             }
         })
@@ -72,25 +89,39 @@ class ZoneRepositoryImpl: ZoneRepository, KoinComponent {
             override fun onResponse(call: Call<List<Handicap>>, response: Response<List<Handicap>>) {
                 if(response.isSuccessful) {
                     val zones = response.body()!!
-                    val features = ArrayList<Feature>()
-                    //for each Handicap object, create a feature and add it to a collection
-                    zones.forEach {
-                        val feature = Feature.fromGeometry(Point.fromLngLat(it.long, it.lat))
-                        feature.addStringProperty("id", it.id)
-                        feature.addStringProperty("zone_name", it.name)
-                        feature.addStringProperty("zone_owner", it.owner)
-                        feature.addNumberProperty("parking_spaces", it.parkingSpaces)
-                        feature.addStringProperty("max_parking_time", it.maxParkingTime)
-                        feature.addStringProperty("max-parking_time_limitation", it.maxParkingTimeLimitation)
-                        feature.addStringProperty("extra_info", it.extraInfo)
-                        feature.addNumberProperty("distance", it.distance)
-                        feature.addNumberProperty("lat", it.lat)
-                        feature.addNumberProperty("long", it.long)
-                        feature.addStringProperty("wkt", it.WKT)
-                        features.add(feature)
+                    if (!zones.isNullOrEmpty()) {
+                        val features = ArrayList<Feature>()
+                        //for each Handicap object, create a feature and add it to a collection
+                        zones.forEach {
+                            val feature = Feature.fromGeometry(Point.fromLngLat(it.long, it.lat))
+                            feature.addStringProperty("id", it.id)
+                            feature.addStringProperty("zone_name", it.name)
+                            feature.addStringProperty("zone_owner", it.owner)
+                            feature.addNumberProperty("parking_spaces", it.parkingSpaces)
+                            feature.addStringProperty("max_parking_time", it.maxParkingTime)
+                            feature.addStringProperty("max-parking_time_limitation", it.maxParkingTimeLimitation)
+                            feature.addStringProperty("extra_info", it.extraInfo)
+                            feature.addNumberProperty("distance", it.distance)
+                            feature.addNumberProperty("lat", it.lat)
+                            feature.addNumberProperty("long", it.long)
+                            feature.addStringProperty("wkt", it.WKT)
+                            features.add(feature)
+                        }
+                        if (allZones.value.isNullOrEmpty()) {
+                            val map = hashMapOf<String, FeatureCollection>()
+                            map["accessible"] = FeatureCollection.fromFeatures(features)
+                            allZones.value = map
+                            return
+                        }
+                        allZones.value?.let {
+                            if (it.size == 1) {
+                                it["accessible"] = FeatureCollection.fromFeatures(features)
+                                allZones.value = it
+                                Log.d(TAG, "size of zone hashmap " + allZones?.value?.size)
+                                return
+                            }
+                        }
                     }
-                    Timber.d("Handicap call to GBGSTAD parsed: " + handicapPoints.value?.features()?.toString())
-                    handicapPoints.value = FeatureCollection.fromFeatures(features)
                 }
             }
         })

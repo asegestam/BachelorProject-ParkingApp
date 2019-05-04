@@ -20,7 +20,8 @@ import com.example.smspark.viewmodels.ZoneViewModel
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.mapbox.api.geocoding.v5.models.CarmenFeature
-import com.mapbox.geojson.*
+import com.mapbox.geojson.Feature
+import com.mapbox.geojson.Point
 import com.mapbox.mapboxsdk.plugins.places.autocomplete.model.PlaceOptions
 import com.mapbox.mapboxsdk.plugins.places.autocomplete.ui.PlaceAutocompleteFragment
 import com.mapbox.mapboxsdk.plugins.places.autocomplete.ui.PlaceSelectionListener
@@ -62,29 +63,31 @@ class TripFragment : Fragment() {
                 }
         initComponents()
     }
+
     /** Adds a place selected listener to a given PlaceAutoCompleteFragment */
     private fun addPlaceSelectionListener(fragment: PlaceAutocompleteFragment, tag: String) {
         fragment.setOnPlaceSelectedListener(object : PlaceSelectionListener {
-                override fun onPlaceSelected(carmenFeature: CarmenFeature) {
-                    when(tag) {
-                        "to" -> handleToLocation(carmenFeature)
-                        "from" -> handleFromLocation(carmenFeature)
-                    }
-                    //remove fragment when it has done it's job
-                    removeAutoCompleteFragment()
+            override fun onPlaceSelected(carmenFeature: CarmenFeature) {
+                when (tag) {
+                    "to" -> handleToLocation(carmenFeature)
+                    "from" -> handleFromLocation(carmenFeature)
                 }
-                override fun onCancel() {
-                    //remove fragment when user cancels the widget
-                    removeAutoCompleteFragment()
-                }
-            })
+                //remove fragment when it has done it's job
+                removeAutoCompleteFragment()
+            }
+
+            override fun onCancel() {
+                //remove fragment when user cancels the widget
+                removeAutoCompleteFragment()
+            }
+        })
     }
 
     /** Commit a fragment transaction of a PlaceAutocompleteFragment */
     private fun addAutoCompleteFragment(fragment: PlaceAutocompleteFragment, tag: String) {
         activity?.supportFragmentManager?.let {
             // check if there is a active AutoCompleteFragment, remove it
-            if(getActiveAutoCompleteFragment() != null) {
+            if (getActiveAutoCompleteFragment() != null) {
                 removeAutoCompleteFragment()
             } else {
                 //no active AutoCompleteFragment, add the given one
@@ -96,11 +99,12 @@ class TripFragment : Fragment() {
             }
         }
     }
+
     /** Commit a fragment removal transaction of a PlaceAutocompleteFragment */
     private fun removeAutoCompleteFragment() {
         activity?.supportFragmentManager?.let {
             val fragment = getActiveAutoCompleteFragment()
-            if(fragment != null) {
+            if (fragment != null) {
                 Log.d(TAG, "removing fragment" + fragment.toString())
                 val transaction = it.beginTransaction()
                 transaction.remove(fragment)
@@ -118,7 +122,7 @@ class TripFragment : Fragment() {
     }
 
     @SuppressLint("MissingPermission")
-    private fun initComponents(){
+    private fun initComponents() {
         initButtons()
         initObservables()
     }
@@ -131,37 +135,43 @@ class TripFragment : Fragment() {
         fromLocation.text = carmenFeature.text()
         myLocation.visibility = View.INVISIBLE
         clearText.visibility = View.VISIBLE
-        if(checkInputs()) next_btn.isEnabled = true
+        if (checkInputs()) next_btn.isEnabled = true
     }
+
     /** Handles the to location part of the search
      * changes the text
      * */
     private fun handleToLocation(carmenFeature: CarmenFeature) {
         toPoint = carmenFeature.geometry() as Point
         toLocation.text = carmenFeature.text()
-        if(checkInputs()) next_btn.isEnabled = true
+        if (checkInputs()) next_btn.isEnabled = true
     }
 
-    private fun initObservables(){
-        zoneViewModel.getObservableZones().observe(this, Observer { data ->
-            if(data.features().isNullOrEmpty()) {
-                //TODO showNoZonesDialog() be användaren öka radiusen om de vill hitta zon
-                if(checkInputs()) Toast.makeText(requireContext(), "Inga zoner hittades nära din destination", Toast.LENGTH_SHORT).show()
-            } else {
-                val zone = data.features()?.first()
-                if(checkInputs()) {
-                    selectedZoneViewModel.selectedZone.value = zone
-                    routeViewModel.destination.value = toPoint
-                    routeViewModel.getWayPointRoute(origin = fromPoint, wayPoint = geometryUtils.getGeometryPoint(zone?.geometry()), destination = toPoint )
-                    progressBar.visibility = View.VISIBLE
-                }
+    private fun initObservables() {
+        zoneViewModel.getAllZones().observe(this, Observer { hashMap ->
+            hashMap["standard"]?.features()?.let {
+                if(!it.isNullOrEmpty()){
+                    val zone = it.first()
+                    if (checkInputs()) {
+                        selectZoneGetRoute(zone)
+                    }
+                } else Toast.makeText(requireContext(), "Inga zoner hittades nära din destination", Toast.LENGTH_SHORT).show()
             }
         })
-        routeViewModel.getRoutes().observe(this, Observer {
+        routeViewModel.routeMap.observe(this, Observer {
             if (it.count() >= 2 && checkInputs()) {
                 findNavController().navigate(R.id.action_tripFragment_to_mapFragment)
             }
         })
+    }
+
+    private fun selectZoneGetRoute(zone: Feature?) {
+        zone?.let {
+            selectedZoneViewModel.selectedZone.value = zone
+        }
+        routeViewModel.destination.value = toPoint
+        routeViewModel.getWayPointRoute(origin = fromPoint, wayPoint = geometryUtils.getGeometryPoint(zone?.geometry()), destination = toPoint)
+        progressBar.visibility = View.VISIBLE
     }
 
     private fun getZones() {
@@ -181,13 +191,13 @@ class TripFragment : Fragment() {
                                 fromPoint = Point.fromLngLat(location.longitude, location.latitude)
                                 myLocation.visibility = View.INVISIBLE
                                 clearText.visibility = View.VISIBLE
-                                if(checkInputs()) next_btn.isEnabled = true
+                                if (checkInputs()) next_btn.isEnabled = true
                             }
                         }
             }
         }
         swapIcon.setOnClickListener {
-            if (checkInputs()){
+            if (checkInputs()) {
                 swapLocations()
             } else {
                 Toast.makeText(requireContext(), "Can´t swap", Toast.LENGTH_LONG).show()
@@ -200,7 +210,7 @@ class TripFragment : Fragment() {
             next_btn.isEnabled = false
         }
         next_btn.setOnClickListener {
-            if(checkInputs()) {
+            if (checkInputs()) {
                 getZones()
             } else Toast.makeText(requireContext(), "Choose all required alternatives", Toast.LENGTH_LONG).show()
         }
@@ -216,11 +226,12 @@ class TripFragment : Fragment() {
         fromPoint = toPoint
         toPoint = tempPoint
     }
+
     /** Checks if the TextViews has inputs */
     private fun checkInputs(): Boolean = !toLocation.text.isNullOrEmpty() && !fromLocation.text.isNullOrEmpty()
 
     companion object {
-        val TAG : String = "TripFragment"
+        val TAG: String = "TripFragment"
         val geometryUtils = GeometryUtils()
     }
 

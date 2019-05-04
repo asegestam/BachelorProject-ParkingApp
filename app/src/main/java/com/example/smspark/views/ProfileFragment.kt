@@ -21,7 +21,7 @@ class ProfileFragment : Fragment() {
         return inflater.inflate(R.layout.fragment_profile, container, false)
     }
 
-
+//TODO Lägg till en knapp för att rensa sök historiken
     companion object {
         val TAG : String = "ProfileFragment"
     }

@@ -44,7 +44,7 @@ class RouteRepository(val context: Context): KoinComponent {
                     getRoutes(start, parking, destination, "walking")
                 }
                 routeMap.value?.let {
-                    if (routeMap.value!!.size == 1) {
+                    if (it.size == 1) {
                         //there is one other route in the map, add the second one
                         it[profile] = response.body()!!.routes()[0]
                         routeMap.value = it

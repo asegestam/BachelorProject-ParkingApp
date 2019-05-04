@@ -30,7 +30,7 @@
         android:text="Centralstationen (långtid)"
         android:textAlignment="textStart"
         android:textAppearance="@style/TextAppearance.AppCompat.Large"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/locate_zone"
         app:layout_constraintStart_toEndOf="@+id/zoneDivider"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -132,7 +132,7 @@
             android:id="@+id/carImage"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="28dp"
+            android:layout_marginStart="16dp"
             android:layout_marginTop="24dp"
             android:layout_marginBottom="16dp"
             app:layout_constraintBottom_toTopOf="@+id/walkingImage"
@@ -144,7 +144,7 @@
             android:id="@+id/walkingImage"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="28dp"
+            android:layout_marginStart="16dp"
             android:layout_marginBottom="24dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -152,25 +152,29 @@
 
         <TextView
             android:id="@+id/drivingDistance"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
+            android:layout_marginStart="4dp"
             android:layout_marginTop="28dp"
+            android:layout_marginEnd="4dp"
             android:layout_marginBottom="16dp"
             android:text="3 km"
             app:layout_constraintBottom_toTopOf="@+id/walkingDistance"
+            app:layout_constraintEnd_toStartOf="@+id/drivingTimeImage"
             app:layout_constraintStart_toEndOf="@+id/carImage"
             app:layout_constraintTop_toBottomOf="@+id/travelInfo"
             app:layout_constraintVertical_bias="0.166" />
 
         <TextView
             android:id="@+id/walkingDistance"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="4dp"
             android:layout_marginBottom="24dp"
             android:text="450 m"
             app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/walkingTimeImage"
             app:layout_constraintStart_toEndOf="@+id/walkingImage" />
 
         <ImageView
@@ -197,11 +201,11 @@
 
         <TextView
             android:id="@+id/drivingTime"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:layout_marginTop="28dp"
-            android:layout_marginEnd="16dp"
+            android:layout_marginEnd="8dp"
             android:layout_marginBottom="16dp"
             android:text="12 min"
             app:layout_constraintBottom_toTopOf="@+id/walkingTime"
@@ -213,10 +217,10 @@
 
         <TextView
             android:id="@+id/walkingTime"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            android:layout_marginEnd="16dp"
+            android:layout_marginEnd="8dp"
             android:layout_marginBottom="24dp"
             android:text="3 min"
             app:layout_constraintBottom_toBottomOf="parent"
@@ -228,18 +232,20 @@
             android:id="@+id/divider2"
             android:layout_width="2dp"
             android:layout_height="0dp"
-            android:layout_marginStart="172dp"
+            android:layout_marginStart="8dp"
             android:layout_marginTop="28dp"
+            android:layout_marginEnd="8dp"
             android:layout_marginBottom="24dp"
             android:background="?android:attr/listDivider"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/carImage"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/travelInfo"
             app:layout_constraintVertical_bias="0.0" />
 
         <TextView
             android:id="@+id/ankomst"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="24dp"
             android:layout_marginBottom="24dp"
@@ -252,7 +258,7 @@
 
         <TextView
             android:id="@+id/arrivalTime"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:layout_marginEnd="8dp"
@@ -263,7 +269,6 @@
             android:textSize="18sp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.076"
             app:layout_constraintStart_toEndOf="@+id/ankomst" />
 
 
@@ -295,6 +300,41 @@
         android:background="?android:attr/listDivider"
         app:layout_constraintStart_toEndOf="@+id/zoneId"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageView
+        android:id="@+id/attr_ecs"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
+        android:contentDescription="Elbilsladdning"
+        app:layout_constraintBottom_toBottomOf="@+id/expand"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:srcCompat="@drawable/ecs_icon"
+        tools:visibility="visible" />
+
+    <ImageView
+        android:id="@+id/attr_accessible"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
+        app:layout_constraintBottom_toBottomOf="@+id/expand"
+        app:layout_constraintEnd_toStartOf="@+id/attr_ecs"
+        app:srcCompat="@drawable/accessible_icon"
+        tools:visibility="gone"
+        android:contentDescription="Handikapp" />
+
+    <ImageView
+        android:id="@+id/locate_zone"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="8dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/marker_image"
+        android:contentDescription="Hitta" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>
