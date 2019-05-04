@@ -83,22 +83,23 @@ class TripFragment : Fragment() {
     /** Commit a fragment transaction of a PlaceAutocompleteFragment */
     private fun addAutoCompleteFragment(fragment: PlaceAutocompleteFragment, tag: String) {
         activity?.supportFragmentManager?.let {
-            if(it.findFragmentByTag(tag) == null) {
+            // check if there is a active AutoCompleteFragment, remove it
+            if(getActiveAutoCompleteFragment() != null) {
+                removeAutoCompleteFragment()
+            } else {
+                //no active AutoCompleteFragment, add the given one
                 Log.d(TAG, "adding fragment" + fragment.toString())
                 val transaction = it.beginTransaction()
                 transaction.add(R.id.fragment_container, fragment, tag)
                 transaction.commit()
                 addPlaceSelectionListener(fragment, tag)
-            } else {
-                removeAutoCompleteFragment()
             }
         }
     }
     /** Commit a fragment removal transaction of a PlaceAutocompleteFragment */
     private fun removeAutoCompleteFragment() {
         activity?.supportFragmentManager?.let {
-            println(it.fragments)
-            val fragment = if (it.findFragmentByTag("to") != null) it.findFragmentByTag("to") else it.findFragmentByTag("from")
+            val fragment = getActiveAutoCompleteFragment()
             if(fragment != null) {
                 Log.d(TAG, "removing fragment" + fragment.toString())
                 val transaction = it.beginTransaction()
@@ -106,6 +107,14 @@ class TripFragment : Fragment() {
                 transaction.commit()
             }
         }
+    }
+
+    /** Tries to return an active AutoCompleteFragment, if there is none return null */
+    private fun getActiveAutoCompleteFragment(): Fragment? {
+        val manager = activity?.supportFragmentManager
+        val toFragment = manager?.findFragmentByTag("to")
+        val fromFragment = manager?.findFragmentByTag("from")
+        return toFragment ?: fromFragment
     }
 
     @SuppressLint("MissingPermission")
@@ -137,7 +146,7 @@ class TripFragment : Fragment() {
         zoneViewModel.getObservableZones().observe(this, Observer { data ->
             if(data.features().isNullOrEmpty()) {
                 //TODO showNoZonesDialog() be användaren öka radiusen om de vill hitta zon
-                Toast.makeText(requireContext(), "No zones found near destination", Toast.LENGTH_SHORT).show()
+                if(checkInputs()) Toast.makeText(requireContext(), "Inga zoner hittades nära din destination", Toast.LENGTH_SHORT).show()
             } else {
                 val zone = data.features()?.first()
                 if(checkInputs()) {
