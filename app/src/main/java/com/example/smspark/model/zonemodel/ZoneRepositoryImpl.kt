@@ -59,7 +59,7 @@ class ZoneRepositoryImpl: ZoneRepository, KoinComponent {
                             it["standard"] = featureCollection
                             allZones.value = it
                             getHandicapZones(latitude, longitude, radius)
-                            Log.d(TAG, "size of zone hashmap " + allZones?.value?.size)
+                            Log.d(TAG, "size of zone hashmap " + allZones.value?.size)
                             return
                         } else {
                             it.clear()
@@ -94,17 +94,19 @@ class ZoneRepositoryImpl: ZoneRepository, KoinComponent {
                         //for each Handicap object, create a feature and add it to a collection
                         zones.forEach {
                             val feature = Feature.fromGeometry(Point.fromLngLat(it.long, it.lat))
-                            feature.addStringProperty("id", it.id)
-                            feature.addStringProperty("zone_name", it.name)
-                            feature.addStringProperty("zone_owner", it.owner)
-                            feature.addNumberProperty("parking_spaces", it.parkingSpaces)
-                            feature.addStringProperty("max_parking_time", it.maxParkingTime)
-                            feature.addStringProperty("max-parking_time_limitation", it.maxParkingTimeLimitation)
-                            feature.addStringProperty("extra_info", it.extraInfo)
-                            feature.addNumberProperty("distance", it.distance)
-                            feature.addNumberProperty("lat", it.lat)
-                            feature.addNumberProperty("long", it.long)
-                            feature.addStringProperty("wkt", it.WKT)
+                            feature.apply {
+                                addStringProperty("id", it.id)
+                                addStringProperty("zone_name", it.name)
+                                addStringProperty("zone_owner", it.owner)
+                                addNumberProperty("parking_spaces", it.parkingSpaces)
+                                addStringProperty("max_parking_time", it.maxParkingTime)
+                                addStringProperty("max-parking_time_limitation", it.maxParkingTimeLimitation)
+                                addStringProperty("extra_info", it.extraInfo)
+                                addNumberProperty("distance", it.distance)
+                                addNumberProperty("lat", it.lat)
+                                addNumberProperty("long", it.long)
+                                addStringProperty("wkt", it.WKT)
+                            }
                             features.add(feature)
                         }
                         if (allZones.value.isNullOrEmpty()) {
@@ -117,7 +119,7 @@ class ZoneRepositoryImpl: ZoneRepository, KoinComponent {
                             if (it.size == 1) {
                                 it["accessible"] = FeatureCollection.fromFeatures(features)
                                 allZones.value = it
-                                Log.d(TAG, "size of zone hashmap " + allZones?.value?.size)
+                                Log.d(TAG, "size of zone hashmap " + allZones.value?.size)
                                 return
                             }
                         }

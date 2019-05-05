@@ -60,8 +60,8 @@ import org.koin.android.viewmodel.ext.android.sharedViewModel
 import org.koin.android.viewmodel.ext.android.viewModel
 import timber.log.Timber
 
-class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLongClickListener, PermissionsListener, MapboxMap.OnMoveListener {
 
+class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLongClickListener, PermissionsListener, MapboxMap.OnMoveListener {
     // variables for adding location layer
     private lateinit var mapView: MapView
     private var mapboxMap: MapboxMap? = null
@@ -132,7 +132,6 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
                 setupMarkerLayer(style)
                 initRecyclerView()
                 initObservers()
-                initCamera()
                 initSelectedZone()
             }
         }
@@ -177,27 +176,29 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
         }
         my_locationFab.setOnClickListener { moveCameraToLocation() }
         expand.setOnClickListener {
-            if (bottomSheetBehavior.state == collapsed) {
-                bottomSheetBehavior.state = expanded
-            } else if (bottomSheetBehavior.state == expanded) {
-                bottomSheetBehavior.state = collapsed
+            when(bottomSheetBehavior.state) {
+                collapsed -> expanded
+                expanded -> collapsed
             }
         }
-        locate_zone.setOnClickListener { moveCameraToLocation(geometryUtils.getGeometryPoint(selectedZoneViewModel.selectedZone.value?.geometry()), duration = 3000)  }
+        locate_zone.setOnClickListener { moveCameraToLocation(geometryUtils.getGeometryPoint(selectedZoneViewModel.selectedZone.value?.geometry()), duration = 3000, zoom = 16.0)  }
         startNavigationButton!!.setOnClickListener { findNavController().navigate(R.id.mapFragment_to_navigation) }
     }
+
 
     /**Initiates the RecyclerView with a adapter, clickListener, LayoutManager, Animator, SnapHelper*/
     private fun initRecyclerView() {
         recyclerView = recycler_view
-        recyclerView.setHasFixedSize(true)
         val onItemClickListener = View.OnClickListener { recyclerView.visibility = View.GONE }
         zoneAdapter = ZoneAdapter({ zone: Feature -> zoneListItemClicked(zone) }, onItemClickListener)
-        recyclerView.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
-        recyclerView.itemAnimator = DefaultItemAnimator()
-        recyclerView.adapter = zoneAdapter
         val snapHelper = LinearSnapHelper()
         snapHelper.attachToRecyclerView(recyclerView)
+        with(recyclerView) {
+            setHasFixedSize(true)
+            layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
+            itemAnimator = DefaultItemAnimator()
+            adapter = zoneAdapter
+        }
     }
 
     /** If there is routes and a selected zone stored in the ViewModels
@@ -207,12 +208,10 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
         val routes = routeViewModel.routeMap.value
         val zone = selectedZoneViewModel.selectedZone.value
         if (!routes.isNullOrEmpty()) {
-            Log.d(TAG, "adding routes to map")
             addRoutesToMap(routes)
             updateBottomSheet(routes)
         }
         zone?.let {
-            Log.d(TAG, zone.getStringProperty("zone_name"))
             addMarkerOnMap(geometryUtils.getGeometryPoint(it.geometry()), true)
             navigationMapRoute?.updateRouteVisibilityTo(true)
         }
@@ -228,6 +227,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
             }, 1000)
             return
         }
+
         Handler().postDelayed({
             moveCameraToLocation(zoom = 14.0, duration = 4000)
             // zoneViewModel.getSpecificZones(getUserLocation()!!.latitude(), getUserLocation()!!.longitude(), 1000)
@@ -239,10 +239,12 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
      * and add a BottomSheetCallback to it.
      */
     private fun initBottomSheet() {
-        bottomSheetBehavior = BottomSheetBehavior.from(bottom_sheet)
-        bottomSheetBehavior.state = hidden
         val bottomSheetCallback = getBottomSheetCallback()
-        bottomSheetBehavior.setBottomSheetCallback(bottomSheetCallback)
+        bottomSheetBehavior = BottomSheetBehavior.from(bottom_sheet)
+        bottomSheetBehavior.apply {
+            state = hidden
+            setBottomSheetCallback(bottomSheetCallback)
+        }
     }
 
     @SuppressLint("MissingPermission")
@@ -261,10 +263,10 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
                 isLocationComponentEnabled = true
                 // Set the component's camera mode
                 cameraMode = CameraMode.NONE
+                initCamera()
             }
         } else {
-            permissionsManager = PermissionsManager(this)
-            permissionsManager.requestLocationPermissions(activity as MainActivity)
+            permissionsManager.requestLocationPermissions(requireActivity())
         }
     }
 
@@ -343,9 +345,6 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
     /** Adds frequently used GeoJson sources and layers to the map
      * @param loadedMapStyle The style to add sources and layers to*/
     private fun setupZoneLayers(loadedMapStyle: Style) {
-        loadedMapStyle.addSource(GeoJsonSource(polygonSource))
-        loadedMapStyle.addSource(GeoJsonSource(pointSource))
-        loadedMapStyle.addSource(GeoJsonSource(handicapSource))
         val polygonLayer = FillLayer(polygonLayer, polygonSource)
                 .withProperties(
                         fillColor(Color.parseColor("#f42428")),
@@ -354,20 +353,27 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
                 .withProperties(iconImage(parkingImage), iconSize(0.35f))
         val handicapLayer = SymbolLayer(handicapLayer, handicapSource)
                 .withProperties(iconImage(handicapImage), iconSize(0.8f))
-        polygonLayer.minZoom = 13f
-        pointLayer.minZoom = 13f
-        handicapLayer.minZoom = 13f
-        loadedMapStyle.addLayerAbove(polygonLayer, "road-street")
-        loadedMapStyle.addLayer(pointLayer)
-        loadedMapStyle.addLayer(handicapLayer)
+        with(loadedMapStyle) {
+            addSource(GeoJsonSource(polygonSource))
+            addSource(GeoJsonSource(pointSource))
+            addSource(GeoJsonSource(handicapSource))
+            polygonLayer.minZoom = 13f
+            pointLayer.minZoom = 13f
+            handicapLayer.minZoom = 13f
+            addLayerAbove(polygonLayer, "road-street")
+            addLayer(pointLayer)
+            addLayer(handicapLayer)
+        }
     }
 
     /** Adds frequently used image sources to the map style
      * @param loadedMapStyle The style to add sources to*/
     private fun setupImageSource(loadedMapStyle: Style) {
-        loadedMapStyle.addImage(markerImage, BitmapFactory.decodeResource(resources, R.drawable.mapbox_marker_icon_default))
-        loadedMapStyle.addImage(parkingImage, BitmapFactory.decodeResource(resources, R.drawable.park_blue))
-        loadedMapStyle.addImage(handicapImage, BitmapFactory.decodeResource(resources, R.drawable.accessible_png))
+        with(loadedMapStyle) {
+            addImage(markerImage, BitmapFactory.decodeResource(resources, R.drawable.mapbox_marker_icon_default))
+            addImage(parkingImage, BitmapFactory.decodeResource(resources, R.drawable.park_blue))
+            addImage(handicapImage, BitmapFactory.decodeResource(resources, R.drawable.accessible_png))
+        }
     }
 
     /** Takes given FeatureCollection filters out Points and Polygons
@@ -583,7 +589,6 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
                 drivingTime.text = travelViewModel.getDrivingTime(drivingDuration)
                 walkingDistance.text = travelViewModel.getWalkingDistance(walkingRouteDistance!!)
                 walkingTime.text = travelViewModel.getWalkingTime(walkingDuration)
-
             }
             bottomSheetBehavior = BottomSheetBehavior.from(bottom_sheet)
             bottomSheetBehavior.state = collapsed
@@ -618,7 +623,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
             enableLocationComponent(getMapStyle()!!)
         } else {
             Toast.makeText(requireContext(), R.string.user_location_permission_not_granted, Toast.LENGTH_LONG).show()
-            requireActivity().finish()
+            permissionsManager.requestLocationPermissions(requireActivity())
         }
     }
 
