@@ -30,9 +30,11 @@ class TicketAdapter(val tickets: List<Feature>, private val itemClickListener: V
         val zoneId: TextView = itemView.findViewById(R.id.zoneId)
         val regNr: TextView = itemView.findViewById(R.id.licensplate)
         val priceInfo: ImageView = itemView.findViewById(R.id.priceInfoBtn)
+        val date : TextView = itemView.findViewById(R.id.date)
 
         fun bind(feature: Feature, itemClickListener: View.OnClickListener) {
-            price.text = (1..95).shuffled().first().toString() + "kr"
+            price.text = feature.getStringProperty("price")
+            date.text = feature.getStringProperty("date")
             regNr.text = "ABC123"
             zoneName.text = feature.getStringProperty("zone_name").replace(",.*".toRegex(), "")
             zoneId.text = feature.getStringProperty("zonecode")

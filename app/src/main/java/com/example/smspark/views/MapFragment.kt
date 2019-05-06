@@ -198,6 +198,8 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
             layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
             itemAnimator = DefaultItemAnimator()
             adapter = zoneAdapter
+            visibility = View.GONE
+
         }
     }
 
@@ -211,7 +213,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
             addRoutesToMap(routes)
             updateBottomSheet(routes)
         }
-        zone?.let {
+        zone?.let {7
             addMarkerOnMap(geometryUtils.getGeometryPoint(it.geometry()), true)
             navigationMapRoute?.updateRouteVisibilityTo(true)
         }
@@ -224,15 +226,14 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
             Handler().postDelayed({
                 moveCameraToLocation(zonePoint, zoom = 14.0, duration = 4000)
                 progressBar.visibility = View.GONE
-            }, 1000)
+            }, 500)
             return
         }
-
         Handler().postDelayed({
             moveCameraToLocation(zoom = 14.0, duration = 4000)
             // zoneViewModel.getSpecificZones(getUserLocation()!!.latitude(), getUserLocation()!!.longitude(), 1000)
             progressBar.visibility = View.GONE
-        }, 1000)
+        }, 500)
     }
 
     /** Initiates the BottomSheet with the view, BottomSheetBehaviour to control its state
@@ -640,6 +641,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
 
     override fun onPause() {
         super.onPause()
+        Handler().removeCallbacksAndMessages(null)
         mapView.onPause()
     }
 

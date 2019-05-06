@@ -15,6 +15,7 @@ import com.example.smspark.R
 import com.example.smspark.viewmodels.ZoneViewModel
 import com.google.android.material.snackbar.Snackbar
 import com.mapbox.geojson.Feature
+import com.mapbox.geojson.FeatureCollection
 import kotlinx.android.synthetic.main.current_ticket.*
 import kotlinx.android.synthetic.main.fragment_tickets.*
 import kotlinx.android.synthetic.main.ticket_list_item.*
@@ -44,14 +45,7 @@ class TicketsFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        zoneViewModel.getAllZones().observe(this, Observer {hashMap ->
-            if (hashMap.count() > 0) {
-                hashMap["standard"]?.features()?.let {
-                    initRecyclerView(it)
-                }
-            }
-        })
-        zoneViewModel.getSpecificZones()
+        initRecyclerView()
         parkingCardView.setOnClickListener {
             if(parkingIsActive){
                 parkingCardView.setCardBackgroundColor(ContextCompat.getColor(context!!, R.color.colorPrimaryLight))
@@ -68,9 +62,13 @@ class TicketsFragment : Fragment() {
 
     }
 
-    private fun initRecyclerView(features : List<Feature>){
+    private fun returnFeatureCollection() : FeatureCollection {
+        return FeatureCollection.fromJson(getString(R.string.fake_parking_tickets))
+    }
+
+    private fun initRecyclerView(){
         recyclerView = ticket_recycler_view
-        ticketAdapter = TicketAdapter(features, itemClickListener = View.OnClickListener { showSnackBar() })
+        ticketAdapter = TicketAdapter(returnFeatureCollection().features()!!, itemClickListener = View.OnClickListener { showSnackBar() })
         recyclerView.layoutManager = LinearLayoutManager(context, RecyclerView.VERTICAL, false)
         recyclerView.adapter = ticketAdapter
     }
