@@ -94,6 +94,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
     private val collapsed = BottomSheetBehavior.STATE_COLLAPSED
     private val hidden = BottomSheetBehavior.STATE_HIDDEN
     private val expanded = BottomSheetBehavior.STATE_EXPANDED
+    private val handler: Handler = Handler()
     //lazy inject ViewModel
     private val zoneViewModel: ZoneViewModel by sharedViewModel()
     private val selectedZoneViewModel: SelectedZoneViewModel by sharedViewModel()
@@ -213,7 +214,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
             addRoutesToMap(routes)
             updateBottomSheet(routes)
         }
-        zone?.let {7
+        zone?.let {
             addMarkerOnMap(geometryUtils.getGeometryPoint(it.geometry()), true)
             navigationMapRoute?.updateRouteVisibilityTo(true)
         }
@@ -223,13 +224,13 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
     private fun initCamera() {
         selectedZoneViewModel.selectedZone.value?.let {
             val zonePoint = geometryUtils.getGeometryPoint(it.geometry())
-            Handler().postDelayed({
+            handler.postDelayed({
                 moveCameraToLocation(zonePoint, zoom = 14.0, duration = 4000)
                 progressBar.visibility = View.GONE
             }, 500)
             return
         }
-        Handler().postDelayed({
+       handler.postDelayed({
             moveCameraToLocation(zoom = 14.0, duration = 4000)
             // zoneViewModel.getSpecificZones(getUserLocation()!!.latitude(), getUserLocation()!!.longitude(), 1000)
             progressBar.visibility = View.GONE
@@ -641,7 +642,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
 
     override fun onPause() {
         super.onPause()
-        Handler().removeCallbacksAndMessages(null)
+        handler.removeCallbacksAndMessages(null)
         mapView.onPause()
     }
 

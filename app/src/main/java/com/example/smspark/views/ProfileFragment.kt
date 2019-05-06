@@ -39,17 +39,17 @@ class ProfileFragment : Fragment() {
     private fun setUserInfo(phoneNr: String?, userEmail: String?, userAddress: String?){
         val sharedPreferences = activity?.getSharedPreferences("UserInfoPreferences", Context.MODE_PRIVATE) ?: return
         with(sharedPreferences.edit()) {
-            phoneNr?.let {
-                phoneNrEditText.text = it
-                this?.putString("phone_nr", it)
+            if(!phoneNr.isNullOrEmpty()) {
+                phoneNrEditText.text = phoneNr
+                this?.putString("phone_nr", phoneNr)
             }
-            userEmail?.let {
-                emailEditText.text = it
-                this?.putString("email", it)
+            if(!userEmail.isNullOrEmpty()){
+                emailEditText.text = userEmail
+                this?.putString("email", userEmail)
             }
-            userAddress?.let {
-                addressEditText.text = it
-                this?.putString("address", it)
+            if(!userAddress.isNullOrEmpty()) {
+                addressEditText.text = userAddress
+                this?.putString("address", userAddress)
             }
             this.apply()
         }
