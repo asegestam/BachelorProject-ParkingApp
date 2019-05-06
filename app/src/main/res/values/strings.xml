@@ -39,6 +39,11 @@
     <string name="search_hint">Sök på en address/plats..</string>
     <string name="nuvarande_plats">Nuvarande Plats</string>
 
+    <string name="default_email">email@company.com</string>
+    <string name="default_phoneNr">+46 123 456 789</string>
+    <string name="default_address">Addressgatan 123, Stad</string>
+
+
     //Spinner
     <string-array name="vehicles">
         <item>ABC 123</item>
