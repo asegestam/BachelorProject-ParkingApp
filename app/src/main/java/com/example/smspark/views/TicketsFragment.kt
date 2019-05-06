@@ -13,9 +13,11 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.smspark.R
 import com.example.smspark.viewmodels.ZoneViewModel
+import com.google.android.material.snackbar.Snackbar
 import com.mapbox.geojson.Feature
 import kotlinx.android.synthetic.main.current_ticket.*
 import kotlinx.android.synthetic.main.fragment_tickets.*
+import kotlinx.android.synthetic.main.ticket_list_item.*
 import org.koin.android.viewmodel.ext.android.sharedViewModel
 
 class TicketsFragment : Fragment() {
@@ -43,7 +45,7 @@ class TicketsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         zoneViewModel.getAllZones().observe(this, Observer {hashMap ->
-            if (hashMap.count() >= 0) {
+            if (hashMap.count() > 0) {
                 hashMap["standard"]?.features()?.let {
                     initRecyclerView(it)
                 }
@@ -67,12 +69,23 @@ class TicketsFragment : Fragment() {
     }
 
     private fun initRecyclerView(features : List<Feature>){
-
         recyclerView = ticket_recycler_view
-        ticketAdapter = TicketAdapter(features)
+        ticketAdapter = TicketAdapter(features, itemClickListener = View.OnClickListener { showSnackBar() })
         recyclerView.layoutManager = LinearLayoutManager(context, RecyclerView.VERTICAL, false)
         recyclerView.adapter = ticketAdapter
     }
+
+    private fun showSnackBar() {
+        val snackbar = Snackbar.make(ticketFragment_holder, "Denna parkering faktureras på nästkommande faktura", Snackbar.LENGTH_LONG )
+        val snackbarView = snackbar.view
+        snackbarView.setBackgroundColor(ContextCompat.getColor(activity!!.applicationContext, R.color.colorAccentLight))
+        snackbar.apply {
+            show()
+            setAction("OK") { snackbar.dismiss() }
+            setActionTextColor(ContextCompat.getColor(activity!!.applicationContext, R.color.colorPrimaryLight))
+        }
+    }
+
 
     companion object {
         val TAG : String = "TicketsFragment"
