@@ -6,7 +6,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    tools:context=".views.TripFragment">
+    tools:context=".views.TripFragment"
+    android:background="@color/colorAccentGrey">
 
 
     <com.google.android.material.button.MaterialButton
@@ -17,12 +18,12 @@
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="16dp"
         android:backgroundTint="@color/colorAccentLight"
-        android:text="Fortsätt"
+        android:text="@string/fortsatt"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        android:enabled="false"
+        android:visibility="gone"
         app:rippleColor="@color/colorPrimaryDark"/>
 
     <androidx.cardview.widget.CardView
@@ -61,7 +62,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
-        android:text="Sök resa"
+        android:text="@string/s_k_resa"
         android:textAppearance="@style/TextAppearance.AppCompat.Display1"
         android:textColor="@color/colorPrimaryLight"
         app:layout_constraintStart_toStartOf="parent"
@@ -93,13 +94,73 @@
         android:layout_marginBottom="8dp"
         app:layout_constraintBottom_toTopOf="@+id/next_btn"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/cardView2"
-        app:layout_constraintVertical_bias="0.074">
-
-
+        app:layout_constraintTop_toBottomOf="@+id/optionsCardView"
+        tools:visibility="gone">
     </FrameLayout>
 
+    <androidx.cardview.widget.CardView
+        android:id="@+id/optionsCardView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="8dp"
+        app:cardCornerRadius="10dp"
+        app:cardElevation="8dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/cardView2">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:background="@color/colorPrimaryLight"
+            android:orientation="vertical">
+
+            <com.github.florent37.expansionpanel.ExpansionHeader
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:expansion_headerIndicator="@id/headerIndicator"
+                app:expansion_layout="@id/expansionLayout"
+                app:expansion_toggleOnClick="true">
+
+                <TextView
+                    android:id="@+id/optionsText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginTop="10dp"
+                    android:gravity="center"
+                    android:layout_marginBottom="10dp"
+                    android:text="@string/alternativ"
+                    android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+                    android:textSize="18sp" />
+
+                <!-- HEADER INDICATOR -->
+                <ImageView
+                    android:id="@+id/headerIndicator"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical|right"
+                    android:layout_marginStart="16dp"
+                    android:adjustViewBounds="true"
+                    app:srcCompat="@drawable/ic_expansion_header_indicator_grey_24dp" />
+
+
+            </com.github.florent37.expansionpanel.ExpansionHeader>
+
+            <com.github.florent37.expansionpanel.ExpansionLayout
+                android:id="@+id/expansionLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+                <include layout="@layout/trip_options"/>
+            </com.github.florent37.expansionpanel.ExpansionLayout>
+
+        </LinearLayout>
+
+    </androidx.cardview.widget.CardView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

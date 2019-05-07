@@ -200,7 +200,6 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
             itemAnimator = DefaultItemAnimator()
             adapter = zoneAdapter
             visibility = View.GONE
-
         }
     }
 

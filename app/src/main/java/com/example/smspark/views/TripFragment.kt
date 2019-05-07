@@ -4,6 +4,7 @@ package com.example.smspark.views
 import android.annotation.SuppressLint
 import android.location.Location
 import android.os.Bundle
+import android.os.Handler
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -135,7 +136,7 @@ class TripFragment : Fragment() {
         fromLocation.text = carmenFeature.text()
         myLocation.visibility = View.INVISIBLE
         clearText.visibility = View.VISIBLE
-        if (checkInputs()) next_btn.isEnabled = true
+        if (checkInputs()) next_btn.visibility = View.VISIBLE
     }
 
     /** Handles the to location part of the search
@@ -144,7 +145,7 @@ class TripFragment : Fragment() {
     private fun handleToLocation(carmenFeature: CarmenFeature) {
         toPoint = carmenFeature.geometry() as Point
         toLocation.text = carmenFeature.text()
-        if (checkInputs()) next_btn.isEnabled = true
+        if (checkInputs()) next_btn.visibility = View.VISIBLE
     }
 
     private fun initObservables() {
@@ -191,7 +192,7 @@ class TripFragment : Fragment() {
                                 fromPoint = Point.fromLngLat(location.longitude, location.latitude)
                                 myLocation.visibility = View.INVISIBLE
                                 clearText.visibility = View.VISIBLE
-                                if (checkInputs()) next_btn.isEnabled = true
+                                if (checkInputs()) next_btn.visibility = View.VISIBLE
                             }
                         }
             }
@@ -207,7 +208,7 @@ class TripFragment : Fragment() {
             fromLocation.text = ""
             clearText.visibility = View.GONE
             myLocation.visibility = View.VISIBLE
-            next_btn.isEnabled = false
+            next_btn.visibility = View.GONE
         }
         next_btn.setOnClickListener {
             if (checkInputs()) {
