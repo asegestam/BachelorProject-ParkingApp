@@ -4,12 +4,12 @@ package com.example.smspark.views
 import android.annotation.SuppressLint
 import android.location.Location
 import android.os.Bundle
-import android.os.Handler
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
@@ -20,6 +20,9 @@ import com.example.smspark.viewmodels.SelectedZoneViewModel
 import com.example.smspark.viewmodels.ZoneViewModel
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
+import com.google.android.material.snackbar.Snackbar
+import com.jaygoo.widget.OnRangeChangedListener
+import com.jaygoo.widget.RangeSeekBar
 import com.mapbox.api.geocoding.v5.models.CarmenFeature
 import com.mapbox.geojson.Feature
 import com.mapbox.geojson.Point
@@ -27,7 +30,9 @@ import com.mapbox.mapboxsdk.plugins.places.autocomplete.model.PlaceOptions
 import com.mapbox.mapboxsdk.plugins.places.autocomplete.ui.PlaceAutocompleteFragment
 import com.mapbox.mapboxsdk.plugins.places.autocomplete.ui.PlaceSelectionListener
 import kotlinx.android.synthetic.main.destination_search.*
+import kotlinx.android.synthetic.main.fragment_tickets.*
 import kotlinx.android.synthetic.main.fragment_trip.*
+import kotlinx.android.synthetic.main.trip_options.*
 import org.koin.android.viewmodel.ext.android.sharedViewModel
 
 @SuppressLint("MissingPermission")
@@ -37,6 +42,8 @@ class TripFragment : Fragment() {
     private lateinit var toPoint: Point
     private lateinit var autoCompleteFragment: PlaceAutocompleteFragment
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
+
+    private var distance: Int = 500
     //lazy inject ViewModel
     private val zoneViewModel: ZoneViewModel by sharedViewModel()
     private val routeViewModel: RouteViewModel by sharedViewModel()
@@ -62,6 +69,7 @@ class TripFragment : Fragment() {
                                 .build(PlaceOptions.MODE_CARDS))
                     }
                 }
+        distanceText.text = "$distance m"
         initComponents()
     }
 
@@ -150,13 +158,14 @@ class TripFragment : Fragment() {
 
     private fun initObservables() {
         zoneViewModel.getAllZones().observe(this, Observer { hashMap ->
+            progressBar.visibility = View.GONE
             hashMap["standard"]?.features()?.let {
                 if(!it.isNullOrEmpty()){
                     val zone = it.first()
                     if (checkInputs()) {
                         selectZoneGetRoute(zone)
                     }
-                } else Toast.makeText(requireContext(), "Inga zoner hittades nära din destination", Toast.LENGTH_SHORT).show()
+                } else showNoZoneFound()
             }
         })
         routeViewModel.routeMap.observe(this, Observer {
@@ -164,6 +173,20 @@ class TripFragment : Fragment() {
                 findNavController().navigate(R.id.action_tripFragment_to_mapFragment)
             }
         })
+    }
+
+    private fun showNoZoneFound() {
+        val snackbar = Snackbar.make(tripFragmentContent, "Inga parkeringar hittades \nTesta att öka max avståndet!", Snackbar.LENGTH_LONG )
+        val snackbarView = snackbar.view
+        snackbarView.setBackgroundColor(ContextCompat.getColor(activity!!.applicationContext, R.color.colorAccentLight))
+        snackbar.apply {
+            setAction("OK") {
+                optionsCardView.performClick()
+                snackbar.dismiss()
+            }
+            setActionTextColor(ContextCompat.getColor(activity!!.applicationContext, R.color.colorPrimaryLight))
+            show()
+        }
     }
 
     private fun selectZoneGetRoute(zone: Feature?) {
@@ -176,7 +199,10 @@ class TripFragment : Fragment() {
     }
 
     private fun getZones() {
-        if (checkInputs()) zoneViewModel.getSpecificZones(toPoint.latitude(), toPoint.longitude(), 1000)
+        if (checkInputs()) {
+            progressBar.visibility = View.VISIBLE
+            zoneViewModel.getSpecificZones(toPoint.latitude(), toPoint.longitude(), distance)
+        }
     }
 
     /** Initiates the button click listeners */
@@ -215,6 +241,23 @@ class TripFragment : Fragment() {
                 getZones()
             } else Toast.makeText(requireContext(), "Choose all required alternatives", Toast.LENGTH_LONG).show()
         }
+       // rangeSeekBar.setValue(500f)
+        rangeSeekBar.setOnRangeChangedListener(object : OnRangeChangedListener {
+            override fun onRangeChanged(view: RangeSeekBar, leftValue: Float, rightValue: Float, isFromUser: Boolean) {
+                rangeSeekBar.setIndicatorText(leftValue.toInt().toString() + "")
+                distance = leftValue.toInt()
+            }
+
+            override fun onStartTrackingTouch(view: RangeSeekBar, isLeft: Boolean) {
+                distanceText.visibility = View.GONE
+            }
+
+            override fun onStopTrackingTouch(view: RangeSeekBar, isLeft: Boolean) {
+                distanceText.text = "$distance m"
+                distanceText.visibility = View.VISIBLE
+            }
+        })
+
     }
 
     /** Swaps the content of the textviews

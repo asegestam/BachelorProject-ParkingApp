@@ -72,6 +72,8 @@ dependencies {
     implementation 'androidx.cardview:cardview:1.0.0'
 
     implementation 'com.github.florent37:expansionpanel:1.2.2'
+    implementation 'com.ramotion.fluidslider:fluid-slider:0.3.1'
+    implementation 'com.github.Jay-Goo:RangeSeekBar:v2.0.6'
 
 }
 repositories {
@@ -79,4 +81,5 @@ repositories {
     jcenter()
     google()
     maven { url 'https://mapbox.bintray.com/mapbox' }
+    maven { url 'https://jitpack.io' }
 }
