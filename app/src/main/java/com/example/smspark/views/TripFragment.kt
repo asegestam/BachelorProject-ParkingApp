@@ -207,28 +207,27 @@ class TripFragment : Fragment() {
 
     /** Initiates the button click listeners */
     private fun initButtons() {
+        initSearchBar()
+        initSeekBar()
+        initSwitches()
+        next_btn.setOnClickListener {
+            if (checkInputs()) {
+                getZones()
+            } else Toast.makeText(requireContext(), "Choose all required alternatives", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun initSearchBar() {
         toLocation.setOnClickListener { addAutoCompleteFragment(autoCompleteFragment, "to") }
         fromLocation.setOnClickListener { addAutoCompleteFragment(autoCompleteFragment, "from") }
         myLocation.setOnClickListener {
             if (fromLocation.text != getString(R.string.nuvarande_plats)) {
-                fusedLocationProviderClient.lastLocation
-                        .addOnSuccessListener { location: Location? ->
-                            location?.let {
-                                fromLocation.text = getString(R.string.nuvarande_plats)
-                                fromPoint = Point.fromLngLat(location.longitude, location.latitude)
-                                myLocation.visibility = View.INVISIBLE
-                                clearText.visibility = View.VISIBLE
-                                if (checkInputs()) next_btn.visibility = View.VISIBLE
-                            }
-                        }
+                setUserLocation()
             }
         }
         swapIcon.setOnClickListener {
-            if (checkInputs()) {
-                swapLocations()
-            } else {
-                Toast.makeText(requireContext(), "Can´t swap", Toast.LENGTH_LONG).show()
-            }
+            if (checkInputs()) swapLocations()
+            else Toast.makeText(requireContext(), "Can´t swap", Toast.LENGTH_LONG).show()
         }
         clearText.setOnClickListener {
             fromLocation.text = ""
@@ -236,12 +235,22 @@ class TripFragment : Fragment() {
             myLocation.visibility = View.VISIBLE
             next_btn.visibility = View.GONE
         }
-        next_btn.setOnClickListener {
-            if (checkInputs()) {
-                getZones()
-            } else Toast.makeText(requireContext(), "Choose all required alternatives", Toast.LENGTH_LONG).show()
-        }
-       // rangeSeekBar.setValue(500f)
+    }
+
+    private fun setUserLocation() {
+        fusedLocationProviderClient.lastLocation
+                .addOnSuccessListener { location: Location? ->
+                    location?.let {
+                        fromLocation.text = getString(R.string.nuvarande_plats)
+                        fromPoint = Point.fromLngLat(location.longitude, location.latitude)
+                        myLocation.visibility = View.INVISIBLE
+                        clearText.visibility = View.VISIBLE
+                        if (checkInputs()) next_btn.visibility = View.VISIBLE
+                    }
+                }
+    }
+
+    private fun initSeekBar() {
         rangeSeekBar.setOnRangeChangedListener(object : OnRangeChangedListener {
             override fun onRangeChanged(view: RangeSeekBar, leftValue: Float, rightValue: Float, isFromUser: Boolean) {
                 rangeSeekBar.setIndicatorText(leftValue.toInt().toString() + "")
@@ -257,7 +266,24 @@ class TripFragment : Fragment() {
                 distanceText.visibility = View.VISIBLE
             }
         })
+    }
 
+    private fun initSwitches() {
+        accessibleSwitch.setOnCheckedChangeListener { buttonView, isChecked ->
+            when(isChecked){
+                //TODO sätt nån variabel i en viewmodel
+            }
+        }
+        ecsSwitch.setOnCheckedChangeListener { buttonView, isChecked ->
+            when(isChecked){
+                //TODO sätt nån variabel i en viewmodel
+            }
+        }
+        priceSwitch.setOnCheckedChangeListener { buttonView, isChecked ->
+            when(isChecked){
+                //TODO sätt nån variabel i en viewmodel
+            }
+        }
     }
 
     /** Swaps the content of the textviews
