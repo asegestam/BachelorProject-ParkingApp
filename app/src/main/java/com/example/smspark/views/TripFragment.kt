@@ -30,7 +30,6 @@ import com.mapbox.mapboxsdk.plugins.places.autocomplete.model.PlaceOptions
 import com.mapbox.mapboxsdk.plugins.places.autocomplete.ui.PlaceAutocompleteFragment
 import com.mapbox.mapboxsdk.plugins.places.autocomplete.ui.PlaceSelectionListener
 import kotlinx.android.synthetic.main.destination_search.*
-import kotlinx.android.synthetic.main.fragment_tickets.*
 import kotlinx.android.synthetic.main.fragment_trip.*
 import kotlinx.android.synthetic.main.trip_options.*
 import org.koin.android.viewmodel.ext.android.sharedViewModel
@@ -100,7 +99,7 @@ class TripFragment : Fragment() {
                 removeAutoCompleteFragment()
             } else {
                 //no active AutoCompleteFragment, add the given one
-                Log.d(TAG, "adding fragment" + fragment.toString())
+                Log.d(TAG, "adding fragment$fragment")
                 val transaction = it.beginTransaction()
                 transaction.add(R.id.fragment_container, fragment, tag)
                 transaction.commit()
@@ -114,7 +113,7 @@ class TripFragment : Fragment() {
         activity?.supportFragmentManager?.let {
             val fragment = getActiveAutoCompleteFragment()
             if (fragment != null) {
-                Log.d(TAG, "removing fragment" + fragment.toString())
+                Log.d(TAG, "removing fragment$fragment")
                 val transaction = it.beginTransaction()
                 transaction.remove(fragment)
                 transaction.commit()
@@ -301,7 +300,7 @@ class TripFragment : Fragment() {
     private fun checkInputs(): Boolean = !toLocation.text.isNullOrEmpty() && !fromLocation.text.isNullOrEmpty()
 
     companion object {
-        val TAG: String = "TripFragment"
+        const val TAG: String = "TripFragment"
         val geometryUtils = GeometryUtils()
     }
 

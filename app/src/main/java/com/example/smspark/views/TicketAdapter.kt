@@ -10,27 +10,27 @@ import com.example.smspark.R
 import com.mapbox.geojson.Feature
 
 
-class TicketAdapter(val tickets: List<Feature>, private val itemClickListener: View.OnClickListener ) : RecyclerView.Adapter<TicketAdapter.TicketViewHolder>() {
+class TicketAdapter(private val tickets: List<Feature>, private val itemClickListener: View.OnClickListener ) : RecyclerView.Adapter<TicketAdapter.TicketViewHolder>() {
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TicketAdapter.TicketViewHolder {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TicketViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.ticket_list_item, parent, false)
         return TicketViewHolder(view)
     }
 
     override fun getItemCount() = tickets.size
 
-    override fun onBindViewHolder(holder: TicketAdapter.TicketViewHolder, position: Int) {
+    override fun onBindViewHolder(holder: TicketViewHolder, position: Int) {
         holder.bind(tickets[position], itemClickListener)
     }
 
     class TicketViewHolder(itemView : View) : RecyclerView.ViewHolder(itemView) {
-        val price: TextView = itemView.findViewById(R.id.ticketPrice)
-        val zoneName: TextView = itemView.findViewById(R.id.zoneName)
-        val location: TextView = itemView.findViewById(R.id.location)
-        val zoneId: TextView = itemView.findViewById(R.id.zoneId)
-        val regNr: TextView = itemView.findViewById(R.id.licensplate)
-        val priceInfo: ImageView = itemView.findViewById(R.id.priceInfoBtn)
-        val date : TextView = itemView.findViewById(R.id.date)
+        private val price: TextView = itemView.findViewById(R.id.ticketPrice)
+        private val zoneName: TextView = itemView.findViewById(R.id.zoneName)
+        private val location: TextView = itemView.findViewById(R.id.location)
+        private val zoneId: TextView = itemView.findViewById(R.id.zoneId)
+        private val regNr: TextView = itemView.findViewById(R.id.licensplate)
+        private val priceInfo: ImageView = itemView.findViewById(R.id.priceInfoBtn)
+        private val date : TextView = itemView.findViewById(R.id.date)
 
         fun bind(feature: Feature, itemClickListener: View.OnClickListener) {
             price.text = feature.getStringProperty("price")

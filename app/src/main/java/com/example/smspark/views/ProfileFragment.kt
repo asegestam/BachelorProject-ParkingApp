@@ -112,6 +112,6 @@ class ProfileFragment : Fragment() {
 
 //TODO Lägg till en knapp för att rensa sök historiken
     companion object {
-        val TAG : String = "ProfileFragment"
+        const val TAG : String = "ProfileFragment"
     }
 }

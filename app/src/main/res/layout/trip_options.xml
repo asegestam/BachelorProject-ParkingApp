@@ -37,7 +37,6 @@
         app:srcCompat="@drawable/price_icon" />
 
     <TextView
-        android:id="@+id/accessibleTextView"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="4dp"
@@ -49,7 +48,6 @@
         app:layout_constraintTop_toBottomOf="@+id/dividerOne" />
 
     <TextView
-        android:id="@+id/ecsTextView"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="4dp"
@@ -62,7 +60,6 @@
         app:layout_constraintTop_toBottomOf="@+id/dividerTwo" />
 
     <TextView
-        android:id="@+id/priceTextView"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="4dp"

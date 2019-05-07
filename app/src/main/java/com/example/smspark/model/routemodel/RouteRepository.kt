@@ -3,7 +3,6 @@ package com.example.smspark.model.routemodel
 import android.content.Context
 import android.util.Log
 import androidx.lifecycle.MutableLiveData
-import com.mapbox.api.directions.v5.DirectionsCriteria
 import com.mapbox.api.directions.v5.models.DirectionsResponse
 import com.mapbox.api.directions.v5.models.DirectionsRoute
 import com.mapbox.geojson.Point
