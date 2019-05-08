@@ -22,10 +22,7 @@ import androidx.recyclerview.widget.LinearSnapHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.example.smspark.R
 import com.example.smspark.model.GeometryUtils
-import com.example.smspark.viewmodels.RouteViewModel
-import com.example.smspark.viewmodels.SelectedZoneViewModel
-import com.example.smspark.viewmodels.TravelViewModel
-import com.example.smspark.viewmodels.ZoneViewModel
+import com.example.smspark.viewmodels.*
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.snackbar.Snackbar
 import com.mapbox.android.core.permissions.PermissionsListener
@@ -49,6 +46,8 @@ import com.mapbox.mapboxsdk.maps.Style
 import com.mapbox.mapboxsdk.plugins.places.autocomplete.PlaceAutocomplete
 import com.mapbox.mapboxsdk.plugins.places.autocomplete.model.PlaceOptions
 import com.mapbox.mapboxsdk.style.layers.*
+import com.mapbox.mapboxsdk.style.layers.Property.NONE
+import com.mapbox.mapboxsdk.style.layers.Property.VISIBLE
 import com.mapbox.mapboxsdk.style.layers.PropertyFactory.*
 import com.mapbox.mapboxsdk.style.sources.GeoJsonSource
 import com.mapbox.mapboxsdk.style.sources.Source
@@ -88,14 +87,14 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
     private val pointLayerID = "zone-point-layer"
     private val pointSourceID = "point-source"
     //Handicap
-    private val handicapLayerID = "handicap-layer"
-    private val handicapSourceID = "handicap-source"
+    private val accessibleLayerID = "handicap-layer"
+    private val accessibleSourceID = "handicap-source"
     //Marker
     private val markerSourceID = "marker-layer"
     //Images
     private val markerImage = "marker-image"
     private val parkingImage = "parking-image"
-    private val handicapImage = "handicap-image"
+    private val accessibleImage = "handicap-image"
     private lateinit var snackbar: Snackbar
     private lateinit var bottomSheetBehavior: BottomSheetBehavior<View>
     private val collapsed = BottomSheetBehavior.STATE_COLLAPSED
@@ -107,6 +106,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
     private val selectedZoneViewModel: SelectedZoneViewModel by sharedViewModel()
     private val routeViewModel: RouteViewModel by sharedViewModel()
     private val travelViewModel: TravelViewModel by viewModel()
+    private val zonePreferences: ZonePreferencesViewModel by sharedViewModel()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -151,9 +151,13 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
         //Observe parking zones, if changed, add them to the map and to the recyclerview.
         zoneViewModel.getAllZones().observe(this, Observer { hashMap ->
             if (checkZoneUpdate(hashMap)) {
-                hashMap["standard"]?.let { addZonesToMap(it) }
-                hashMap["accessible"]?.let { addMarkersToMap(it, true) }
-                addToRecyclerView(hashMap)
+                hashMap["standard"]?.let {
+                    addZonesToMap(it)
+                    zonePreferences.showAccessibleZones.value?.let {showAccessibleZones ->
+                        if(showAccessibleZones) addToRecyclerView(hashMap) else addToRecyclerView(hashMapOf(Pair("standard" , it)))
+                    }
+                }
+                hashMap["accessible"]?.let {addMarkersToMap(it, true) }
             } else Toast.makeText(requireContext(), "Inga zoner hittades nära din destination", Toast.LENGTH_SHORT).show()
         })
         //Observe the selected zone, can be one from the map or the list and moves the camera to it
@@ -174,6 +178,10 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
                     }
                 }
             }
+        })
+        zonePreferences.showAccessibleZones.observe(this, Observer { showAccessibleZones ->
+            val accessibleLayer = getMapStyle()?.getLayer(accessibleLayerID)
+            if(showAccessibleZones) accessibleLayer?.setProperties(visibility(VISIBLE)) else accessibleLayer?.setProperties(visibility(NONE))
         })
     }
 
@@ -306,7 +314,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
     private fun queryMapClick(point: LatLng): Boolean {
         val pixel = mapboxMap?.projection?.toScreenLocation(point)
         pixel?.let {
-            val features = mapboxMap?.queryRenderedFeatures(pixel, pointLayerID, polygonLayerID, handicapLayerID)
+            val features = mapboxMap?.queryRenderedFeatures(pixel, pointLayerID, polygonLayerID, accessibleLayerID)
             features?.let {
                 if (features.size > 0) {
                     val feature = features[0]
@@ -359,7 +367,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
                 lineColor(Color.parseColor("#090cb0"))
         )
         val pointLayer = SymbolLayer(pointLayerID, pointSourceID).withProperties(iconImage(parkingImage), iconSize(0.35f))
-        val handicapLayer = SymbolLayer(handicapLayerID, handicapSourceID).withProperties(iconImage(handicapImage), iconSize(0.8f))
+        val handicapLayer = SymbolLayer(accessibleLayerID, accessibleSourceID).withProperties(iconImage(accessibleImage), iconSize(0.8f))
         val selectedZoneLayer = FillLayer(selectedZoneLayerID, selectedZoneSourceID).withProperties(
                         fillColor(Color.parseColor("#ff0900")),
                         fillOpacity(0.85f))
@@ -370,7 +378,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
                 lineColor(Color.parseColor("#ba170c"))
         )
         val layers = listOf(zoneLayer, highlightLayer, pointLayer, handicapLayer, selectedZoneLayer, selectedHighlightLayer)
-        val sources =  listOf(GeoJsonSource(polygonSourceID),GeoJsonSource(pointSourceID), GeoJsonSource(handicapSourceID), GeoJsonSource(selectedZoneSourceID))
+        val sources =  listOf(GeoJsonSource(polygonSourceID),GeoJsonSource(pointSourceID), GeoJsonSource(accessibleSourceID), GeoJsonSource(selectedZoneSourceID))
         addLayersToStyle(loadedMapStyle, layers, sources)
     }
 
@@ -403,7 +411,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
         with(loadedMapStyle) {
             addImage(markerImage, BitmapFactory.decodeResource(resources, R.drawable.mapbox_marker_icon_default))
             addImage(parkingImage, BitmapFactory.decodeResource(resources, R.drawable.park_blue))
-            addImage(handicapImage, BitmapFactory.decodeResource(resources, R.drawable.accessible_png))
+            addImage(accessibleImage, BitmapFactory.decodeResource(resources, R.drawable.accessible_png))
         }
     }
 
@@ -433,7 +441,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
      * @param isHandicap indicates if the given JSON is handicap zones, used to change marker icon*/
     private fun addMarkersToMap(featureCollection: FeatureCollection, isHandicap: Boolean) {
         if (isHandicap) {
-            val handicapSource = getMapStyle()?.getSourceAs<GeoJsonSource>(handicapSourceID)
+            val handicapSource = getMapStyle()?.getSourceAs<GeoJsonSource>(accessibleSourceID)
             handicapSource?.setGeoJson(featureCollection)
         } else {
             val pointSource = getMapStyle()?.getSourceAs<GeoJsonSource>(pointSourceID)

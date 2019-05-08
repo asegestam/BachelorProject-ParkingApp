@@ -17,7 +17,9 @@ import com.example.smspark.viewmodels.SelectedZoneViewModel
 import com.google.android.material.snackbar.Snackbar
 import com.mapbox.api.directions.v5.models.DirectionsRoute
 import com.mapbox.geojson.Point
-import com.mapbox.services.android.navigation.ui.v5.*
+import com.mapbox.services.android.navigation.ui.v5.NavigationView
+import com.mapbox.services.android.navigation.ui.v5.NavigationViewOptions
+import com.mapbox.services.android.navigation.ui.v5.OnNavigationReadyCallback
 import com.mapbox.services.android.navigation.ui.v5.listeners.NavigationListener
 import com.mapbox.services.android.navigation.ui.v5.listeners.RouteListener
 import com.mapbox.services.android.navigation.v5.offroute.OffRouteListener
@@ -30,7 +32,6 @@ import org.koin.android.viewmodel.ext.android.sharedViewModel
 class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationListener, ProgressChangeListener, OffRouteListener, RouteListener {
 
     private lateinit var navigationView: NavigationView
-    private lateinit var soundButton: NavigationButton
     private lateinit var snackbar: Snackbar
     private var routingToDestination = false
     private val routeViewModel: RouteViewModel by sharedViewModel()
@@ -50,11 +51,6 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
         navigationView = navigation_view_fragment
         navigationView.onCreate(savedInstanceState)
         navigationView.initialize(this)
-        initSoundButton()
-    }
-
-    private fun initSoundButton() {
-        soundButton = navigationView.retrieveSoundButton() as SoundButton
     }
 
     override fun onNavigationReady(isRunning: Boolean) {
