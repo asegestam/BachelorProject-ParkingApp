@@ -48,10 +48,10 @@ import com.mapbox.mapboxsdk.maps.MapboxMap
 import com.mapbox.mapboxsdk.maps.Style
 import com.mapbox.mapboxsdk.plugins.places.autocomplete.PlaceAutocomplete
 import com.mapbox.mapboxsdk.plugins.places.autocomplete.model.PlaceOptions
-import com.mapbox.mapboxsdk.style.layers.FillLayer
+import com.mapbox.mapboxsdk.style.layers.*
 import com.mapbox.mapboxsdk.style.layers.PropertyFactory.*
-import com.mapbox.mapboxsdk.style.layers.SymbolLayer
 import com.mapbox.mapboxsdk.style.sources.GeoJsonSource
+import com.mapbox.mapboxsdk.style.sources.Source
 import com.mapbox.services.android.navigation.ui.v5.route.NavigationMapRoute
 import kotlinx.android.synthetic.main.fragment_map.*
 import kotlinx.android.synthetic.main.selected_zone.*
@@ -65,26 +65,33 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
     // variables for adding location layer
     private lateinit var mapView: MapView
     private var mapboxMap: MapboxMap? = null
-    private val REQUEST_CODE_AUTOCOMPLETE = 1
+    private val requestCodeAutoComplete = 1
     // variables for adding location layer
     private var permissionsManager: PermissionsManager = PermissionsManager(this)
     // variables for calculating and drawing a route
-    private var navigationMapRoute: NavigationMapRoute? = null
+    private val navigationMapRoute by lazy {
+        NavigationMapRoute(null, mapView, mapboxMap!!, R.style.NavigationMapRoute)
+    }
     //RecyclerView fields
     private lateinit var recyclerView: RecyclerView
     private lateinit var zoneAdapter: ZoneAdapter
     //Layer and Source Strings
     //Polygon
-    private val polygonLayer = "zone-polygons-layer"
-    private val polygonSource = "polygon-source"
+    private val polygonLayerID = "zone-polygons-layer"
+    private val polygonSourceID = "polygon-source"
+    private val polygonHighlightID = "polygon-highlight"
+    //Sources and layers relating to highlighting selected zone
+    private val selectedZoneLayerID = "selected-zone-layer"
+    private val selectedZoneSourceID = "selected-zone-source"
+    private val selectedZoneHighLightID = "highlight-zone-layer"
     //Point
-    private val pointLayer = "zone-point-layer"
-    private val pointSource = "point-source"
+    private val pointLayerID = "zone-point-layer"
+    private val pointSourceID = "point-source"
     //Handicap
-    private val handicapLayer = "handicap-layer"
-    private val handicapSource = "handicap-source"
+    private val handicapLayerID = "handicap-layer"
+    private val handicapSourceID = "handicap-source"
     //Marker
-    private val markerSource = "marker-layer"
+    private val markerSourceID = "marker-layer"
     //Images
     private val markerImage = "marker-image"
     private val parkingImage = "parking-image"
@@ -117,7 +124,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
         val activity = activity as MainActivity
         activity.changeNavBarVisibility(true)
         progressBar.visibility = View.VISIBLE
-        initBottomSheet()
+        setupBottomSheet()
         mapView = view.findViewById(R.id.mapView)
         mapView.onCreate(savedInstanceState)
         mapView.getMapAsync { mapboxMap ->
@@ -131,12 +138,12 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
                 setupImageSource(style)
                 setupZoneLayers(style)
                 setupMarkerLayer(style)
-                initRecyclerView()
+                setupRecyclerView()
                 initObservers()
-                initSelectedZone()
+                setupSelectedZone()
             }
         }
-        initButtons()
+        setupButtons()
     }
 
     /** Initiates ViewModel observers */
@@ -152,6 +159,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
         //Observe the selected zone, can be one from the map or the list and moves the camera to it
         selectedZoneViewModel.selectedZone.observe(this, Observer {
             val zonePoint = geometryUtils.getGeometryPoint(it.geometry())
+            addSelectedZoneToMap(it)
             moveCameraToLocation(zonePoint)
         })
         //Observe an requested route, if changed this will add the route to the map and update BottomSheet
@@ -170,7 +178,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
     }
 
     /** Initiates button clickListeners */
-    private fun initButtons() {
+    private fun setupButtons() {
         fab_search.setOnClickListener {
             recyclerView.visibility = View.GONE
             startAutoCompleteActivity()
@@ -188,7 +196,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
 
 
     /**Initiates the RecyclerView with a adapter, clickListener, LayoutManager, Animator, SnapHelper*/
-    private fun initRecyclerView() {
+    private fun setupRecyclerView() {
         recyclerView = recycler_view
         val onItemClickListener = View.OnClickListener { recyclerView.visibility = View.GONE }
         zoneAdapter = ZoneAdapter({ zone: Feature -> zoneListItemClicked(zone) }, onItemClickListener)
@@ -206,21 +214,15 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
     /** If there is routes and a selected zone stored in the ViewModels
      * add the routes and markers to the map
      */
-    private fun initSelectedZone() {
-        val routes = routeViewModel.routeMap.value
+    private fun setupSelectedZone() {
         val zone = selectedZoneViewModel.selectedZone.value
-        if (!routes.isNullOrEmpty()) {
-            addRoutesToMap(routes)
-            updateBottomSheet(routes)
-        }
         zone?.let {
             addMarkerOnMap(geometryUtils.getGeometryPoint(it.geometry()), true)
-            navigationMapRoute?.updateRouteVisibilityTo(true)
         }
     }
 
     /** Moves camera to either the user's location or to a selected zone, if it exists */
-    private fun initCamera() {
+    private fun setupCamera() {
         selectedZoneViewModel.selectedZone.value?.let {
             val zonePoint = geometryUtils.getGeometryPoint(it.geometry())
             handler.postDelayed({
@@ -239,7 +241,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
     /** Initiates the BottomSheet with the view, BottomSheetBehaviour to control its state
      * and add a BottomSheetCallback to it.
      */
-    private fun initBottomSheet() {
+    private fun setupBottomSheet() {
         val bottomSheetCallback = getBottomSheetCallback()
         bottomSheetBehavior = BottomSheetBehavior.from(bottom_sheet)
         bottomSheetBehavior.apply {
@@ -264,7 +266,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
                 isLocationComponentEnabled = true
                 // Set the component's camera mode
                 cameraMode = CameraMode.NONE
-                initCamera()
+                setupCamera()
             }
         } else {
             permissionsManager.requestLocationPermissions(requireActivity())
@@ -304,10 +306,11 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
     private fun queryMapClick(point: LatLng): Boolean {
         val pixel = mapboxMap?.projection?.toScreenLocation(point)
         pixel?.let {
-            val features = mapboxMap?.queryRenderedFeatures(pixel, pointLayer, polygonLayer, handicapLayer)
+            val features = mapboxMap?.queryRenderedFeatures(pixel, pointLayerID, polygonLayerID, handicapLayerID)
             features?.let {
                 if (features.size > 0) {
                     val feature = features[0]
+
                     addMarkerOnMap(Point.fromLngLat(point.longitude, point.latitude), true)
                     selectedZoneViewModel.selectedZone.value = feature
                     return true
@@ -321,8 +324,8 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
      * @param loadedMapStyle Mapbox style to add Layers and Sources to
      * */
     private fun setupMarkerLayer(loadedMapStyle: Style) {
-        loadedMapStyle.addSource(GeoJsonSource(markerSource))
-        loadedMapStyle.addLayer(SymbolLayer("marker-layer", markerSource)
+        loadedMapStyle.addSource(GeoJsonSource(markerSourceID))
+        loadedMapStyle.addLayer(SymbolLayer("marker-layer", markerSourceID)
                 .withProperties(iconImage(markerImage),
                         iconAllowOverlap(true),
                         iconIgnorePlacement(true)))
@@ -333,7 +336,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
      * @param isWayPoint if the SymbolLayer should have 2 markers or 1
      * */
     private fun addMarkerOnMap(point: Point, isWayPoint: Boolean) {
-        val source = getMapStyle()?.getSourceAs<GeoJsonSource>(markerSource)
+        val source = getMapStyle()?.getSourceAs<GeoJsonSource>(markerSourceID)
         if (source != null) {
             if (isWayPoint) {
                 source.setGeoJson(FeatureCollection.fromFeatures(listOf(Feature.fromGeometry(routeViewModel.destination.value), Feature.fromGeometry(point))))
@@ -343,27 +346,54 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
         }
     }
 
-    /** Adds frequently used GeoJson sources and layers to the map
+    /** Creates layers for different type of zones
      * @param loadedMapStyle The style to add sources and layers to*/
     private fun setupZoneLayers(loadedMapStyle: Style) {
-        val polygonLayer = FillLayer(polygonLayer, polygonSource)
-                .withProperties(
-                        fillColor(Color.parseColor("#f42428")),
-                        fillOpacity(0.75f))
-        val pointLayer = SymbolLayer(pointLayer, pointSource)
-                .withProperties(iconImage(parkingImage), iconSize(0.35f))
-        val handicapLayer = SymbolLayer(handicapLayer, handicapSource)
-                .withProperties(iconImage(handicapImage), iconSize(0.8f))
+        val zoneLayer = FillLayer(polygonLayerID, polygonSourceID).withProperties(
+                        fillColor(Color.parseColor("#0351ab")),
+                        fillOpacity(0.65f))
+        val highlightLayer = LineLayer(polygonHighlightID, polygonSourceID).withProperties(
+                lineCap(Property.LINE_CAP_ROUND),
+                lineJoin(Property.LINE_JOIN_ROUND),
+                lineWidth(2f),
+                lineColor(Color.parseColor("#090cb0"))
+        )
+        val pointLayer = SymbolLayer(pointLayerID, pointSourceID).withProperties(iconImage(parkingImage), iconSize(0.35f))
+        val handicapLayer = SymbolLayer(handicapLayerID, handicapSourceID).withProperties(iconImage(handicapImage), iconSize(0.8f))
+        val selectedZoneLayer = FillLayer(selectedZoneLayerID, selectedZoneSourceID).withProperties(
+                        fillColor(Color.parseColor("#ff0900")),
+                        fillOpacity(0.85f))
+        val selectedHighlightLayer = LineLayer(selectedZoneHighLightID, selectedZoneSourceID).withProperties(
+                lineCap(Property.LINE_CAP_ROUND),
+                lineJoin(Property.LINE_JOIN_ROUND),
+                lineWidth(5f),
+                lineColor(Color.parseColor("#ba170c"))
+        )
+        val layers = listOf(zoneLayer, highlightLayer, pointLayer, handicapLayer, selectedZoneLayer, selectedHighlightLayer)
+        val sources =  listOf(GeoJsonSource(polygonSourceID),GeoJsonSource(pointSourceID), GeoJsonSource(handicapSourceID), GeoJsonSource(selectedZoneSourceID))
+        addLayersToStyle(loadedMapStyle, layers, sources)
+    }
+
+    /** Adds layers and sources to the map style
+     * @param loadedMapStyle The style to add sources and layers to
+     * @param newLayers layers to be added
+     * @param sources sources for the layers to be added
+     */
+    private fun addLayersToStyle(loadedMapStyle: Style, newLayers: List<Layer>, sources: List<Source>) {
         with(loadedMapStyle) {
-            addSource(GeoJsonSource(polygonSource))
-            addSource(GeoJsonSource(pointSource))
-            addSource(GeoJsonSource(handicapSource))
-            polygonLayer.minZoom = 13f
-            pointLayer.minZoom = 13f
-            handicapLayer.minZoom = 13f
-            addLayerAbove(polygonLayer, "road-street")
-            addLayer(pointLayer)
-            addLayer(handicapLayer)
+            newLayers.forEach {layer ->
+                layer.minZoom = 13f
+                when(layer.id) {
+                    polygonLayerID -> this.addLayerAbove(layer, "road-street")
+                    polygonHighlightID -> this.addLayerAbove(layer, polygonLayerID)
+                    selectedZoneLayerID -> this.addLayerAbove(layer, polygonHighlightID)
+                    selectedZoneHighLightID -> this.addLayerAbove(layer, selectedZoneLayerID)
+                    else -> this.addLayer(layer)
+                }
+            }
+            sources.forEach { source ->
+                this.addSource(source)
+            }
         }
     }
 
@@ -392,9 +422,9 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
     }
 
     /** Adds a FillLayer representation of a given JSON String
-     * @param featureCollection Valid JSON string containing Polygon Features */
+     * @param featureCollection Valid FeatureCollection containing Polygon Features */
     private fun addPolygonsToMap(featureCollection: FeatureCollection) {
-        val source = getMapStyle()?.getSourceAs<GeoJsonSource>(polygonSource)
+        val source = getMapStyle()?.getSourceAs<GeoJsonSource>(polygonSourceID)
         source?.setGeoJson(featureCollection)
     }
 
@@ -403,21 +433,26 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
      * @param isHandicap indicates if the given JSON is handicap zones, used to change marker icon*/
     private fun addMarkersToMap(featureCollection: FeatureCollection, isHandicap: Boolean) {
         if (isHandicap) {
-            val handicapSource = getMapStyle()?.getSourceAs<GeoJsonSource>(handicapSource)
+            val handicapSource = getMapStyle()?.getSourceAs<GeoJsonSource>(handicapSourceID)
             handicapSource?.setGeoJson(featureCollection)
         } else {
-            val pointSource = getMapStyle()?.getSourceAs<GeoJsonSource>(pointSource)
+            val pointSource = getMapStyle()?.getSourceAs<GeoJsonSource>(pointSourceID)
             pointSource?.setGeoJson(featureCollection)
         }
+    }
+
+    /** Adds a FillLayer representation of a selected zone
+     * @param feature Valid feature */
+    private fun addSelectedZoneToMap(feature: Feature) {
+        val source = getMapStyle()?.getSourceAs<GeoJsonSource>(selectedZoneSourceID)
+        source?.setGeoJson(feature)
     }
 
     /** Adds given route to the HashMap, if the HashMap contains 2 Routes
      * add them to the Map. */
     private fun addRoutesToMap(routes: HashMap<String, DirectionsRoute>) {
-        if (navigationMapRoute == null) {
-            navigationMapRoute = NavigationMapRoute(null, mapView, mapboxMap!!, R.style.NavigationMapRoute)
-        }
-        navigationMapRoute?.addRoutes(ArrayList<DirectionsRoute>(routes.values))
+        navigationMapRoute.addRoutes(ArrayList<DirectionsRoute>(routes.values))
+        navigationMapRoute.updateRouteVisibilityTo(true)
         progressBar.visibility = View.GONE
         startNavigationButton.visibility = View.VISIBLE
     }
@@ -434,7 +469,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
                         .proximity(getUserLocation())
                         .build(PlaceOptions.MODE_CARDS))
                 .build(requireActivity())
-        startActivityForResult(intent, REQUEST_CODE_AUTOCOMPLETE)
+        startActivityForResult(intent, requestCodeAutoComplete)
     }
 
     private fun checkZoneUpdate(hashMap: HashMap<String,FeatureCollection>): Boolean {
@@ -458,9 +493,9 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         //if result code is for AutoComplete activity
-        if (resultCode == Activity.RESULT_OK && requestCode == REQUEST_CODE_AUTOCOMPLETE) {
+        if (resultCode == Activity.RESULT_OK && requestCode == requestCodeAutoComplete) {
             handleAutoCompleteResult(data)
-            navigationMapRoute?.updateRouteVisibilityTo(false)
+            navigationMapRoute.updateRouteVisibilityTo(false)
             startNavigationButton.visibility = View.GONE
             snackbar = Snackbar.make(coordinator, R.string.select_zone, Snackbar.LENGTH_LONG)
             val snackbarView = snackbar.view
