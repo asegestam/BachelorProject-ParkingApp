@@ -13,10 +13,6 @@
         <item name="windowNoTitle">true</item>
     </style>
 
-    <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
-
-    <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
-
     <style name="BottomSheet">
         <item name="shapeAppearance">?attr/shapeAppearanceLargeComponent</item>
         <item name="backgroundTint">@color/colorPrimaryLight</item>
@@ -43,5 +39,10 @@
     <style name="PositiveButtonStyle" parent="Widget.AppCompat.Button.ButtonBar.AlertDialog">
         <item name="android:textColor">@color/colorAccentLight</item>
         <item name="android:backgroundTint">@color/colorPrimaryLight</item>
+    </style>
+
+    <style name="CustomSwitchTheme" >
+        <item name="colorControlNormal">#B6B3B3</item>
+        <item name="colorControlActivated">@color/colorAccentLight</item>
     </style>
 </resources>

@@ -73,6 +73,6 @@ class TicketsFragment : Fragment() {
 
 
     companion object {
-        val TAG : String = "TicketsFragment"
+        const val TAG : String = "TicketsFragment"
     }
 }

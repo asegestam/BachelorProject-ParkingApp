@@ -6,74 +6,137 @@
     android:layout_height="wrap_content"
     android:background="@color/colorPrimaryLight">
 
-    <Switch
-        android:id="@+id/handicapSwitch"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="8dp"
-        app:layout_constraintEnd_toStartOf="@+id/ecsSwitch"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/divider8" />
-
-    <Switch
-        android:id="@+id/priceSwitch"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="16dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/ecsSwitch"
-        app:layout_constraintTop_toBottomOf="@+id/divider8" />
-
     <ImageView
-        android:id="@+id/imageView2"
+        android:id="@+id/accessibleImageView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:layout_marginTop="16dp"
-        app:layout_constraintStart_toEndOf="@+id/handicapSwitch"
-        app:layout_constraintTop_toBottomOf="@+id/divider8"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/dividerOne"
         app:srcCompat="@drawable/accessible_icon" />
 
-    <Switch
-        android:id="@+id/ecsSwitch"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="8dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/divider8" />
-
     <ImageView
-        android:id="@+id/ecs_icon"
+        android:id="@+id/ecsImageView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:layout_marginTop="16dp"
-        app:layout_constraintStart_toEndOf="@+id/ecsSwitch"
-        app:layout_constraintTop_toBottomOf="@+id/divider8"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/dividerTwo"
         app:srcCompat="@drawable/ecs_icon" />
 
     <ImageView
-        android:id="@+id/price_icon"
+        android:id="@+id/priceImageView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:layout_marginTop="16dp"
-        app:layout_constraintStart_toEndOf="@+id/priceSwitch"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/dividerThree"
         app:srcCompat="@drawable/price_icon" />
 
+    <TextView
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        android:layout_marginTop="20dp"
+        android:layout_marginEnd="8dp"
+        android:text="Jag vill se handikappsparkeringar"
+        app:layout_constraintEnd_toStartOf="@+id/accessibleSwitch"
+        app:layout_constraintStart_toEndOf="@+id/accessibleImageView"
+        app:layout_constraintTop_toBottomOf="@+id/dividerOne" />
+
+    <TextView
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        android:layout_marginTop="20dp"
+        android:layout_marginEnd="8dp"
+        android:text="Jag vill se laddningsstationer"
+        android:theme="@style/CustomSwitchTheme"
+        app:layout_constraintEnd_toStartOf="@+id/ecsSwitch"
+        app:layout_constraintStart_toEndOf="@+id/ecsImageView"
+        app:layout_constraintTop_toBottomOf="@+id/dividerTwo" />
+
+    <TextView
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        android:layout_marginTop="20dp"
+        android:layout_marginEnd="8dp"
+        android:text="Filtrera efter pris"
+        app:layout_constraintEnd_toStartOf="@+id/priceSwitch"
+        app:layout_constraintStart_toEndOf="@+id/priceImageView"
+        app:layout_constraintTop_toBottomOf="@+id/dividerThree" />
+
+    <androidx.appcompat.widget.SwitchCompat
+        android:id="@+id/accessibleSwitch"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:thumbTint="#42A5F5"
+        android:trackTint="#B6B3B3"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/dividerOne"
+        app:theme="@style/CustomSwitchTheme" />
+
+    <androidx.appcompat.widget.SwitchCompat
+        android:id="@+id/ecsSwitch"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:thumbTint="#42A5F5"
+        android:trackTint="#B6B3B3"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/dividerTwo"
+        app:theme="@style/CustomSwitchTheme" />
+
+    <androidx.appcompat.widget.SwitchCompat
+        android:id="@+id/priceSwitch"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:showText="false"
+        android:splitTrack="false"
+        android:thumbTint="#42A5F5"
+        android:trackTint="#B6B3B3"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/dividerThree"
+        app:theme="@style/CustomSwitchTheme" />
+
     <View
-        android:id="@+id/divider7"
+        android:id="@+id/dividerOne"
         android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:background="?android:attr/listDivider"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <View
+        android:id="@+id/dividerTwo"
+        android:layout_width="0dp"
         android:layout_height="1dp"
         android:layout_marginStart="8dp"
-        android:layout_marginTop="24dp"
+        android:layout_marginEnd="8dp"
+        android:background="?android:attr/listDivider"
+        android:theme="@style/CustomSwitchTheme"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/accessibleSwitch" />
+
+    <View
+        android:id="@+id/dividerThree"
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:layout_marginStart="8dp"
         android:layout_marginEnd="8dp"
         android:background="?android:attr/listDivider"
         app:layout_constraintEnd_toEndOf="parent"
@@ -82,15 +145,29 @@
         app:layout_constraintTop_toBottomOf="@+id/ecsSwitch" />
 
     <View
-        android:id="@+id/divider8"
+        android:id="@+id/dividerFour"
         android:layout_width="match_parent"
-        android:layout_height="1dp"
+        android:layout_height="2dp"
         android:layout_marginStart="8dp"
         android:layout_marginEnd="8dp"
         android:background="?android:attr/listDivider"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@+id/priceSwitch" />
+
+    <TextView
+        android:id="@+id/textView7"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:text="Max avstånd till destination"
+        android:textAppearance="@style/TextAppearance.AppCompat.Body2"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/dividerFour" />
 
     <com.jaygoo.widget.RangeSeekBar
         android:id="@+id/rangeSeekBar"
@@ -112,19 +189,6 @@
         app:rsb_tick_mark_mode="number"
         app:rsb_tick_mark_text_array="@array/tickArray"
         tools:layout_editor_absoluteX="0dp" />
-
-    <TextView
-        android:id="@+id/textView7"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginEnd="8dp"
-        android:text="Max avstånd till destination"
-        android:textAppearance="@style/TextAppearance.AppCompat.Body2"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/divider7" />
 
     <TextView
         android:id="@+id/distanceText"

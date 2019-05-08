@@ -130,7 +130,6 @@
                 app:expansion_toggleOnClick="true">
 
                 <TextView
-                    android:id="@+id/optionsText"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="16dp"
@@ -158,8 +157,7 @@
                 android:id="@+id/expansionLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
-                <include layout="@layout/trip_options"
-                    android:id="@+id/trip_option_content"/>
+                <include layout="@layout/trip_options" />
             </com.github.florent37.expansionpanel.ExpansionLayout>
 
         </LinearLayout>
