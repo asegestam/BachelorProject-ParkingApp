@@ -29,7 +29,7 @@
             app:srcCompat="@drawable/blue_car" />
 
         <TextView
-            android:id="@+id/zoneName"
+            android:id="@+id/dialogZoneName"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
@@ -64,10 +64,10 @@
             android:layout_marginTop="8dp"
             android:text="Göteborg"
             app:layout_constraintStart_toEndOf="@+id/imageView"
-            app:layout_constraintTop_toBottomOf="@+id/zoneName" />
+            app:layout_constraintTop_toBottomOf="@+id/dialogZoneName" />
 
         <TextView
-            android:id="@+id/zone"
+            android:id="@+id/dialogZoneCode"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
@@ -83,7 +83,7 @@
             android:layout_marginStart="4dp"
             android:layout_marginTop="4dp"
             android:text="5588"
-            app:layout_constraintStart_toEndOf="@+id/zone"
+            app:layout_constraintStart_toEndOf="@+id/dialogZoneCode"
             app:layout_constraintTop_toBottomOf="@+id/location" />
 
         <TextView
@@ -96,7 +96,7 @@
             android:text="28e April 2019"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toEndOf="@+id/imageView"
-            app:layout_constraintTop_toBottomOf="@+id/zone" />
+            app:layout_constraintTop_toBottomOf="@+id/dialogZoneCode" />
 
         <TextView
             android:id="@+id/ticketPrice"

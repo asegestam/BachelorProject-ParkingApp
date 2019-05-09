@@ -31,7 +31,7 @@
             app:srcCompat="@drawable/park_blue" />
 
         <TextView
-            android:id="@+id/zoneName"
+            android:id="@+id/dialogZoneName"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
@@ -54,8 +54,8 @@
             android:padding="1dp"
             android:text="Zonkod: 3071"
             android:textAppearance="@style/MaterialAlertDialog.MaterialComponents.Body.Text"
-            app:layout_constraintStart_toStartOf="@+id/zoneName"
-            app:layout_constraintTop_toBottomOf="@+id/zoneName" />
+            app:layout_constraintStart_toStartOf="@+id/dialogZoneName"
+            app:layout_constraintTop_toBottomOf="@+id/dialogZoneName" />
 
         <TextView
             android:id="@+id/zoneOwner"

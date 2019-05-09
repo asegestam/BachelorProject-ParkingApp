@@ -652,7 +652,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
                     attr_accessible.visibility = View.VISIBLE
                     attr_ecs.visibility = View.GONE
                 }
-                zoneName.text = selectedZone.getStringProperty("zone_name")
+                dialogZoneName.text = selectedZone.getStringProperty("zone_name")
                 zoneOwner.text = selectedZone.getStringProperty("zone_owner")
                 travelTime.text = travelViewModel.getTotalTravelTime(drivingDuration!!, walkingDuration!!)
                 arrivalTime.text = travelViewModel.getArrivalTime(drivingDuration, walkingDuration)

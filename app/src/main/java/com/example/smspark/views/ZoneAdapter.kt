@@ -41,7 +41,7 @@ class ZoneAdapter(private val listener: (Feature) -> Unit, private val itemClick
     class ZoneViewHolder(private val v: View, private val itemClickListener: View.OnClickListener) : RecyclerView.ViewHolder(v), View.OnClickListener {
 
         private val icon: ImageView = v.findViewById(R.id.icon)
-        private val zoneName: TextView = v.findViewById(R.id.zoneName)
+        private val zoneName: TextView = v.findViewById(R.id.dialogZoneName)
         private val zoneType: TextView = v.findViewById(R.id.zoneType)
         private val zoneOwner: TextView = v.findViewById(R.id.zoneOwner)
         private val zoneDistance: TextView = v.findViewById(R.id.zoneDistance)
@@ -51,7 +51,7 @@ class ZoneAdapter(private val listener: (Feature) -> Unit, private val itemClick
         /** Binds the data to the viewholder by setting the text and listener */
         fun bind(zone: Feature, listner: (Feature) -> Unit) {
             if(zone.hasProperty("wkt")) {
-                zoneType.text = "Typ: HandikappsParkering"
+                zoneType.text = "För rörelsehindrade"
                 icon.setImageResource(R.drawable.accessible_png)
             }
             else {

@@ -25,7 +25,7 @@ class TicketAdapter(private val tickets: List<Feature>, private val itemClickLis
 
     class TicketViewHolder(itemView : View) : RecyclerView.ViewHolder(itemView) {
         private val price: TextView = itemView.findViewById(R.id.ticketPrice)
-        private val zoneName: TextView = itemView.findViewById(R.id.zoneName)
+        private val zoneName: TextView = itemView.findViewById(R.id.dialogZoneName)
         private val location: TextView = itemView.findViewById(R.id.location)
         private val zoneId: TextView = itemView.findViewById(R.id.zoneId)
         private val regNr: TextView = itemView.findViewById(R.id.licensplate)

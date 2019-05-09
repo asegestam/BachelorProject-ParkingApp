@@ -7,6 +7,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
@@ -51,6 +52,7 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
         navigationView = navigation_view_fragment
         navigationView.onCreate(savedInstanceState)
         navigationView.initialize(this)
+        showParkingDialog()
     }
 
     override fun onNavigationReady(isRunning: Boolean) {
@@ -93,10 +95,15 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
     /** Shows a dialog to the user asking for confirmation to start a parking at the parking zone */
     private fun showParkingDialog() {
         val builder = AlertDialog.Builder(requireContext(), R.style.AlertDialogCustom)
+        val inflater = activity?.layoutInflater
+        val dialogView = inflater?.inflate(R.layout.start_parking_dialog, null)
+        val zoneName = dialogView?.findViewById(R.id.dialogZoneName) as TextView
+        val zoneCode = dialogView.findViewById(R.id.dialogZoneCode) as TextView
+        zoneName.text = selectedZoneViewModel.selectedZone.value?.getStringProperty("zone_name")
+        zoneCode.text = selectedZoneViewModel.selectedZone.value?.getStringProperty("zonecode")
+
         builder.apply {
-            setTitle("Vill du starta parkering?")
-            setMessage("Parkeringen kommer att startas på " + selectedZoneViewModel.selectedZone.value?.getStringProperty("zone_name"))
-            setIcon(R.drawable.park_blue)
+            setView(dialogView)
             setPositiveButton("JA") { _, _ ->
                 showSnackBar(R.string.parking_success, R.color.colorSuccess)
                 startWalkingDirections()
