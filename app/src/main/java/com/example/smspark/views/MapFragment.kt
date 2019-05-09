@@ -90,9 +90,11 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
     private val accessibleLayerID = "handicap-layer"
     private val accessibleSourceID = "handicap-source"
     //Marker
-    private val markerSourceID = "marker-layer"
+    private val waypointMarkerLayer = "waypoint-marker-layer"
+    private val destinationMarkerLayer = "destination-marker-layer"
     //Images
-    private val markerImage = "marker-image"
+    private val destinationMarker = "destination-marker-image"
+    private val parkingMarker = "parking-marker-image"
     private val parkingImage = "parking-image"
     private val accessibleImage = "handicap-image"
     private lateinit var snackbar: Snackbar
@@ -185,6 +187,8 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
         })
     }
 
+
+
     /** Initiates button clickListeners */
     private fun setupButtons() {
         fab_search.setOnClickListener {
@@ -226,6 +230,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
         val zone = selectedZoneViewModel.selectedZone.value
         zone?.let {
             addMarkerOnMap(geometryUtils.getGeometryPoint(it.geometry()), true)
+            addMarkerOnMap(geometryUtils.getGeometryPoint(routeViewModel.destination.value), false)
         }
     }
 
@@ -332,9 +337,14 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
      * @param loadedMapStyle Mapbox style to add Layers and Sources to
      * */
     private fun setupMarkerLayer(loadedMapStyle: Style) {
-        loadedMapStyle.addSource(GeoJsonSource(markerSourceID))
-        loadedMapStyle.addLayer(SymbolLayer("marker-layer", markerSourceID)
-                .withProperties(iconImage(markerImage),
+        loadedMapStyle.addSource(GeoJsonSource(waypointMarkerLayer))
+        loadedMapStyle.addLayer(SymbolLayer(waypointMarkerLayer, waypointMarkerLayer)
+                .withProperties(iconImage(parkingMarker),
+                        iconAllowOverlap(true),
+                        iconIgnorePlacement(true)))
+        loadedMapStyle.addSource(GeoJsonSource(destinationMarkerLayer))
+        loadedMapStyle.addLayer(SymbolLayer(destinationMarkerLayer, destinationMarkerLayer)
+                .withProperties(iconImage(destinationMarker),
                         iconAllowOverlap(true),
                         iconIgnorePlacement(true)))
     }
@@ -344,14 +354,10 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
      * @param isWayPoint if the SymbolLayer should have 2 markers or 1
      * */
     private fun addMarkerOnMap(point: Point, isWayPoint: Boolean) {
-        val source = getMapStyle()?.getSourceAs<GeoJsonSource>(markerSourceID)
-        if (source != null) {
-            if (isWayPoint) {
-                source.setGeoJson(FeatureCollection.fromFeatures(listOf(Feature.fromGeometry(routeViewModel.destination.value), Feature.fromGeometry(point))))
-            } else {
-                source.setGeoJson(routeViewModel.destination.value)
-            }
-        }
+        if (isWayPoint)
+            getMapStyle()?.getSourceAs<GeoJsonSource>(waypointMarkerLayer)?.setGeoJson(point)
+        else
+            getMapStyle()?.getSourceAs<GeoJsonSource>(destinationMarkerLayer)?.setGeoJson(routeViewModel.destination.value)
     }
 
     /** Creates layers for different type of zones
@@ -409,7 +415,8 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
      * @param loadedMapStyle The style to add sources to*/
     private fun setupImageSource(loadedMapStyle: Style) {
         with(loadedMapStyle) {
-            addImage(markerImage, BitmapFactory.decodeResource(resources, R.drawable.destination_marker))
+            addImage(destinationMarker, BitmapFactory.decodeResource(resources, R.drawable.destination_marker))
+            addImage(parkingMarker, BitmapFactory.decodeResource(resources, R.drawable.parking_marker))
             addImage(parkingImage, BitmapFactory.decodeResource(resources, R.drawable.park_blue))
             addImage(accessibleImage, BitmapFactory.decodeResource(resources, R.drawable.accessible_png))
         }
