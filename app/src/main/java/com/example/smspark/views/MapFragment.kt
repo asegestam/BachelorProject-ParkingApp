@@ -409,7 +409,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
      * @param loadedMapStyle The style to add sources to*/
     private fun setupImageSource(loadedMapStyle: Style) {
         with(loadedMapStyle) {
-            addImage(markerImage, BitmapFactory.decodeResource(resources, R.drawable.mapbox_marker_icon_default))
+            addImage(markerImage, BitmapFactory.decodeResource(resources, R.drawable.destination_marker))
             addImage(parkingImage, BitmapFactory.decodeResource(resources, R.drawable.park_blue))
             addImage(accessibleImage, BitmapFactory.decodeResource(resources, R.drawable.accessible_png))
         }
