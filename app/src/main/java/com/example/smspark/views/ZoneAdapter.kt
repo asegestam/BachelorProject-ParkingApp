@@ -31,9 +31,7 @@ class ZoneAdapter(private val listener: (Feature) -> Unit, private val itemClick
 
     fun setData(zonesData: List<Feature>) {
         featureList.clear()
-        zonesData.forEach {
-            if(!featureList.contains(it)) featureList.add(it)
-        }
+        zonesData.forEach { featureList.add(it) }
         featureList.sortBy { it.getNumberProperty("distance").toInt()}
         val featureCollection = FeatureCollection.fromFeatures(featureList)
         zones = featureCollection

@@ -200,8 +200,6 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
         })
     }
 
-
-
     /** Initiates button clickListeners */
     private fun setupButtons() {
         fab_search.setOnClickListener {
@@ -353,11 +351,13 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
         loadedMapStyle.addSource(GeoJsonSource(waypointMarkerLayer))
         loadedMapStyle.addLayer(SymbolLayer(waypointMarkerLayer, waypointMarkerLayer)
                 .withProperties(iconImage(parkingMarker),
+                        iconSize(0.8f),
                         iconAllowOverlap(true),
                         iconIgnorePlacement(true)))
         loadedMapStyle.addSource(GeoJsonSource(destinationMarkerLayer))
         loadedMapStyle.addLayer(SymbolLayer(destinationMarkerLayer, destinationMarkerLayer)
                 .withProperties(iconImage(destinationMarker),
+                        iconSize(0.8f),
                         iconAllowOverlap(true),
                         iconIgnorePlacement(true)))
     }
@@ -386,7 +386,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
                 lineColor(Color.parseColor("#090cb0"))
         )
         val pointLayer = SymbolLayer(pointLayerID, pointSourceID).withProperties(iconImage(parkingImage), iconSize(0.35f))
-        val handicapLayer = SymbolLayer(accessibleLayerID, accessibleSourceID).withProperties(iconImage(accessibleImage), iconSize(0.8f))
+        val handicapLayer = SymbolLayer(accessibleLayerID, accessibleSourceID).withProperties(iconImage(accessibleImage), iconSize(0.385f))
         val selectedZoneLayer = FillLayer(selectedZoneLayerID, selectedZoneSourceID).withProperties(
                         fillColor(Color.parseColor("#ff0900")),
                         fillOpacity(0.85f))
@@ -431,7 +431,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
             addImage(destinationMarker, BitmapFactory.decodeResource(resources, R.drawable.destination_marker))
             addImage(parkingMarker, BitmapFactory.decodeResource(resources, R.drawable.parking_marker))
             addImage(parkingImage, BitmapFactory.decodeResource(resources, R.drawable.park_blue))
-            addImage(accessibleImage, BitmapFactory.decodeResource(resources, R.drawable.accessible_png))
+            addImage(accessibleImage, BitmapFactory.decodeResource(resources, R.drawable.handicap_icon))
         }
     }
 
@@ -514,7 +514,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
 
     private fun addToRecyclerView(features: List<Feature>) {
         zoneAdapter.setData(features)
-        recyclerView.visibility = View.VISIBLE
+        if(routeViewModel.destination.value != null) recyclerView.visibility = View.VISIBLE
         recyclerView.smoothScrollToPosition(0)
     }
 
@@ -666,7 +666,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
         }
     }
 
-    private fun isZonesNull(): Boolean = (zoneViewModel.getStandardZones().value.isNullOrEmpty() && selectedZoneViewModel.selectedZone.value != null) || (zoneViewModel.getAccessibleZones().value.isNullOrEmpty() && selectedZoneViewModel.selectedZone.value != null)
+    private fun isZonesNull(): Boolean = (zoneViewModel.getStandardZones().value.isNullOrEmpty() && selectedZoneViewModel.selectedZone.value != null)
 
     override fun onMoveBegin(detector: MoveGestureDetector) {
         mapboxMap?.let {
