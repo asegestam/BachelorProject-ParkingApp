@@ -45,6 +45,7 @@ class TripFragment : Fragment() {
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
 
     private var distance: Int = 500
+    private var listeningForUpdates: Boolean = false
     //lazy inject ViewModel
     private val zoneViewModel: ZoneViewModel by sharedViewModel()
     private val routeViewModel: RouteViewModel by sharedViewModel()
@@ -161,15 +162,19 @@ class TripFragment : Fragment() {
 
     private fun initObservables() {
         zoneViewModel.getStandardZones().observe(this, Observer { zones ->
-            if (zones.isNotEmpty() && !accessibleSwitch.isChecked) {
-                selectZone(zones)
-            } else showNoZoneFound()
+            if(listeningForUpdates) {
+                if (zones.isNotEmpty() && !accessibleSwitch.isChecked) {
+                    selectZone(zones)
+                } else showNoZoneFound()
+            }
         })
 
         zoneViewModel.getAccessibleZones().observe(this, Observer { zones ->
-            if (zones.isNotEmpty() && accessibleSwitch.isChecked) {
-                selectZone(zones)
-            } else showNoZoneFound()
+            if(listeningForUpdates) {
+                if (zones.isNotEmpty() && accessibleSwitch.isChecked) {
+                    selectZone(zones)
+                } else showNoZoneFound()
+            }
         })
         routeViewModel.routeMap.observe(this, Observer {
             if (it.count() >= 2 && checkInputs()) {
@@ -221,6 +226,7 @@ class TripFragment : Fragment() {
     private fun getZones() {
         if (checkInputs()) {
             progressBar.visibility = View.VISIBLE
+            listeningForUpdates = true
             zoneViewModel.getSpecificZones(toPoint.latitude(), toPoint.longitude(), distance, fetchAccessible = accessibleSwitch.isChecked)
         }
     }
