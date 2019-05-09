@@ -17,6 +17,7 @@ import com.example.smspark.R
 import com.example.smspark.model.GeometryUtils
 import com.example.smspark.viewmodels.RouteViewModel
 import com.example.smspark.viewmodels.SelectedZoneViewModel
+import com.example.smspark.viewmodels.ZonePreferencesViewModel
 import com.example.smspark.viewmodels.ZoneViewModel
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
@@ -47,6 +48,7 @@ class TripFragment : Fragment() {
     private val zoneViewModel: ZoneViewModel by sharedViewModel()
     private val routeViewModel: RouteViewModel by sharedViewModel()
     private val selectedZoneViewModel: SelectedZoneViewModel by sharedViewModel()
+    private val zonePreferencesViewModel: ZonePreferencesViewModel by sharedViewModel()
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View? {
@@ -172,6 +174,13 @@ class TripFragment : Fragment() {
                 findNavController().navigate(R.id.action_tripFragment_to_mapFragment)
             }
         })
+        zonePreferencesViewModel.showAccessibleZones.observe(this, Observer { showAccessibleZones ->
+            if(showAccessibleZones) accessibleSwitch.isChecked = true
+        })
+        zonePreferencesViewModel.showEcsZones.observe(this, Observer { showEcsZones ->
+            if(showEcsZones) ecsSwitch.isChecked = true
+        })
+
     }
 
     private fun showNoZoneFound() {
@@ -268,21 +277,24 @@ class TripFragment : Fragment() {
     }
 
     private fun initSwitches() {
-        accessibleSwitch.setOnCheckedChangeListener { buttonView, isChecked ->
+        accessibleSwitch.setOnCheckedChangeListener { _, isChecked ->
+            when(isChecked){
+                true -> zonePreferencesViewModel.showAccessibleZones.value = true
+                false -> zonePreferencesViewModel.showAccessibleZones.value = false
+            }
+        }
+        ecsSwitch.setOnCheckedChangeListener { _, isChecked ->
+            when(isChecked){
+                true -> zonePreferencesViewModel.showEcsZones.value = true
+                false -> zonePreferencesViewModel.showEcsZones.value = false
+            }
+        }
+        priceSwitch.setOnCheckedChangeListener { _, isChecked ->
             when(isChecked){
                 //TODO sätt nån variabel i en viewmodel
             }
         }
-        ecsSwitch.setOnCheckedChangeListener { buttonView, isChecked ->
-            when(isChecked){
-                //TODO sätt nån variabel i en viewmodel
-            }
-        }
-        priceSwitch.setOnCheckedChangeListener { buttonView, isChecked ->
-            when(isChecked){
-                //TODO sätt nån variabel i en viewmodel
-            }
-        }
+
     }
 
     /** Swaps the content of the textviews

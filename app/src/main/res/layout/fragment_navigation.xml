@@ -17,5 +17,4 @@
         app:navigationDarkTheme="@style/NavigationViewDark"
         app:navigationLightTheme="@style/NavigationViewLight"/>
 
-
 </androidx.constraintlayout.widget.ConstraintLayout>
