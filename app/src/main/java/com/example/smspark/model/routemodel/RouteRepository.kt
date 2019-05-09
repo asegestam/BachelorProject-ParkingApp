@@ -3,8 +3,10 @@ package com.example.smspark.model.routemodel
 import android.content.Context
 import android.util.Log
 import androidx.lifecycle.MutableLiveData
+import com.example.smspark.model.changeValue
 import com.mapbox.api.directions.v5.models.DirectionsResponse
 import com.mapbox.api.directions.v5.models.DirectionsRoute
+import com.mapbox.geojson.Feature
 import com.mapbox.geojson.Point
 import com.mapbox.mapboxsdk.Mapbox
 import com.mapbox.services.android.navigation.v5.navigation.NavigationRoute
@@ -23,7 +25,6 @@ class RouteRepository(val context: Context): KoinComponent {
         MutableLiveData<HashMap<String, DirectionsRoute>>()
     }
 
-
     /** Returns a route from a start point, to a destination with a waypoint in between
      * @param start Start location of the route, usually the user location
      * @param parking A stop point in the route between start and destination
@@ -35,27 +36,25 @@ class RouteRepository(val context: Context): KoinComponent {
                     Log.e("RouteRepo", "No routes found")
                     return
                 }
+                routeMap.value?.let {
+                    if(it.size == 2) {
+                        it.clear()
+                        routeMap.changeValue(it)
+                    }
+                    if (it.size == 1) {
+                        //there is one other route in the map, add the second one
+                        it[profile] = response.body()!!.routes()[0]
+                        routeMap.changeValue(it)
+                        return
+                    }
+                }
                 if (routeMap.value.isNullOrEmpty()) {
                     //routeMap is empty, create a HashMap, put in the route and add it to the LiveData
                     val map = hashMapOf<String, DirectionsRoute>()
                     map[profile] = response.body()!!.routes()[0]
-                    routeMap.value = map
+                    routeMap.changeValue(map)
                     //one route is fetched, fetch the second route recursivley
                     getRoutes(start, parking, destination, "walking")
-                }
-                routeMap.value?.let {
-                    if (it.size == 1) {
-                        //there is one other route in the map, add the second one
-                        it[profile] = response.body()!!.routes()[0]
-                        routeMap.value = it
-                        return
-                    }
-                    else {
-                        //the map is full and is cleared, and then call this method recursivley to fetch the new routes
-                        it.clear()
-                        routeMap.value = it
-                        getRoutes(start, parking, destination)
-                    }
                 }
             }
             override fun onFailure(call: Call<DirectionsResponse>, throwable: Throwable) {

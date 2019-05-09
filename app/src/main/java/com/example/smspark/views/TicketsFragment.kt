@@ -62,12 +62,9 @@ class TicketsFragment : Fragment() {
 
     private fun showSnackBar() {
         val snackbar = Snackbar.make(ticketFragment_holder, "Denna parkering faktureras på nästkommande faktura", Snackbar.LENGTH_LONG )
-        val snackbarView = snackbar.view
-        snackbarView.setBackgroundColor(ContextCompat.getColor(activity!!.applicationContext, R.color.colorAccentLight))
         snackbar.apply {
             show()
             setAction("OK") { snackbar.dismiss() }
-            setActionTextColor(ContextCompat.getColor(activity!!.applicationContext, R.color.colorPrimaryLight))
         }
     }
 

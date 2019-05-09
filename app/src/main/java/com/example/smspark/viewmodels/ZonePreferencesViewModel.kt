@@ -2,6 +2,7 @@ package com.example.smspark.viewmodels
 
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import com.example.smspark.model.changeValue
 
 class ZonePreferencesViewModel: ViewModel() {
 
@@ -11,7 +12,7 @@ class ZonePreferencesViewModel: ViewModel() {
 
 
     init {
-        showAccessibleZones.value = false
-        showEcsZones.value = false
+        showAccessibleZones.changeValue(false)
+        showEcsZones.changeValue( false)
     }
 }

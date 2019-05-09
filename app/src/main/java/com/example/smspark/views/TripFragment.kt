@@ -9,12 +9,13 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
 import com.example.smspark.R
 import com.example.smspark.model.GeometryUtils
+import com.example.smspark.model.changeValue
+import com.example.smspark.model.observeOnce
 import com.example.smspark.viewmodels.RouteViewModel
 import com.example.smspark.viewmodels.SelectedZoneViewModel
 import com.example.smspark.viewmodels.ZonePreferencesViewModel
@@ -106,6 +107,7 @@ class TripFragment : Fragment() {
                 transaction.add(R.id.fragment_container, fragment, tag)
                 transaction.commit()
                 addPlaceSelectionListener(fragment, tag)
+                expansionLayout.collapse(true)
             }
         }
     }
@@ -158,16 +160,16 @@ class TripFragment : Fragment() {
     }
 
     private fun initObservables() {
-        zoneViewModel.getAllZones().observe(this, Observer { hashMap ->
-            progressBar.visibility = View.GONE
-            hashMap["standard"]?.features()?.let {
-                if(!it.isNullOrEmpty()){
-                    val zone = it.first()
-                    if (checkInputs()) {
-                        selectZoneGetRoute(zone)
-                    }
-                } else showNoZoneFound()
-            }
+        zoneViewModel.getStandardZones().observe(this, Observer { zones ->
+            if (zones.isNotEmpty() && !accessibleSwitch.isChecked) {
+                selectZone(zones)
+            } else showNoZoneFound()
+        })
+
+        zoneViewModel.getAccessibleZones().observe(this, Observer { zones ->
+            if (zones.isNotEmpty() && accessibleSwitch.isChecked) {
+                selectZone(zones)
+            } else showNoZoneFound()
         })
         routeViewModel.routeMap.observe(this, Observer {
             if (it.count() >= 2 && checkInputs()) {
@@ -183,25 +185,35 @@ class TripFragment : Fragment() {
 
     }
 
+    /** Selects first zone in the list of features given
+     * if the list is empty or null show error message
+     */
+    private fun selectZone(features: List<Feature>?) {
+        if(!features.isNullOrEmpty()) {
+            val sortedList = features.sortedBy { it.getNumberProperty("distance").toInt() }
+            val zone = sortedList.first()
+            if (checkInputs())selectZoneGetRoute(zone)
+        }
+    }
+
+
     private fun showNoZoneFound() {
-        val snackbar = Snackbar.make(tripFragmentContent, "Inga parkeringar hittades \nTesta att öka max avståndet!", Snackbar.LENGTH_LONG )
-        val snackbarView = snackbar.view
-        snackbarView.setBackgroundColor(ContextCompat.getColor(activity!!.applicationContext, R.color.colorAccentLight))
-        snackbar.apply {
+        val snackBar = Snackbar.make(tripFragmentContent, "Inga parkeringar hittades \nTesta att öka max avståndet!", Snackbar.LENGTH_LONG )
+        snackBar.apply {
             setAction("OK") {
                 optionsCardView.performClick()
-                snackbar.dismiss()
+                snackBar.dismiss()
             }
-            setActionTextColor(ContextCompat.getColor(activity!!.applicationContext, R.color.colorPrimaryLight))
             show()
+            progressBar.visibility = View.GONE
         }
     }
 
     private fun selectZoneGetRoute(zone: Feature?) {
         zone?.let {
-            selectedZoneViewModel.selectedZone.value = zone
+            selectedZoneViewModel.selectedZone.changeValue(zone)
         }
-        routeViewModel.destination.value = toPoint
+        routeViewModel.destination.changeValue(toPoint)
         routeViewModel.getWayPointRoute(origin = fromPoint, wayPoint = geometryUtils.getGeometryPoint(zone?.geometry()), destination = toPoint)
         progressBar.visibility = View.VISIBLE
     }
@@ -209,7 +221,7 @@ class TripFragment : Fragment() {
     private fun getZones() {
         if (checkInputs()) {
             progressBar.visibility = View.VISIBLE
-            zoneViewModel.getSpecificZones(toPoint.latitude(), toPoint.longitude(), distance)
+            zoneViewModel.getSpecificZones(toPoint.latitude(), toPoint.longitude(), distance, fetchAccessible = accessibleSwitch.isChecked)
         }
     }
 
@@ -221,6 +233,7 @@ class TripFragment : Fragment() {
         next_btn.setOnClickListener {
             if (checkInputs()) {
                 getZones()
+                expansionLayout.collapse(true)
             } else Toast.makeText(requireContext(), "Choose all required alternatives", Toast.LENGTH_LONG).show()
         }
     }
@@ -279,14 +292,14 @@ class TripFragment : Fragment() {
     private fun initSwitches() {
         accessibleSwitch.setOnCheckedChangeListener { _, isChecked ->
             when(isChecked){
-                true -> zonePreferencesViewModel.showAccessibleZones.value = true
-                false -> zonePreferencesViewModel.showAccessibleZones.value = false
+                true -> zonePreferencesViewModel.showAccessibleZones.changeValue(true)
+                false -> zonePreferencesViewModel.showAccessibleZones.changeValue(false)
             }
         }
         ecsSwitch.setOnCheckedChangeListener { _, isChecked ->
             when(isChecked){
-                true -> zonePreferencesViewModel.showEcsZones.value = true
-                false -> zonePreferencesViewModel.showEcsZones.value = false
+                true -> zonePreferencesViewModel.showEcsZones.changeValue(true)
+                false -> zonePreferencesViewModel.showEcsZones.changeValue(false)
             }
         }
         priceSwitch.setOnCheckedChangeListener { _, isChecked ->
@@ -318,6 +331,8 @@ class TripFragment : Fragment() {
 
     override fun onPause() {
         removeAutoCompleteFragment()
+        zoneViewModel.getStandardZones().removeObservers(this)
+        zoneViewModel.getAccessibleZones().removeObservers(this)
         super.onPause()
     }
 }

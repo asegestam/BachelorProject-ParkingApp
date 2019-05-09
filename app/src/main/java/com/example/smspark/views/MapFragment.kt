@@ -22,10 +22,11 @@ import androidx.recyclerview.widget.LinearSnapHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.example.smspark.R
 import com.example.smspark.model.GeometryUtils
+import com.example.smspark.model.observeOnce
+import com.example.smspark.model.changeValue
 import com.example.smspark.viewmodels.*
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.snackbar.Snackbar
-import com.mapbox.android.core.permissions.PermissionsListener
 import com.mapbox.android.core.permissions.PermissionsManager
 import com.mapbox.android.gestures.MoveGestureDetector
 import com.mapbox.api.directions.v5.models.DirectionsRoute
@@ -60,13 +61,13 @@ import org.koin.android.viewmodel.ext.android.viewModel
 import timber.log.Timber
 
 
-class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLongClickListener, PermissionsListener, MapboxMap.OnMoveListener {
+class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLongClickListener , MapboxMap.OnMoveListener {
+
+    private val mainActivity: MainActivity by lazy { activity as MainActivity }
     // variables for adding location layer
     private lateinit var mapView: MapView
     private var mapboxMap: MapboxMap? = null
     private val requestCodeAutoComplete = 1
-    // variables for adding location layer
-    private var permissionsManager: PermissionsManager = PermissionsManager(this)
     // variables for calculating and drawing a route
     private val navigationMapRoute by lazy {
         NavigationMapRoute(null, mapView, mapboxMap!!, R.style.NavigationMapRoute)
@@ -91,6 +92,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
     private val accessibleSourceID = "handicap-source"
     //Marker
     private val markerSourceID = "marker-layer"
+    private val zoneLayerIDs = listOf(polygonLayerID, polygonHighlightID, pointLayerID, selectedZoneLayerID, selectedZoneHighLightID)
     //Images
     private val markerImage = "marker-image"
     private val parkingImage = "parking-image"
@@ -139,7 +141,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
                 setupZoneLayers(style)
                 setupMarkerLayer(style)
                 setupRecyclerView()
-                initObservers()
+                setupObservers()
                 setupSelectedZone()
             }
         }
@@ -147,17 +149,22 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
     }
 
     /** Initiates ViewModel observers */
-    private fun initObservers() {
+    private fun setupObservers() {
+        mainActivity.locationPermissionGranted.observeOnce(this, Observer { granted -> if(granted) enableLocationComponent(getMapStyle()!!) })
         //Observe parking zones, if changed, add them to the map and to the recyclerview.
-        zoneViewModel.getAllZones().observe(this, Observer { hashMap ->
-            if (checkZoneUpdate(hashMap)) {
-                hashMap["standard"]?.let {
-                    addZonesToMap(it)
-                    zonePreferences.showAccessibleZones.value?.let {showAccessibleZones ->
-                        if(showAccessibleZones) addToRecyclerView(hashMap) else addToRecyclerView(hashMapOf(Pair("standard" , it)))
-                    }
-                }
-                hashMap["accessible"]?.let {addMarkersToMap(it, true) }
+        zoneViewModel.getStandardZones().observe(this, Observer { zones ->
+            Log.d("ObserveStandard" , zones.toString())
+            if (zones.isNotEmpty()) {
+                addZonesToMap(zones)
+                addToRecyclerView(zones)
+                showSelectZone()
+            } else Toast.makeText(requireContext(), "Inga zoner hittades nära din destination", Toast.LENGTH_SHORT).show()
+        })
+        zoneViewModel.getAccessibleZones().observe(this, Observer { zones ->
+            if (zones.isNotEmpty()) {
+                addMarkersToMap(FeatureCollection.fromFeatures(zones), true)
+                addToRecyclerView(zones)
+                showSelectZone()
             } else Toast.makeText(requireContext(), "Inga zoner hittades nära din destination", Toast.LENGTH_SHORT).show()
         })
         //Observe the selected zone, can be one from the map or the list and moves the camera to it
@@ -173,15 +180,21 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
                 updateBottomSheet(it)
                 it.forEach { entry ->
                     when (entry.key) {
-                        "driving" -> routeViewModel.routeDestination.value = entry.value
-                        "walking" -> routeViewModel.routeWayPoint.value = entry.value
+                        "driving" -> routeViewModel.routeDestination.changeValue(entry.value)
+                        "walking" -> routeViewModel.routeWayPoint.changeValue(entry.value)
                     }
                 }
             }
         })
         zonePreferences.showAccessibleZones.observe(this, Observer { showAccessibleZones ->
             val accessibleLayer = getMapStyle()?.getLayer(accessibleLayerID)
-            if(showAccessibleZones) accessibleLayer?.setProperties(visibility(VISIBLE)) else accessibleLayer?.setProperties(visibility(NONE))
+            if(showAccessibleZones) {
+                hideStandardZones()
+                accessibleLayer?.setProperties(visibility(VISIBLE))
+            } else {
+                showStandardZones()
+                accessibleLayer?.setProperties(visibility(NONE))
+            }
         })
     }
 
@@ -277,7 +290,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
                 setupCamera()
             }
         } else {
-            permissionsManager.requestLocationPermissions(requireActivity())
+            mainActivity.requestLocationPermission()
         }
     }
 
@@ -298,11 +311,11 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
     }
 
     override fun onMapLongClick(point: LatLng): Boolean {
-        routeViewModel.destination.value = Point.fromLngLat(point.longitude, point.latitude)
+        routeViewModel.destination.changeValue(Point.fromLngLat(point.longitude, point.latitude))
         routeViewModel.destination.value?.let {
             moveCameraToLocation(it, animate = false)
             addMarkerOnMap(it, false)
-            zoneViewModel.getSpecificZones(latitude = it.latitude(), longitude = it.longitude(), radius = 1000)
+            zoneViewModel.getSpecificZones(latitude = it.latitude(), longitude = it.longitude(), radius = 1000, fetchAccessible = zonePreferences.showAccessibleZones.value!!)
         }
         return true
     }
@@ -320,7 +333,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
                     val feature = features[0]
 
                     addMarkerOnMap(Point.fromLngLat(point.longitude, point.latitude), true)
-                    selectedZoneViewModel.selectedZone.value = feature
+                    selectedZoneViewModel.selectedZone.changeValue(feature)
                     return true
                 }
             }
@@ -417,16 +430,15 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
 
     /** Takes given FeatureCollection filters out Points and Polygons
      * and calls the appropiate method to add them to the map
-     * @param featureCollection collection of features to be added
+     * @param features collection of features to be added
      * */
-    private fun addZonesToMap(featureCollection: FeatureCollection) {
-        val features = featureCollection.features()
+    private fun addZonesToMap(features: List<Feature>) {
         //all features that is polygons
-        val polygons = features?.filter { it.geometry() is Polygon }
+        val polygons = features.filter { it.geometry() is Polygon }
         //all features that is points
-        val points = features?.filter { it.geometry() is Point }
-        polygons?.let { addPolygonsToMap(FeatureCollection.fromFeatures(polygons)) }
-        points?.let { addMarkersToMap(FeatureCollection.fromFeatures(points), false) }
+        val points = features.filter { it.geometry() is Point }
+        addPolygonsToMap(FeatureCollection.fromFeatures(polygons))
+        addMarkersToMap(FeatureCollection.fromFeatures(points), false)
     }
 
     /** Adds a FillLayer representation of a given JSON String
@@ -465,6 +477,18 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
         startNavigationButton.visibility = View.VISIBLE
     }
 
+    private fun showStandardZones() {
+        zoneLayerIDs.forEach {
+            getMapStyle()?.getLayer(it)?.setProperties(visibility(VISIBLE))
+        }
+    }
+
+    private fun hideStandardZones() {
+        zoneLayerIDs.forEach {
+            getMapStyle()?.getLayer(it)?.setProperties(visibility(NONE))
+        }
+    }
+
     /** Starts a Search AutoComplete activity for searching locations */
     private fun startAutoCompleteActivity() {
         val intent = PlaceAutocomplete.IntentBuilder()
@@ -480,16 +504,9 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
         startActivityForResult(intent, requestCodeAutoComplete)
     }
 
-    private fun checkZoneUpdate(hashMap: HashMap<String,FeatureCollection>): Boolean {
-        return !hashMap["standard"]?.features().isNullOrEmpty()
-    }
 
-    private fun addToRecyclerView(hashMap: HashMap<String, FeatureCollection>) {
-        val list = arrayListOf<Feature>()
-        hashMap.values.forEach {
-            it.features()?.let { listOfFeatures -> list.addAll(listOfFeatures) }
-        }
-        zoneAdapter.setData(FeatureCollection.fromFeatures(list))
+    private fun addToRecyclerView(features: List<Feature>) {
+        zoneAdapter.setData(features)
         recyclerView.visibility = View.VISIBLE
         recyclerView.smoothScrollToPosition(0)
     }
@@ -505,10 +522,6 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
             handleAutoCompleteResult(data)
             navigationMapRoute.updateRouteVisibilityTo(false)
             startNavigationButton.visibility = View.GONE
-            snackbar = Snackbar.make(coordinator, R.string.select_zone, Snackbar.LENGTH_LONG)
-            val snackbarView = snackbar.view
-            snackbarView.setBackgroundColor(ContextCompat.getColor(activity!!.applicationContext, R.color.mapbox_blue))
-            snackbar.show()
             bottomSheetBehavior.state = hidden
         }
     }
@@ -518,11 +531,11 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
         //Gets the place data from searched position
         val feature = PlaceAutocomplete.getPlace(data)
         feature?.let {
-            routeViewModel.destination.value = feature.geometry() as Point
+            routeViewModel.destination.changeValue(feature.geometry() as Point)
             routeViewModel.destination.value?.let {
                 moveCameraToLocation(it, 15.0, 4000, zoom = 14.0)
                 addMarkerOnMap(it, false)
-                zoneViewModel.getSpecificZones(latitude = it.latitude(), longitude = it.longitude(), radius = 1000)
+                zoneViewModel.getSpecificZones(latitude = it.latitude(), longitude = it.longitude(), radius = 1000, fetchAccessible = zonePreferences.showAccessibleZones.value!!)
             }
         }
     }
@@ -531,7 +544,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
      * @param zone The list items binded object*/
     private fun zoneListItemClicked(zone: Feature) {
         if (zone != selectedZoneViewModel.selectedZone.value) {
-            selectedZoneViewModel.selectedZone.value = zone
+            selectedZoneViewModel.selectedZone.changeValue(zone)
             val geometry = zone.geometry()
             val wayPoint: Point
             geometry?.let {
@@ -580,6 +593,13 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
             }
         }
         return null
+    }
+
+    private fun showSelectZone() {
+        snackbar = Snackbar.make(coordinator, R.string.select_zone, Snackbar.LENGTH_LONG)
+        val snackbarView = snackbar.view
+        snackbarView.setBackgroundColor(ContextCompat.getColor(activity!!.applicationContext, R.color.mapbox_blue))
+        snackbar.show()
     }
 
     /** Returns the current zoom level of the map */
@@ -639,9 +659,11 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
         }
     }
 
+    private fun isZonesNull(): Boolean = (zoneViewModel.getStandardZones().value.isNullOrEmpty() && selectedZoneViewModel.selectedZone.value != null) || (zoneViewModel.getAccessibleZones().value.isNullOrEmpty() && selectedZoneViewModel.selectedZone.value != null)
+
     override fun onMoveBegin(detector: MoveGestureDetector) {
         mapboxMap?.let {
-            if (it.cameraPosition.zoom < 13 && zoneViewModel.getAllZones().value != null && selectedZoneViewModel.selectedZone.value == null) {
+            if (it.cameraPosition.zoom < 13 && !isZonesNull()) {
                 Toast.makeText(requireContext(), "Zooma in mer för att se fler zoner", Toast.LENGTH_SHORT).show()
             }
         }
@@ -653,23 +675,6 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
     override fun onMoveEnd(detector: MoveGestureDetector) {
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
-        permissionsManager.onRequestPermissionsResult(requestCode, permissions, grantResults)
-    }
-
-    override fun onExplanationNeeded(permissionsToExplain: List<String>) {
-        Toast.makeText(requireContext(), R.string.user_location_permission_explanation, Toast.LENGTH_LONG).show()
-    }
-
-    override fun onPermissionResult(granted: Boolean) {
-        if (granted) {
-            Log.d("onPermissionResult", "permission granted")
-            enableLocationComponent(getMapStyle()!!)
-        } else {
-            Toast.makeText(requireContext(), R.string.user_location_permission_not_granted, Toast.LENGTH_LONG).show()
-            permissionsManager.requestLocationPermissions(requireActivity())
-        }
-    }
 
     /**  ------ LifeCycle Methods ------*/
     override fun onStart() {

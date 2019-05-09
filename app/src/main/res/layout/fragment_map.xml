@@ -27,7 +27,8 @@
             mapbox:mapbox_cameraTargetLng="12.0056"
             mapbox:mapbox_uiCompass="false"
             mapbox:mapbox_uiLogo="false"
-            mapbox:mapbox_uiAttribution="false"/>
+            mapbox:mapbox_uiAttribution="false"
+            />
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recycler_view"

@@ -1,13 +1,15 @@
 package com.example.smspark.model.zonemodel
 
 import androidx.lifecycle.LiveData
-import com.mapbox.geojson.FeatureCollection
+import com.mapbox.geojson.Feature
 
 interface ZoneRepository {
 
-    fun getAllZones() : LiveData<HashMap<String,FeatureCollection>>
+    fun getStandardZones() : LiveData<List<Feature>>
 
-    fun getSpecificZones(latitude: Double, longitude: Double, radius: Int)
+    fun getAccessibleZones() : LiveData<List<Feature>>
 
-    fun getHandicapZones(latitude: Double, longitude: Double, radius: Int)
+    fun getSpecificZones(latitude: Double, longitude: Double, radius: Int, fetchAccessible: Boolean = false)
+
+    fun getAccessibleZones(latitude: Double, longitude: Double, radius: Int)
 }
