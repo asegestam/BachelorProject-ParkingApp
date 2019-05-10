@@ -18,14 +18,14 @@
         android:layout_marginStart="4dp"
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="16dp"
-        android:backgroundTint="@color/colorAccentLight"
         android:text="@string/search"
+        android:visibility="gone"
+        app:backgroundTint="@color/colorAccentLight"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        android:visibility="gone"
-        app:rippleColor="@color/colorPrimaryDark"/>
+        app:rippleColor="@color/colorPrimaryDark" />
 
     <androidx.cardview.widget.CardView
         android:id="@+id/cardView2"

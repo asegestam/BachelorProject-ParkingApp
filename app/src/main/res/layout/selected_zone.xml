@@ -56,7 +56,6 @@
         android:layout_marginTop="8dp"
         android:padding="1dp"
         android:text="EuroPark Svenska AB EPS"
-        android:textAppearance="@style/MaterialAlertDialog.MaterialComponents.Body.Text"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/dialogZoneName" />
 
