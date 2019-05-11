@@ -9,7 +9,7 @@ interface ZoneRepository {
 
     fun getAccessibleZones() : LiveData<List<Feature>>
 
-    fun getSpecificZones(latitude: Double, longitude: Double, radius: Int, fetchAccessible: Boolean = false)
+    fun getSpecificZones(latitude: Double, longitude: Double, radius: Int)
 
     fun getAccessibleZones(latitude: Double, longitude: Double, radius: Int)
 }

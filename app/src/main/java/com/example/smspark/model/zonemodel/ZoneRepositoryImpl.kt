@@ -3,7 +3,7 @@ package com.example.smspark.model.zonemodel
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import com.example.smspark.model.changeValue
+import com.example.smspark.model.extentionFunctions.changeValue
 import com.google.gson.GsonBuilder
 import com.mapbox.geojson.Feature
 import com.mapbox.geojson.FeatureCollection
@@ -39,7 +39,7 @@ class ZoneRepositoryImpl: ZoneRepository, KoinComponent {
      * @param longitude longitude
      * @param radius radius from the LatLong to fetch zones
      * */
-    override fun getSpecificZones(latitude: Double, longitude: Double, radius: Int, fetchAccessible: Boolean){
+    override fun getSpecificZones(latitude: Double, longitude: Double, radius: Int){
 
         val call = service.getSpecificZones(latitude, longitude, radius)
         call.enqueue(object : retrofit2.Callback<Zone> {
@@ -55,10 +55,7 @@ class ZoneRepositoryImpl: ZoneRepository, KoinComponent {
                     //create a FeatureCollection of the given respone
                     val featureCollection = FeatureCollection.fromJson(featuresJson)
                     Log.d("onResponse", featureCollection.features().toString())
-                    if(fetchAccessible) {
-                        getAccessibleZones(latitude, longitude, radius)
-                        return
-                    }
+                    getAccessibleZones(latitude, longitude, radius)
                     standardZones.changeValue(featureCollection.features()!!)
                 }
             }

@@ -13,9 +13,9 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
 import com.example.smspark.R
-import com.example.smspark.model.GeometryUtils
-import com.example.smspark.model.changeValue
-import com.example.smspark.model.observeOnce
+import com.example.smspark.model.extentionFunctions.changeValue
+import com.example.smspark.model.extentionFunctions.changeVisibility
+import com.example.smspark.model.extentionFunctions.getGeometryPoint
 import com.example.smspark.viewmodels.RouteViewModel
 import com.example.smspark.viewmodels.SelectedZoneViewModel
 import com.example.smspark.viewmodels.ZonePreferencesViewModel
@@ -27,6 +27,7 @@ import com.jaygoo.widget.OnRangeChangedListener
 import com.jaygoo.widget.RangeSeekBar
 import com.mapbox.api.geocoding.v5.models.CarmenFeature
 import com.mapbox.geojson.Feature
+import com.mapbox.geojson.Geometry
 import com.mapbox.geojson.Point
 import com.mapbox.mapboxsdk.plugins.places.autocomplete.model.PlaceOptions
 import com.mapbox.mapboxsdk.plugins.places.autocomplete.ui.PlaceAutocompleteFragment
@@ -147,8 +148,8 @@ class TripFragment : Fragment() {
         fromPoint = carmenFeature.geometry() as Point
         fromLocation.text = carmenFeature.text()
         myLocation.visibility = View.INVISIBLE
-        clearText.visibility = View.VISIBLE
-        if (checkInputs()) next_btn.visibility = View.VISIBLE
+        clearText.changeVisibility(View.VISIBLE)
+        if (checkInputs()) next_btn.changeVisibility(View.VISIBLE)
     }
 
     /** Handles the to location part of the search
@@ -157,7 +158,7 @@ class TripFragment : Fragment() {
     private fun handleToLocation(carmenFeature: CarmenFeature) {
         toPoint = carmenFeature.geometry() as Point
         toLocation.text = carmenFeature.text()
-        if (checkInputs()) next_btn.visibility = View.VISIBLE
+        if (checkInputs()) next_btn.changeVisibility(View.VISIBLE)
     }
 
     private fun initObservables() {
@@ -210,7 +211,7 @@ class TripFragment : Fragment() {
                 snackBar.dismiss()
             }
             show()
-            progressBar.visibility = View.GONE
+            progressBar.changeVisibility(View.GONE)
         }
     }
 
@@ -219,13 +220,14 @@ class TripFragment : Fragment() {
             selectedZoneViewModel.selectedZone.changeValue(zone)
         }
         routeViewModel.destination.changeValue(toPoint)
-        routeViewModel.getWayPointRoute(origin = fromPoint, wayPoint = geometryUtils.getGeometryPoint(zone?.geometry()), destination = toPoint)
-        progressBar.visibility = View.VISIBLE
+        val point = zone?.geometry() as Geometry
+        routeViewModel.getWayPointRoute(origin = fromPoint, wayPoint = point.getGeometryPoint(), destination = toPoint)
+        progressBar.changeVisibility(View.VISIBLE)
     }
 
     private fun getZones() {
         if (checkInputs()) {
-            progressBar.visibility = View.VISIBLE
+            progressBar.changeVisibility(View.VISIBLE)
             listeningForUpdates = true
             zoneViewModel.getSpecificZones(toPoint.latitude(), toPoint.longitude(), distance, fetchAccessible = accessibleSwitch.isChecked)
         }
@@ -258,9 +260,9 @@ class TripFragment : Fragment() {
         }
         clearText.setOnClickListener {
             fromLocation.text = ""
-            clearText.visibility = View.GONE
-            myLocation.visibility = View.VISIBLE
-            next_btn.visibility = View.GONE
+            clearText.changeVisibility(View.GONE)
+            myLocation.changeVisibility(View.VISIBLE)
+            next_btn.changeVisibility(View.GONE)
         }
     }
 
@@ -271,8 +273,8 @@ class TripFragment : Fragment() {
                         fromLocation.text = getString(R.string.nuvarande_plats)
                         fromPoint = Point.fromLngLat(location.longitude, location.latitude)
                         myLocation.visibility = View.INVISIBLE
-                        clearText.visibility = View.VISIBLE
-                        if (checkInputs()) next_btn.visibility = View.VISIBLE
+                        clearText.changeVisibility(View.VISIBLE)
+                        if (checkInputs()) next_btn.changeVisibility(View.VISIBLE)
                     }
                 }
     }
@@ -285,12 +287,12 @@ class TripFragment : Fragment() {
             }
 
             override fun onStartTrackingTouch(view: RangeSeekBar, isLeft: Boolean) {
-                distanceText.visibility = View.GONE
+                distanceText.changeVisibility(View.GONE)
             }
 
             override fun onStopTrackingTouch(view: RangeSeekBar, isLeft: Boolean) {
                 distanceText.text = "$distance m"
-                distanceText.visibility = View.VISIBLE
+                distanceText.changeVisibility(View.VISIBLE)
             }
         })
     }
@@ -332,7 +334,6 @@ class TripFragment : Fragment() {
 
     companion object {
         const val TAG: String = "TripFragment"
-        val geometryUtils = GeometryUtils()
     }
 
     override fun onPause() {

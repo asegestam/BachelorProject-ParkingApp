@@ -3,10 +3,9 @@ package com.example.smspark.model.routemodel
 import android.content.Context
 import android.util.Log
 import androidx.lifecycle.MutableLiveData
-import com.example.smspark.model.changeValue
+import com.example.smspark.model.extentionFunctions.changeValue
 import com.mapbox.api.directions.v5.models.DirectionsResponse
 import com.mapbox.api.directions.v5.models.DirectionsRoute
-import com.mapbox.geojson.Feature
 import com.mapbox.geojson.Point
 import com.mapbox.mapboxsdk.Mapbox
 import com.mapbox.services.android.navigation.v5.navigation.NavigationRoute

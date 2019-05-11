@@ -7,62 +7,107 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.smspark.R
-import com.google.android.material.button.MaterialButton
 import com.mapbox.geojson.Feature
-import com.mapbox.geojson.FeatureCollection
 
-class ZoneAdapter(private val listener: (Feature) -> Unit, private val itemClickListener: View.OnClickListener): RecyclerView.Adapter<ZoneAdapter.ZoneViewHolder>() {
+class ZoneAdapter(private val listener: (Feature) -> Unit): RecyclerView.Adapter<ZoneAdapter.ZoneViewHolder>() {
 
-    private lateinit var zones: FeatureCollection
+    private var zones: ArrayList<Feature> = ArrayList()
     private val featureList: ArrayList<Feature> = ArrayList()
+    private val accessibleFeatureList: ArrayList<Feature> = ArrayList()
+    private var allFeatures: ArrayList<Feature> = ArrayList()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ZoneViewHolder {
         val cardView = LayoutInflater.from(parent.context)
                 .inflate(R.layout.list_item, parent, false)
-        return ZoneViewHolder(cardView, itemClickListener)
+        return ZoneViewHolder(cardView)
     }
 
-    override fun getItemCount(): Int = featureList.size
+    override fun getItemCount(): Int = zones.size
 
 
     override fun onBindViewHolder(holder: ZoneViewHolder, position: Int) {
-        holder.bind(zones.features()!![position], listener)
+        holder.bind(zones[position], listener)
     }
 
     fun setData(zonesData: List<Feature>) {
         featureList.clear()
         zonesData.forEach { featureList.add(it) }
-        featureList.sortBy { it.getNumberProperty("distance").toInt()}
-        val featureCollection = FeatureCollection.fromFeatures(featureList)
-        zones = featureCollection
+        combineAndNotify()
+    }
+
+    fun setAccessibleData(zonesData: List<Feature>) {
+        accessibleFeatureList.clear()
+        zonesData.forEach { accessibleFeatureList.add(it) }
+        combineAndNotify()
+    }
+
+    /** Combines the two feature lists */
+    private fun combineAndNotify() {
+        allFeatures.clear()
+        allFeatures.addAll(featureList)
+        allFeatures.addAll(accessibleFeatureList)
+        allFeatures.sortBy { it.getNumberProperty("distance").toInt()}
+        zones = allFeatures
         notifyDataSetChanged()
     }
 
-    class ZoneViewHolder(private val v: View, private val itemClickListener: View.OnClickListener) : RecyclerView.ViewHolder(v), View.OnClickListener {
+    fun removeZonesFromList(layerID: String) {
+        if(layerID == "zone-polygons-layer") removeStandardZonesFromList()
+        else removeAccessibleZonesFromList()
+    }
 
-        private val icon: ImageView = v.findViewById(R.id.icon)
-        private val zoneName: TextView = v.findViewById(R.id.dialogZoneName)
-        private val zoneType: TextView = v.findViewById(R.id.zoneType)
-        private val zoneOwner: TextView = v.findViewById(R.id.zoneOwner)
-        private val zoneDistance: TextView = v.findViewById(R.id.zoneDistance)
-        private val hideButton: MaterialButton = v.findViewById(R.id.hide_list_button)
+    fun addZonesToList(layerID: String) {
+        if(layerID == "zone-polygons-layer") addStandardZonesToList()
+        else addAccessibleZonesToList()
+    }
 
+    /** Changes the data set to all features that is a regular zone */
+    fun removeStandardZonesFromList() {
+        val accessibleZones = allFeatures.filter { it.hasProperty("wkt") }.toCollection(ArrayList())
+        allFeatures = accessibleZones
+        zones = allFeatures
+        notifyDataSetChanged()
+    }
+
+    /** Changes the data set to all features that is not a Göteborg stad zone */
+    fun removeAccessibleZonesFromList() {
+        val standardZones = allFeatures.filter { !it.hasProperty("wkt") }.toCollection(ArrayList())
+        allFeatures = standardZones
+        zones = allFeatures
+        notifyDataSetChanged()
+    }
+
+    private fun addStandardZonesToList() {
+        allFeatures.addAll(featureList)
+        allFeatures.sortBy { it.getNumberProperty("distance").toInt() }
+        zones = allFeatures
+        notifyDataSetChanged()
+    }
+
+    private fun addAccessibleZonesToList() {
+        allFeatures.addAll(accessibleFeatureList)
+        allFeatures.sortBy { it.getNumberProperty("distance").toInt() }
+        zones = allFeatures
+        notifyDataSetChanged()
+    }
+
+    class ZoneViewHolder(private val cardView: View) : RecyclerView.ViewHolder(cardView), View.OnClickListener {
+
+        private val icon: ImageView = cardView.findViewById(R.id.icon)
+        private val zoneName: TextView = cardView.findViewById(R.id.dialogZoneName)
+        private val zoneDistance: TextView = cardView.findViewById(R.id.zoneDistance)
 
         /** Binds the data to the viewholder by setting the text and listener */
         fun bind(zone: Feature, listner: (Feature) -> Unit) {
             if(zone.hasProperty("wkt")) {
-                zoneType.text = "För rörelsehindrade"
                 icon.setImageResource(R.drawable.accessible_png)
             }
             else {
                 icon.setImageResource(R.drawable.park_blue)
-                zoneType.text = "Zonkod: " + zone.getNumberProperty("zonecode")
             }
                 zoneName.text = zone.getStringProperty("zone_name")
-                zoneOwner.text = zone.getStringProperty("zone_owner")
                 zoneDistance.text = zone.getNumberProperty("distance").toInt().toString() + " m"
-            v.setOnClickListener { listner(zone) }
-            hideButton.setOnClickListener(itemClickListener)
+            cardView.setOnClickListener { listner(zone) }
         }
 
         override fun onClick(v: View?) {

@@ -58,6 +58,7 @@
     <string name="alternativ">Alternativ</string>
     <string name="s_k_resa">Sök resa</string>
     <string name="fortsatt" tools:keep="@string/fortsatt">Fortsätt</string>
+    <string name="searchHint">Address/Område/Plats</string>
 
 
 </resources>

@@ -5,7 +5,7 @@
     <color name="colorPrimaryLight">#FFFFFF</color>
     <color name="colorAccent">#E53935</color>
     <color name="colorAccentLight">#42A5F5</color>
-    <color name="colorAccentGrey">#EEECEC</color>
+    <color name="colorAccentGrey">#E2DEDE</color>
     <color name="colorSuccess">#1BCA2B</color>
     <color name="black">#000</color>
 </resources>

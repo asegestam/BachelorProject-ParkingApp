@@ -11,7 +11,7 @@ class ZoneViewModel(private val repo: ZoneRepository): ViewModel(){
 
     fun getAccessibleZones(): LiveData<List<Feature>> = repo.getAccessibleZones()
 
-    fun getSpecificZones(latitude: Double = 57.7089, longitude: Double = 11.9746, radius: Int = 500, fetchAccessible: Boolean = false){
-        repo.getSpecificZones(latitude, longitude, radius, fetchAccessible)
+    fun getSpecificZones(latitude: Double = 57.7089, longitude: Double = 11.9746, radius: Int = 500, fetchAccessible: Boolean = true){
+        repo.getSpecificZones(latitude, longitude, radius)
     }
 }

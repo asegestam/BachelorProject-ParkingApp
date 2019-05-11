@@ -2,7 +2,7 @@ package com.example.smspark.viewmodels
 
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.example.smspark.model.changeValue
+import com.example.smspark.model.extentionFunctions.changeValue
 
 class ZonePreferencesViewModel: ViewModel() {
 

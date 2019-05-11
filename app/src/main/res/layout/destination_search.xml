@@ -50,7 +50,7 @@
         android:layout_marginStart="8dp"
         android:layout_marginTop="16dp"
         android:layout_marginEnd="8dp"
-        android:hint="Address/Område/Plats"
+        android:hint="@string/searchHint"
         android:textSize="18sp"
         app:layout_constraintEnd_toStartOf="@+id/myLocation"
         app:layout_constraintStart_toEndOf="@+id/from"
