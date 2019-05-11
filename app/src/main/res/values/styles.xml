@@ -47,4 +47,13 @@
         <item name="fab_colorPressed">@color/colorPrimaryDark</item>
         <item name="fab_colorRipple">@color/colorPrimaryLight</item>
     </style>
+
+    <style name="CustomNavigationLight" parent="@style/NavigationViewLight">
+        <item name="navigationViewPrimary">@color/colorPrimary</item>
+        <item name="navigationViewBannerBackground">@color/colorPrimary</item>
+        <item name="navigationViewPrimaryText">@color/colorPrimaryLight</item>
+        <item name="navigationViewSecondaryText">@color/colorPrimaryLight</item>
+        <item name="navigationViewAccent">@color/colorPrimaryLight</item>
+        <item name="navigationViewSecondary">@color/colorPrimaryLight</item>
+    </style>
 </resources>

@@ -175,7 +175,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
                 updateBottomSheet(it)
                 it.forEach { entry ->
                     when (entry.key) {
-                        "driving" -> routeViewModel.routeDestination.changeValue(entry.value)
+                        "driving-traffic" -> routeViewModel.routeDestination.changeValue(entry.value)
                         "walking" -> routeViewModel.routeWayPoint.changeValue(entry.value)
                     }
                 }
@@ -619,8 +619,8 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
     private fun updateBottomSheet(routes: HashMap<String, DirectionsRoute>) {
         val selectedZone = selectedZoneViewModel.selectedZone.value
         selectedZone?.let {
-            val drivingRouteDistance = routes["driving"]?.distance()
-            val drivingDuration = routes["driving"]?.duration()
+            val drivingRouteDistance = routes["driving-traffic"]?.distance()
+            val drivingDuration = routes["driving-traffic"]?.duration()
             val walkingRouteDistance = routes["walking"]?.distance()
             val walkingDuration = routes["walking"]?.duration()
             bottom_sheet.apply {
@@ -633,7 +633,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
                     attr_accessible.changeVisibility(View.VISIBLE)
                     attr_ecs.changeVisibility(View.GONE)
                 }
-                dialogZoneName.text = selectedZone.getStringProperty("zone_name")
+                zoneName.text = selectedZone.getStringProperty("zone_name")
                 zoneOwner.text = selectedZone.getStringProperty("zone_owner")
                 travelTime.text = travelViewModel.getTotalTravelTime(drivingDuration!!, walkingDuration!!)
                 arrivalTime.text = travelViewModel.getArrivalTime(drivingDuration, walkingDuration)

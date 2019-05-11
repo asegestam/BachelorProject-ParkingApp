@@ -32,7 +32,7 @@
 
 
         <TextView
-            android:id="@+id/dialogZoneName"
+            android:id="@+id/zoneName"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="4dp"

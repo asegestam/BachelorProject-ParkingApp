@@ -98,7 +98,7 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
         val builder = AlertDialog.Builder(requireContext(), R.style.AlertDialogCustom)
         val inflater = activity?.layoutInflater
         val dialogView = inflater?.inflate(R.layout.start_parking_dialog, null)
-        val zoneName = dialogView?.findViewById(R.id.dialogZoneName) as TextView
+        val zoneName = dialogView?.findViewById(R.id.zoneName) as TextView
         val zoneCode = dialogView.findViewById(R.id.dialogZoneCode) as TextView
         val spinner: Spinner = dialogView.findViewById(R.id.spinner) as Spinner
         val code = selectedZoneViewModel.selectedZone.value?.getNumberProperty("zonecode")?.toInt()

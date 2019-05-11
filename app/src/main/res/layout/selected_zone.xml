@@ -18,7 +18,7 @@
 
     <!-- Peek layout start!-->
     <TextView
-        android:id="@+id/dialogZoneName"
+        android:id="@+id/zoneName"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
@@ -57,7 +57,7 @@
         android:padding="1dp"
         android:text="EuroPark Svenska AB EPS"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/dialogZoneName" />
+        app:layout_constraintTop_toBottomOf="@+id/zoneName" />
 
     <ImageView
         android:id="@+id/expand"

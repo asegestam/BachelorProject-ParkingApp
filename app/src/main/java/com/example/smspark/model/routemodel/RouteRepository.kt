@@ -28,7 +28,7 @@ class RouteRepository(val context: Context): KoinComponent {
      * @param start Start location of the route, usually the user location
      * @param parking A stop point in the route between start and destination
      * @param destination Final destination of the route*/
-    fun getRoutes(start: Point, parking: Point, destination: Point, profile: String = "driving") {
+    fun getRoutes(start: Point, parking: Point, destination: Point, profile: String = "driving-traffic") {
         getRouteBuilder(start, parking, destination, profile).build().getRoute(object : Callback<DirectionsResponse> {
             override fun onResponse(call: Call<DirectionsResponse>, response: Response<DirectionsResponse>) {
                 if (response.body() == null) {

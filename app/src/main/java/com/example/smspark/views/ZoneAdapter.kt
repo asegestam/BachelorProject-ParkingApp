@@ -94,7 +94,7 @@ class ZoneAdapter(private val listener: (Feature) -> Unit): RecyclerView.Adapter
     class ZoneViewHolder(private val cardView: View) : RecyclerView.ViewHolder(cardView), View.OnClickListener {
 
         private val icon: ImageView = cardView.findViewById(R.id.icon)
-        private val zoneName: TextView = cardView.findViewById(R.id.dialogZoneName)
+        private val zoneName: TextView = cardView.findViewById(R.id.zoneName)
         private val zoneDistance: TextView = cardView.findViewById(R.id.zoneDistance)
 
         /** Binds the data to the viewholder by setting the text and listener */
