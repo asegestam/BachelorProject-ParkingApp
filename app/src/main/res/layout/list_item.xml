@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/card_view"
-    android:layout_width="300dp"
+    android:layout_width="325dp"
     android:layout_height="wrap_content"
     android:layout_margin="8dp"
     android:orientation="vertical"
@@ -21,8 +19,8 @@
 
         <ImageView
             android:id="@+id/icon"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
+            android:layout_width="35dp"
+            android:layout_height="35dp"
             android:layout_centerVertical="true"
             android:layout_marginStart="8dp"
             android:layout_marginTop="8dp"
@@ -33,10 +31,10 @@
             app:srcCompat="@drawable/park_blue" />
 
         <TextView
-            android:id="@+id/zoneName"
+            android:id="@+id/dialogZoneName"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
+            android:layout_marginStart="16dp"
             android:layout_marginTop="8dp"
             android:layout_marginEnd="8dp"
             android:ellipsize="end"
@@ -55,9 +53,8 @@
             android:layout_marginTop="5dp"
             android:padding="1dp"
             android:text="Zonkod: 3071"
-            android:textAppearance="@style/MaterialAlertDialog.MaterialComponents.Body.Text"
-            app:layout_constraintStart_toStartOf="@+id/zoneName"
-            app:layout_constraintTop_toBottomOf="@+id/zoneName" />
+            app:layout_constraintStart_toStartOf="@+id/dialogZoneName"
+            app:layout_constraintTop_toBottomOf="@+id/dialogZoneName" />
 
         <TextView
             android:id="@+id/zoneOwner"
@@ -67,7 +64,6 @@
             android:layout_marginBottom="8dp"
             android:padding="1dp"
             android:text="EuroPark Svenska AB EPS"
-            android:textAppearance="@style/MaterialAlertDialog.MaterialComponents.Body.Text"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="@+id/zoneType"
             app:layout_constraintTop_toBottomOf="@+id/zoneType"

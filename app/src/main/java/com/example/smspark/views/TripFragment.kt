@@ -2,43 +2,55 @@ package com.example.smspark.views
 
 
 import android.annotation.SuppressLint
-import android.app.Activity
-import android.content.Intent
 import android.location.Location
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
 import com.example.smspark.R
+import com.example.smspark.model.GeometryUtils
+import com.example.smspark.model.changeValue
+import com.example.smspark.model.observeOnce
+import com.example.smspark.viewmodels.RouteViewModel
+import com.example.smspark.viewmodels.SelectedZoneViewModel
+import com.example.smspark.viewmodels.ZonePreferencesViewModel
 import com.example.smspark.viewmodels.ZoneViewModel
+import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
+import com.google.android.material.snackbar.Snackbar
+import com.jaygoo.widget.OnRangeChangedListener
+import com.jaygoo.widget.RangeSeekBar
+import com.mapbox.api.geocoding.v5.models.CarmenFeature
 import com.mapbox.geojson.Feature
 import com.mapbox.geojson.Point
-import com.mapbox.geojson.Polygon
-import com.mapbox.mapboxsdk.geometry.LatLng
-import com.mapbox.mapboxsdk.geometry.LatLngBounds
-import com.mapbox.mapboxsdk.maps.MapboxMap
-import com.mapbox.mapboxsdk.maps.OnMapReadyCallback
-import com.mapbox.mapboxsdk.plugins.places.autocomplete.PlaceAutocomplete
 import com.mapbox.mapboxsdk.plugins.places.autocomplete.model.PlaceOptions
+import com.mapbox.mapboxsdk.plugins.places.autocomplete.ui.PlaceAutocompleteFragment
+import com.mapbox.mapboxsdk.plugins.places.autocomplete.ui.PlaceSelectionListener
+import kotlinx.android.synthetic.main.destination_search.*
 import kotlinx.android.synthetic.main.fragment_trip.*
+import kotlinx.android.synthetic.main.trip_options.*
 import org.koin.android.viewmodel.ext.android.sharedViewModel
 
+@SuppressLint("MissingPermission")
+class TripFragment : Fragment() {
 
-class TripFragment : Fragment(), OnMapReadyCallback {
+    private lateinit var fromPoint: Point
+    private lateinit var toPoint: Point
+    private lateinit var autoCompleteFragment: PlaceAutocompleteFragment
+    private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
 
-    private val FROM_TEXT_VIEW = 1
-    private val DESTINATION_TEXT_VIEW = 2
-    private var fromLatLng: String? = null
-    private var destinationLatLng: String? = null
-
+    private var distance: Int = 500
+    private var listeningForUpdates: Boolean = false
     //lazy inject ViewModel
     private val zoneViewModel: ZoneViewModel by sharedViewModel()
+    private val routeViewModel: RouteViewModel by sharedViewModel()
+    private val selectedZoneViewModel: SelectedZoneViewModel by sharedViewModel()
+    private val zonePreferencesViewModel: ZonePreferencesViewModel by sharedViewModel()
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View? {
@@ -48,154 +60,285 @@ class TripFragment : Fragment(), OnMapReadyCallback {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(requireActivity())
+        fusedLocationProviderClient.lastLocation
+                .addOnSuccessListener { location: Location? ->
+                    location?.let {
+                        autoCompleteFragment = PlaceAutocompleteFragment.newInstance(getString(R.string.access_token), PlaceOptions.builder()
+                                .language("sv")
+                                .hint(getString(R.string.search_hint))
+                                .country("SE")
+                                .proximity(Point.fromLngLat(location.longitude, location.latitude))
+                                .build(PlaceOptions.MODE_CARDS))
+                    }
+                }
+        distanceText.text = "$distance m"
         initComponents()
     }
 
-    override fun onMapReady(mapboxMap: MapboxMap) {}
-
-    @SuppressLint("MissingPermission")
-    private fun initComponents(){
-        textFrom.setOnClickListener { startAutoCompleteActivity(FROM_TEXT_VIEW) }
-        textDestination.setOnClickListener { startAutoCompleteActivity(DESTINATION_TEXT_VIEW) }
-        iv_my_location.setOnClickListener {
-            val fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity())
-            fusedLocationClient.lastLocation
-                    .addOnSuccessListener { location: Location? ->
-                        // Got last known location. In some rare situations this can be null.
-                        if ((location != null) && (textDestination.text.toString() != "Current Location")) {
-                            textFrom.text = "Current Location"
-                            val point = Point.fromLngLat(location.longitude, location.latitude)
-                            fromLatLng = point.toJson().toString()
-                        }
-                    }
-        }
-
-        iv_swap.setOnClickListener {
-            if ((fromLatLng != null) && (destinationLatLng != null)){
-                val tempText = textFrom.text.toString()
-                val tempPoint = fromLatLng
-                textFrom.text = textDestination.text
-                textDestination.text = tempText
-                fromLatLng = destinationLatLng
-                destinationLatLng = tempPoint
-            } else {
-                Toast.makeText(requireContext(), "Can´t swap", Toast.LENGTH_LONG).show()
-            }
-        }
-        initButtons()
-        initSpinner()
-        initObservables()
-    }
-
-    private fun initObservables(){
-        zoneViewModel.getObservableZones().observe(this, Observer { data ->
-            val wayPoint: Point
-            if(data.features().isNullOrEmpty()) {
-                Toast.makeText(requireContext(), "No zones found near destination", Toast.LENGTH_SHORT).show()
-            } else {
-                val first = data.features()?.first()
-                wayPoint = if (first?.geometry() is Point)
-                    first.geometry() as Point
-                else {
-                    val  builder  = LatLngBounds.Builder()
-                    val polygon = first?.geometry() as Polygon
-                    val outer = polygon.outer()
-                    outer?.coordinates()?.forEach {
-                        builder.include(LatLng(it.latitude(), it.longitude()))
-                    }
-                    val build = builder.build()
-                    val center = build.center
-                    Point.fromLngLat(center.longitude, center.latitude)
+    /** Adds a place selected listener to a given PlaceAutoCompleteFragment */
+    private fun addPlaceSelectionListener(fragment: PlaceAutocompleteFragment, tag: String) {
+        fragment.setOnPlaceSelectedListener(object : PlaceSelectionListener {
+            override fun onPlaceSelected(carmenFeature: CarmenFeature) {
+                when (tag) {
+                    "to" -> handleToLocation(carmenFeature)
+                    "from" -> handleFromLocation(carmenFeature)
                 }
-                checkArguments(wayPoint, first)
+                //remove fragment when it has done it's job
+                removeAutoCompleteFragment()
+            }
+
+            override fun onCancel() {
+                //remove fragment when user cancels the widget
+                removeAutoCompleteFragment()
             }
         })
     }
 
-    private fun initSpinner(){
-        val arrayAdapter = ArrayAdapter<String>(requireContext(),
-                R.layout.support_simple_spinner_dropdown_item,
-                resources.getStringArray(R.array.vehicles))
-
-        arrayAdapter.setDropDownViewResource(R.layout.support_simple_spinner_dropdown_item)
-
-        spinner.adapter = arrayAdapter
+    /** Commit a fragment transaction of a PlaceAutocompleteFragment */
+    private fun addAutoCompleteFragment(fragment: PlaceAutocompleteFragment, tag: String) {
+        activity?.supportFragmentManager?.let {
+            // check if there is a active AutoCompleteFragment, remove it
+            if (getActiveAutoCompleteFragment() != null) {
+                removeAutoCompleteFragment()
+            } else {
+                //no active AutoCompleteFragment, add the given one
+                Log.d(TAG, "adding fragment$fragment")
+                val transaction = it.beginTransaction()
+                transaction.add(R.id.fragment_container, fragment, tag)
+                transaction.commit()
+                addPlaceSelectionListener(fragment, tag)
+                expansionLayout.collapse(true)
+            }
+        }
     }
 
-    /** Starts a Search AutoComplete activity for searching locations */
-    private fun startAutoCompleteActivity(id: Int) {
-        val intent = PlaceAutocomplete.IntentBuilder()
-                .accessToken(getString(R.string.access_token))
-                .placeOptions(PlaceOptions.builder()
-                        .language("sv")
-                        .country("SE")
-                        .proximity(Point.fromLngLat(11.9745, 57.7088))
-                        .build(PlaceOptions.MODE_CARDS))
-                .build(requireActivity())
-        startActivityForResult(intent, id)
+    /** Commit a fragment removal transaction of a PlaceAutocompleteFragment */
+    private fun removeAutoCompleteFragment() {
+        activity?.supportFragmentManager?.let {
+            val fragment = getActiveAutoCompleteFragment()
+            if (fragment != null) {
+                Log.d(TAG, "removing fragment$fragment")
+                val transaction = it.beginTransaction()
+                transaction.remove(fragment)
+                transaction.commit()
+            }
+        }
+    }
+
+    /** Tries to return an active AutoCompleteFragment, if there is none return null */
+    private fun getActiveAutoCompleteFragment(): Fragment? {
+        val manager = activity?.supportFragmentManager
+        val toFragment = manager?.findFragmentByTag("to")
+        val fromFragment = manager?.findFragmentByTag("from")
+        return toFragment ?: fromFragment
     }
 
     @SuppressLint("MissingPermission")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        //if result code is for AutoComplete activity
-        if (resultCode == Activity.RESULT_OK && (requestCode == FROM_TEXT_VIEW || requestCode == DESTINATION_TEXT_VIEW)) {
-            handleAutoCompleteResult(data, requestCode)
-        }
+    private fun initComponents() {
+        initButtons()
+        initObservables()
     }
 
-    /** Handles the result given from the Search AutoComplete Activity*/
-    private fun handleAutoCompleteResult(data: Intent?, id: Int) {
-        //Gets the place data from searched position
-        val feature = PlaceAutocomplete.getPlace(data)
-        val point = feature?.geometry() as Point
+    /** Handles the from location part of the search
+     * changes the text and showing the correct views
+     * */
+    private fun handleFromLocation(carmenFeature: CarmenFeature) {
+        fromPoint = carmenFeature.geometry() as Point
+        fromLocation.text = carmenFeature.text()
+        myLocation.visibility = View.INVISIBLE
+        clearText.visibility = View.VISIBLE
+        if (checkInputs()) next_btn.visibility = View.VISIBLE
+    }
 
-        when(id){
-            FROM_TEXT_VIEW -> {
-                textFrom.text = feature.placeName()
-                fromLatLng = point.toJson().toString()
+    /** Handles the to location part of the search
+     * changes the text
+     * */
+    private fun handleToLocation(carmenFeature: CarmenFeature) {
+        toPoint = carmenFeature.geometry() as Point
+        toLocation.text = carmenFeature.text()
+        if (checkInputs()) next_btn.visibility = View.VISIBLE
+    }
+
+    private fun initObservables() {
+        zoneViewModel.getStandardZones().observe(this, Observer { zones ->
+            if(listeningForUpdates) {
+                if (zones.isNotEmpty() && !accessibleSwitch.isChecked) {
+                    selectZone(zones)
+                } else showNoZoneFound()
             }
-            DESTINATION_TEXT_VIEW -> {
-                textDestination.text = feature.placeName()
-                destinationLatLng = point.toJson().toString()
+        })
+
+        zoneViewModel.getAccessibleZones().observe(this, Observer { zones ->
+            if(listeningForUpdates) {
+                if (zones.isNotEmpty() && accessibleSwitch.isChecked) {
+                    selectZone(zones)
+                } else showNoZoneFound()
             }
-        }
+        })
+        routeViewModel.routeMap.observe(this, Observer {
+            if (it.count() >= 2 && checkInputs()) {
+                findNavController().navigate(R.id.action_tripFragment_to_mapFragment)
+            }
+        })
+        zonePreferencesViewModel.showAccessibleZones.observe(this, Observer { showAccessibleZones ->
+            if(showAccessibleZones) accessibleSwitch.isChecked = true
+        })
+        zonePreferencesViewModel.showEcsZones.observe(this, Observer { showEcsZones ->
+            if(showEcsZones) ecsSwitch.isChecked = true
+        })
 
-        //Toast.makeText(requireContext(), point.toString(), Toast.LENGTH_LONG).show()
     }
 
-    private fun getNearestParking() {
-        if (destinationLatLng != null) {
-            val destinationPoint = Point.fromJson(destinationLatLng!!)
-            zoneViewModel.getSpecificZones(destinationPoint.latitude(), destinationPoint.longitude(), 500)
+    /** Selects first zone in the list of features given
+     * if the list is empty or null show error message
+     */
+    private fun selectZone(features: List<Feature>?) {
+        if(!features.isNullOrEmpty()) {
+            val sortedList = features.sortedBy { it.getNumberProperty("distance").toInt() }
+            val zone = sortedList.first()
+            if (checkInputs())selectZoneGetRoute(zone)
         }
     }
 
-    private fun checkArguments(wayPoint : Point, feature : Feature){
-        if(fromLatLng != null && destinationLatLng != null){
-            val bundle = Bundle()
 
-            bundle.putString("fromArg", fromLatLng)
-            bundle.putString("destArg", destinationLatLng)
-            bundle.putString("wayPointArg", wayPoint.toJson())
-            bundle.putString("wayPointFeatureArg", feature.toJson())
-            //Toast.makeText(requireContext(), wayPoint.toString(), Toast.LENGTH_LONG).show()
-
-            findNavController().navigate(R.id.action_tripFragment_to_mapFragment, bundle)
+    private fun showNoZoneFound() {
+        val snackBar = Snackbar.make(tripFragmentContent, "Inga parkeringar hittades \nTesta att öka max avståndet!", Snackbar.LENGTH_LONG )
+        snackBar.apply {
+            setAction("OK") {
+                optionsCardView.performClick()
+                snackBar.dismiss()
+            }
+            show()
+            progressBar.visibility = View.GONE
         }
     }
 
+    private fun selectZoneGetRoute(zone: Feature?) {
+        zone?.let {
+            selectedZoneViewModel.selectedZone.changeValue(zone)
+        }
+        routeViewModel.destination.changeValue(toPoint)
+        routeViewModel.getWayPointRoute(origin = fromPoint, wayPoint = geometryUtils.getGeometryPoint(zone?.geometry()), destination = toPoint)
+        progressBar.visibility = View.VISIBLE
+    }
+
+    private fun getZones() {
+        if (checkInputs()) {
+            progressBar.visibility = View.VISIBLE
+            listeningForUpdates = true
+            zoneViewModel.getSpecificZones(toPoint.latitude(), toPoint.longitude(), distance, fetchAccessible = accessibleSwitch.isChecked)
+        }
+    }
+
+    /** Initiates the button click listeners */
     private fun initButtons() {
+        initSearchBar()
+        initSeekBar()
+        initSwitches()
         next_btn.setOnClickListener {
-            if(fromLatLng != null && destinationLatLng != null)
-                getNearestParking()
-            else
-                Toast.makeText(requireContext(), "Choose all required alternatives", Toast.LENGTH_LONG).show()
+            if (checkInputs()) {
+                getZones()
+                expansionLayout.collapse(true)
+            } else Toast.makeText(requireContext(), "Choose all required alternatives", Toast.LENGTH_LONG).show()
         }
     }
+
+    private fun initSearchBar() {
+        toLocation.setOnClickListener { addAutoCompleteFragment(autoCompleteFragment, "to") }
+        fromLocation.setOnClickListener { addAutoCompleteFragment(autoCompleteFragment, "from") }
+        myLocation.setOnClickListener {
+            if (fromLocation.text != getString(R.string.nuvarande_plats)) {
+                setUserLocation()
+            }
+        }
+        swapIcon.setOnClickListener {
+            if (checkInputs()) swapLocations()
+            else Toast.makeText(requireContext(), "Can´t swap", Toast.LENGTH_LONG).show()
+        }
+        clearText.setOnClickListener {
+            fromLocation.text = ""
+            clearText.visibility = View.GONE
+            myLocation.visibility = View.VISIBLE
+            next_btn.visibility = View.GONE
+        }
+    }
+
+    private fun setUserLocation() {
+        fusedLocationProviderClient.lastLocation
+                .addOnSuccessListener { location: Location? ->
+                    location?.let {
+                        fromLocation.text = getString(R.string.nuvarande_plats)
+                        fromPoint = Point.fromLngLat(location.longitude, location.latitude)
+                        myLocation.visibility = View.INVISIBLE
+                        clearText.visibility = View.VISIBLE
+                        if (checkInputs()) next_btn.visibility = View.VISIBLE
+                    }
+                }
+    }
+
+    private fun initSeekBar() {
+        rangeSeekBar.setOnRangeChangedListener(object : OnRangeChangedListener {
+            override fun onRangeChanged(view: RangeSeekBar, leftValue: Float, rightValue: Float, isFromUser: Boolean) {
+                rangeSeekBar.setIndicatorText(leftValue.toInt().toString() + "")
+                distance = leftValue.toInt()
+            }
+
+            override fun onStartTrackingTouch(view: RangeSeekBar, isLeft: Boolean) {
+                distanceText.visibility = View.GONE
+            }
+
+            override fun onStopTrackingTouch(view: RangeSeekBar, isLeft: Boolean) {
+                distanceText.text = "$distance m"
+                distanceText.visibility = View.VISIBLE
+            }
+        })
+    }
+
+    private fun initSwitches() {
+        accessibleSwitch.setOnCheckedChangeListener { _, isChecked ->
+            when(isChecked){
+                true -> zonePreferencesViewModel.showAccessibleZones.changeValue(true)
+                false -> zonePreferencesViewModel.showAccessibleZones.changeValue(false)
+            }
+        }
+        ecsSwitch.setOnCheckedChangeListener { _, isChecked ->
+            when(isChecked){
+                true -> zonePreferencesViewModel.showEcsZones.changeValue(true)
+                false -> zonePreferencesViewModel.showEcsZones.changeValue(false)
+            }
+        }
+        priceSwitch.setOnCheckedChangeListener { _, isChecked ->
+            when(isChecked){
+                //TODO sätt nån variabel i en viewmodel
+            }
+        }
+
+    }
+
+    /** Swaps the content of the textviews
+     * fromLocation text becomes toLocation text and vice versa*/
+    private fun swapLocations() {
+        val tempText = fromLocation.text
+        val tempPoint = fromPoint
+        fromLocation.text = toLocation.text
+        toLocation.text = tempText
+        fromPoint = toPoint
+        toPoint = tempPoint
+    }
+
+    /** Checks if the TextViews has inputs */
+    private fun checkInputs(): Boolean = !toLocation.text.isNullOrEmpty() && !fromLocation.text.isNullOrEmpty()
 
     companion object {
-        val TAG : String = "TripFragment"
+        const val TAG: String = "TripFragment"
+        val geometryUtils = GeometryUtils()
+    }
+
+    override fun onPause() {
+        removeAutoCompleteFragment()
+        zoneViewModel.getStandardZones().removeObservers(this)
+        zoneViewModel.getAccessibleZones().removeObservers(this)
+        super.onPause()
     }
 }

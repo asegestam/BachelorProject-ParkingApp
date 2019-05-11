@@ -7,7 +7,9 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
+import android.widget.ArrayAdapter
+import android.widget.Spinner
+import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
@@ -18,13 +20,14 @@ import com.example.smspark.viewmodels.SelectedZoneViewModel
 import com.google.android.material.snackbar.Snackbar
 import com.mapbox.api.directions.v5.models.DirectionsRoute
 import com.mapbox.geojson.Point
-import com.mapbox.services.android.navigation.ui.v5.*
+import com.mapbox.services.android.navigation.ui.v5.NavigationView
+import com.mapbox.services.android.navigation.ui.v5.NavigationViewOptions
+import com.mapbox.services.android.navigation.ui.v5.OnNavigationReadyCallback
 import com.mapbox.services.android.navigation.ui.v5.listeners.NavigationListener
 import com.mapbox.services.android.navigation.ui.v5.listeners.RouteListener
 import com.mapbox.services.android.navigation.v5.offroute.OffRouteListener
 import com.mapbox.services.android.navigation.v5.routeprogress.ProgressChangeListener
 import com.mapbox.services.android.navigation.v5.routeprogress.RouteProgress
-import com.mapbox.services.android.navigation.v5.utils.RouteUtils
 import kotlinx.android.synthetic.main.fragment_navigation.*
 import org.koin.android.viewmodel.ext.android.sharedViewModel
 
@@ -32,7 +35,6 @@ import org.koin.android.viewmodel.ext.android.sharedViewModel
 class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationListener, ProgressChangeListener, OffRouteListener, RouteListener {
 
     private lateinit var navigationView: NavigationView
-    private lateinit var soundButton: NavigationButton
     private lateinit var snackbar: Snackbar
     private var routingToDestination = false
     private val routeViewModel: RouteViewModel by sharedViewModel()
@@ -52,11 +54,6 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
         navigationView = navigation_view_fragment
         navigationView.onCreate(savedInstanceState)
         navigationView.initialize(this)
-        initSoundButton()
-    }
-
-    private fun initSoundButton() {
-        soundButton = navigationView.retrieveSoundButton() as SoundButton
     }
 
     override fun onNavigationReady(isRunning: Boolean) {
@@ -66,6 +63,7 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
         })
     }
 
+    /** Starts the navigation and sets up the correct Listeners */
     private fun startNavigation(route: DirectionsRoute) {
         val options: NavigationViewOptions = NavigationViewOptions.builder()
                 .directionsRoute(route)
@@ -90,35 +88,41 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
         findNavController().navigate(R.id.navigation_to_map)
     }
 
+    /** Handles Progress Change along the route */
     override fun onProgressChange(location: Location?, routeProgress: RouteProgress?) {
-            val progressFraction = routeProgress?.currentLegProgress()?.fractionTraveled()
-            val routeUtils = RouteUtils()
-            if(progressFraction!! >= 0.99f && !routingToDestination) {
-                navigationView.stopNavigation()
-                showParkingDialog()
-            }
-            if (routeUtils.isArrivalEvent(routeProgress)) {
-                navigationView.retrieveMapboxNavigation()?.removeProgressChangeListener(this)
-                showSnackBar(R.string.destination_arrival, R.color.colorAccentLight, Snackbar.LENGTH_INDEFINITE, true)
-            }
+
     }
 
+    /** Shows a dialog to the user asking for confirmation to start a parking at the parking zone */
     private fun showParkingDialog() {
         val builder = AlertDialog.Builder(requireContext(), R.style.AlertDialogCustom)
-            builder.apply {
-                setTitle("Vill du starta parkering?")
-                setMessage("Parkeringen kommer att startas på " + selectedZoneViewModel.selectedZone.value?.getStringProperty("zone_name"))
-                setIcon(R.drawable.park_blue)
-                setPositiveButton("JA") { _, _ ->
-                    showSnackBar(R.string.parking_success, R.color.colorSuccess)
-                    startWalkingDirections()
-                }
-                setNegativeButton("AVBRYT") {_, _ -> showSnackBar(R.string.parking_cancel, R.color.colorPrimary, Snackbar.LENGTH_LONG)}
-                create()
-                show()
+        val inflater = activity?.layoutInflater
+        val dialogView = inflater?.inflate(R.layout.start_parking_dialog, null)
+        val zoneName = dialogView?.findViewById(R.id.dialogZoneName) as TextView
+        val zoneCode = dialogView.findViewById(R.id.dialogZoneCode) as TextView
+        val spinner: Spinner = dialogView.findViewById(R.id.spinner) as Spinner
+        val code = selectedZoneViewModel.selectedZone.value?.getNumberProperty("zonecode")?.toInt()
+        zoneName.text = selectedZoneViewModel.selectedZone.value?.getStringProperty("zone_name")
+        zoneCode.text = code.toString()
+        ArrayAdapter.createFromResource(requireContext(), R.array.carSigns, android.R.layout.simple_spinner_item).also {
+            arrayAdapter ->
+            arrayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_item)
+            spinner.adapter = arrayAdapter
+        }
+
+        builder.apply {
+            setView(dialogView)
+            setPositiveButton("JA") { _, _ ->
+                showSnackBar(R.string.parking_success, R.color.colorSuccess)
+                startWalkingDirections()
             }
+            setNegativeButton("AVBRYT") { _, _ -> showSnackBar(R.string.parking_cancel, R.color.colorPrimary, Snackbar.LENGTH_LONG) }
+            create()
+            show()
+        }
     }
 
+    /** Starts an navigation from the parking zone to the destination as a walking route */
     private fun startWalkingDirections() {
         routingToDestination = true
         val route = routeViewModel.routeWayPoint.value!!
@@ -126,11 +130,12 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
         startNavigation(route)
     }
 
+    /** Shows a SnackBar with the given parameters */
     private fun showSnackBar(text: Int, color: Int, length: Int = Snackbar.LENGTH_SHORT, hasButton: Boolean = false) {
         snackbar = Snackbar.make(navigation_view_fragment, text, length)
         val snackbarView = snackbar.view
         snackbarView.setBackgroundColor(ContextCompat.getColor(requireContext(), color))
-        if(hasButton) {
+        if (hasButton) {
             snackbar.setAction("OK") { findNavController().navigate(R.id.navigation_to_map) }
         }
         snackbar.show()
@@ -150,6 +155,13 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
     }
 
     override fun onArrival() {
+        if(!routingToDestination) {
+            navigationView.stopNavigation()
+            showParkingDialog()
+        } else {
+            navigationView.stopNavigation()
+            showSnackBar(R.string.destination_arrival, R.color.colorAccentLight, Snackbar.LENGTH_INDEFINITE, true)
+        }
         Log.d("NavigationFragment", "Arrived")
     }
 
@@ -196,7 +208,7 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
 
     override fun onViewStateRestored(savedInstanceState: Bundle?) {
         super.onViewStateRestored(savedInstanceState)
-        if(savedInstanceState != null) {
+        if (savedInstanceState != null) {
             navigationView.onRestoreInstanceState(savedInstanceState)
         }
     }

@@ -1,51 +1,63 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">My Application</string>
-    <string name="title_activity_maps">Map</string>
-    <string name="title_activity_main">MainActivity</string>
+    <string name="title_activity_maps" tools:keep="@string/title_activity_maps">Map</string>
+    <string name="title_activity_main" tools:keep="@string/title_activity_main">MainActivity</string>
     <string name="access_token">pk.eyJ1IjoiYXNlZ2VzdGFtIiwiYSI6ImNqc214azFsbjA1c280M3BlZHk3emVwMmQifQ.-3503vKfLt3L0dhTSol2ew</string>
     <string name="user_location_permission_not_granted">Location Permission Not Granted</string>
-    <string name="user_location_permission_explanation">You need to give location permission</string>
+    <string name="user_location_permission_explanation">Du behöver ge plats behörighet för att applikation ska fungera</string>
 
     //Buttons
     <string name="startNavigation">Start</string>
     <string name="streets_parking">mapbox://styles/asegestam/cjtn640k420wp1fo9mu5fh2k3</string>
-    <string name="streets_parking_debug">mapbox://styles/asegestam/cjt048qko06vw1fmtf8t9rv4n</string>
+    <string name="streets_parking_debug" tools:keep="@string/streets_parking_debug">mapbox://styles/asegestam/cjt048qko06vw1fmtf8t9rv4n</string>
 
     //App_code
-    <string name="app_code">38cd95124d0c4c4045550a90664ec77a</string>
+    <string name="app_code" tools:keep="@string/app_code">38cd95124d0c4c4045550a90664ec77a</string>
 
-    <string name="selected_place_info">Selected location information:\n%1$s</string>
-    <string name="geojson_string">{ \"type\": \"FeatureCollection\", \"features\":</string>
+    <string name="selected_place_info" tools:keep="@string/selected_place_info">Selected location information:\n%1$s</string>
+    <string name="geojson_string" tools:keep="@string/geojson_string">{ \"type\": \"FeatureCollection\", \"features\":</string>
 
     <string name="select_zone">Välj en Zon!</string>
-    <string name="vald_zon">Vald Zon</string>
-    <string name="start_navigation">START NAVIGATION</string>
-    <string name="zon_kod">Zonkod&#160;</string>
-    <string name="list_of_zones">List of Zones</string>
+    <string name="vald_zon" tools:keep="@string/vald_zon">Vald Zon</string>
+    <string name="start_navigation" tools:keep="@string/start_navigation">START NAVIGATION</string>
+    <string name="zon_kod" tools:keep="@string/zon_kod">Zonkod&#160;</string>
+    <string name="list_of_zones" tools:keep="@string/list_of_zones">List of Zones</string>
 
     <string name="search">Search</string>
-    <string name="list">List of Zones</string>
+    <string name="list" tools:keep="@string/list">List of Zones</string>
     <string name="trip">Trip</string>
     <string name="profile">Profile</string>
     <string name="tickets">Tickets</string>
     <string name="map">Map</string>
-    <string name="handicap">Handikappsparkering</string>
+    <string name="handicap" tools:keep="@string/handicap">Handikappsparkering</string>
 
     <string name="parking_success">Parkering startad!</string>
     <string name="parking_cancel">Parkering ej startad..</string>
     <string name="destination_arrival">Du är nu vid din destination!</string>
     <string name="reseinfo">Reseinformation</string>
-    <string name="ankomst">Ankomst</string>
+    <string name="ankomst">Ankomst:</string>
+    <string name="search_hint">Sök på en address/plats..</string>
+    <string name="nuvarande_plats">Nuvarande Plats</string>
+
+    <string name="default_email">email@company.com</string>
+    <string name="default_phoneNr">+46 123 456 789</string>
+    <string name="default_address">Addressgatan 123, Stad</string>
 
 
     //Spinner
-    <string-array name="vehicles">
+    <string-array name="vehicles" tools:keep="@array/vehicles">
         <item>ABC 123</item>
         <item>TYJ 346</item>
         <item>SET 568</item>
         <item>UIY 679</item>
         <item>Other</item>
     </string-array>
+
+    //fake parking-tickets
+    <string name="fake_parking_tickets">{\"type\":\"FeatureCollection\",\"features\":[{\"id\":\"60820d23-be26-4c46-9779-f55973e3363e\",\"type\":\"Feature\",\"geometry\":{\"type\":\"Polygon\",\"coordinates\":[[[11.974964,57.710673]]]},\"properties\":{\"distance\":138.98495125,\"zonecode\":3071,\"zone_id\":901,\"parent_zonecode\":null,\"zone_name\":\"Centralstationen (långtid)\",\"zone_owner\":\"EuroPark Svenska AB EPS\",\"has_evc\":false,\"price\":\"37kr\",\"date\":\"25/3 - 19\"}},{\"id\":\"ed628b6a-67bd-4ba2-9093-dccb4f1c2297\",\"type\":\"Feature\",\"geometry\":{\"type\":\"Polygon\",\"coordinates\":[[[11.974964,57.710673]]]},\"properties\":{\"distance\":148.73576624,\"zonecode\":3274,\"zone_id\":3031,\"parent_zonecode\":null,\"zone_name\":\"Centralgaraget\",\"zone_owner\":\"EuroPark Svenska AB PS\",\"has_evc\":false,\"price\":\"15kr\",\"date\":\"18/3 - 19\"}},{\"id\":\"ba7b2a2c-c43f-4823-88fb-8c5b3e954ef5\",\"type\":\"Feature\",\"geometry\":{\"type\":\"Polygon\",\"coordinates\":[[[11.974964,57.710673]]]},\"properties\":{\"distance\":164.47190166,\"zonecode\":3069,\"zone_id\":881,\"parent_zonecode\":null,\"zone_name\":\"Centralstationen (korttid)\",\"zone_owner\":\"EuroPark Svenska AB EPS\",\"has_evc\":false,\"price\":\"67kr\",\"date\":\"15/3 - 19\"}},{\"id\":\"a8cd1e2b-8f2d-488a-87b6-233dfb024b1f\",\"type\":\"Feature\",\"geometry\":{\"type\":\"Polygon\",\"coordinates\":[[[11.974964,57.710673]]]},\"properties\":{\"distance\":240.49541923,\"zonecode\":6683,\"zone_id\":17869,\"parent_zonecode\":null,\"zone_name\":\"Odinsgatan 4 (MC-parkering)\",\"zone_owner\":\"Parkeringstjänst Väst AB\",\"has_evc\":false,\"price\":\"54kr\",\"date\":\"11/3 - 19\"}},{\"id\":\"3cd1d3c5-9943-4fef-9f28-82cd93424800\",\"type\":\"Feature\",\"geometry\":{\"type\":\"Polygon\",\"coordinates\":[[[11.974964,57.710673]]]},\"properties\":{\"distance\":254.37832678,\"zonecode\":6579,\"zone_id\":13091,\"parent_zonecode\":null,\"zone_name\":\"P-hus Odin\",\"zone_owner\":\"Parkeringstjänst Väst AB\",\"has_evc\":false,\"price\":\"39kr\",\"date\":\"9/3 - 19\"}},{\"id\":\"6de4197a-1acd-45b8-baf0-51515b9fe70d\",\"type\":\"Feature\",\"geometry\":{\"type\":\"Polygon\",\"coordinates\":[[[11.974964,57.710673]]]},\"properties\":{\"distance\":270.96090499,\"zonecode\":3070,\"zone_id\":891,\"parent_zonecode\":null,\"zone_name\":\"Centralstationen (Skansen)\",\"zone_owner\":\"EuroPark Svenska AB EPS\",\"has_evc\":false,\"price\":\"14kr\",\"date\":\"8/3 - 19\"}},{\"id\":\"a2283d16-9227-4807-b09a-9973919a8517\",\"type\":\"Feature\",\"geometry\":{\"type\":\"Polygon\",\"coordinates\":[[[11.974964,57.710673]]]},\"properties\":{\"distance\":323.27069004,\"zonecode\":3271,\"zone_id\":3001,\"parent_zonecode\":null,\"zone_name\":\"P hus City\",\"zone_owner\":\"EuroPark Svenska AB EPS\",\"has_evc\":false,\"price\":\"27kr\",\"date\":\"6/3 - 19\"}},{\"id\":\"cb07ca39-79be-44a3-803e-2df405c9876d\",\"type\":\"Feature\",\"geometry\":{\"type\":\"Polygon\",\"coordinates\":[[[11.974964,57.710673]]]},\"properties\":{\"distance\":344.43634329,\"zonecode\":6577,\"zone_id\":13071,\"parent_zonecode\":null,\"zone_name\":\"Barnhusgatan 1-3\",\"zone_owner\":\"Parkeringstjänst Väst AB\",\"has_evc\":false,\"price\":\"74kr\",\"date\":\"4/3 - 19\"}},{\"id\":\"93717723-1494-4d55-bfe6-d6a3ac5538da\",\"type\":\"Feature\",\"geometry\":{\"type\":\"Polygon\",\"coordinates\":[[[11.974964,57.710673]]]},\"properties\":{\"distance\":455.47083355,\"zonecode\":1138,\"zone_id\":457,\"parent_zonecode\":null,\"zone_name\":\"Odinsgymnasiet\",\"zone_owner\":\"Odinskolan fastighets AB\",\"has_evc\":false,\"price\":\"3kr\",\"date\":\"1/3 - 19\"}}]}</string>
+    <string name="alternativ">Alternativ</string>
+    <string name="s_k_resa">Sök resa</string>
+    <string name="fortsatt" tools:keep="@string/fortsatt">Fortsätt</string>
 
 
 </resources>

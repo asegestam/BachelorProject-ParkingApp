@@ -3,23 +3,15 @@ package com.example.smspark.viewmodels
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
 import com.example.smspark.model.zonemodel.ZoneRepository
-import com.mapbox.geojson.FeatureCollection
+import com.mapbox.geojson.Feature
 
 class ZoneViewModel(private val repo: ZoneRepository): ViewModel(){
 
-    fun getObservableZones() : LiveData<FeatureCollection> {
-        return repo.getObservableZones()
-    }
+    fun getStandardZones(): LiveData<List<Feature>> = repo.getStandardZones()
 
-    fun getSpecificZones(latitude: Double = 57.7089, longitude: Double = 11.9746, radius: Int = 500){
-        repo.getSpecificZones(latitude, longitude, radius)
-    }
+    fun getAccessibleZones(): LiveData<List<Feature>> = repo.getAccessibleZones()
 
-    fun getObservableHandicapZones() : LiveData<FeatureCollection>{
-        return repo.getObservableHandicapZones()
-    }
-
-    fun getHandicapZones(latitude: Double, longitude: Double, radius: Int) {
-        repo.getHandicapZones(latitude, longitude, radius)
+    fun getSpecificZones(latitude: Double = 57.7089, longitude: Double = 11.9746, radius: Int = 500, fetchAccessible: Boolean = false){
+        repo.getSpecificZones(latitude, longitude, radius, fetchAccessible)
     }
 }
