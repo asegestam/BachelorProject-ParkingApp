@@ -185,9 +185,14 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
                     setNegativeButton("AVBRYT") { _, _ ->
                         //TODO handle negative action and send user back to mapFragment
                     }
-                    create()
-                    show()
                 }
+                val dialog = builder.create()
+                dialog.show()
+
+                //Get the positiv button and change the color
+                val positivButton = dialog.findViewById(android.R.id.button1) as Button
+                positivButton.setTextColor(ContextCompat.getColor(requireContext(), R.color.colorSuccess))
+
             } else {
                 //TODO Handle the case where there was no other parkinglots nearby
                 showSnackBar(R.string.failed_finding_new_parking, R.color.colorFailure)
