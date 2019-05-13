@@ -119,19 +119,18 @@
 
             <com.github.clans.fab.FloatingActionButton
                 android:id="@+id/ecs_fab"
-                style="@style/MenuButtonsSmall"
+                style="@style/MenuButtonInactive"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:src="@drawable/ecs_icon_white"
-                mapbox:fab_label="Laddningstationer" />
+                mapbox:fab_label="Laddningstationer"/>
 
             <com.github.clans.fab.FloatingActionButton
                 android:id="@+id/accessible_fab"
-                style="@style/MenuButtonsSmall"
+                style="@style/MenuButtonInactive"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:src="@drawable/accessible_icon_white"
-                mapbox:fab_label="Funktionshindrade" />
+                mapbox:fab_label="För funktionshindrade"/>
 
             <com.github.clans.fab.FloatingActionButton
                 android:id="@+id/parking_fab"
@@ -139,7 +138,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:src="@drawable/parking_icon"
-                mapbox:fab_label="Parkeringar" />
+                mapbox:fab_label="Parkeringar"/>
 
             <com.github.clans.fab.FloatingActionButton
                 android:id="@+id/list_fab"
@@ -147,7 +146,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:src="@drawable/view_list_icon"
-                mapbox:fab_label="Lista" />
+                mapbox:fab_label="Lista"/>
 
         </com.github.clans.fab.FloatingActionMenu>
 

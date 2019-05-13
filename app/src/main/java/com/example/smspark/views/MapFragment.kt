@@ -5,8 +5,10 @@ import android.app.Activity
 import android.content.Intent
 import android.graphics.BitmapFactory
 import android.graphics.Color
+import android.graphics.Color.parseColor
 import android.os.Bundle
 import android.os.Handler
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -20,10 +22,8 @@ import androidx.recyclerview.widget.LinearSnapHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.example.smspark.R
 import com.example.smspark.model.extentionFunctions.*
-import com.example.smspark.viewmodels.RouteViewModel
-import com.example.smspark.viewmodels.SelectedZoneViewModel
-import com.example.smspark.viewmodels.TravelViewModel
-import com.example.smspark.viewmodels.ZoneViewModel
+import com.example.smspark.viewmodels.*
+import com.github.clans.fab.FloatingActionButton
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.mapbox.android.core.permissions.PermissionsManager
 import com.mapbox.android.gestures.MoveGestureDetector
@@ -103,11 +103,14 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
     private val hidden = BottomSheetBehavior.STATE_HIDDEN
     private val expanded = BottomSheetBehavior.STATE_EXPANDED
     private val handler: Handler = Handler()
+    private val colorPrimary = "#42A5F5"
+    private val colorAccentGrey = "#E2DEDE"
     //lazy inject ViewModel
     private val zoneViewModel: ZoneViewModel by sharedViewModel()
     private val selectedZoneViewModel: SelectedZoneViewModel by sharedViewModel()
     private val routeViewModel: RouteViewModel by sharedViewModel()
     private val travelViewModel: TravelViewModel by viewModel()
+    private val zonePreferences: ZonePreferencesViewModel by viewModel()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -150,15 +153,20 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
     private fun setupObservers() {
         mainActivity.locationPermissionGranted.observeOnce(this, Observer { granted -> if(granted) enableLocationComponent(getMapStyle()!!) })
         //Observe parking zones, if changed, add them to the map and to the recyclerview.
-        zoneViewModel.getStandardZones().observe(this, Observer { zones ->
+        zoneViewModel.standardZones().observe(this, Observer { zones ->
             if (zones.isNotEmpty()) {
                 addZonesToMap(zones)
                 addToRecyclerView(zones)
             } else Toast.makeText(requireContext(), "Inga zoner hittades nära din destination", Toast.LENGTH_SHORT).show()
+            if(!zonePreferences.showAccessibleZones.value!!) {
+                Log.d("obsrvve", "removing zones from viewmodel and list")
+                zoneViewModel.clearAccessibleZones()
+                zoneAdapter.removeAccessibleZonesFromList()
+            }
         })
-        zoneViewModel.getAccessibleZones().observe(this, Observer { zones ->
+        zoneViewModel.accessibleZones().observe(this, Observer { zones ->
+            addMarkersToMap(FeatureCollection.fromFeatures(zones), true)
             if (zones.isNotEmpty()) {
-                addMarkersToMap(FeatureCollection.fromFeatures(zones), true)
                 addToRecyclerView(zones)
             } else zoneAdapter.removeAccessibleZonesFromList()
         })
@@ -181,6 +189,23 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
                 }
             }
         })
+        zonePreferences.showAccessibleZones.observe(this, Observer { show ->
+            Log.d("ShowAcces", show.toString())
+            routeViewModel.destination.value?.let {
+                if(show && zoneViewModel.accessibleZones().value.isNullOrEmpty()){
+                    zoneViewModel.getAccessibleZones(it.latitude(), it.longitude(), radius = 500)
+                    showLayer(accessibleLayerID)
+                }
+                else if(show) {
+                    showLayer(accessibleLayerID)
+                    zoneAdapter.addZonesToList(accessibleLayerID)
+                }
+                else {
+                    hideLayer(accessibleLayerID)
+                    zoneAdapter.removeAccessibleZonesFromList()
+                }
+            }
+        })
     }
 
     /** Initiates button clickListeners */
@@ -196,21 +221,33 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
                 expanded -> collapsed
             }
         }
+        fab_menu.setClosedOnTouchOutside(true)
         list_fab.setOnClickListener {
+            toggleFabActive(list_fab)
             recyclerView.toggleVisibility()
-            fab_menu.close(true)
         }
         accessible_fab.setOnClickListener {
-            toggleLayer(accessibleLayerID)
-            fab_menu.close(true)
+            toggleFabActive(accessible_fab)
+            zonePreferences.showAccessibleZones.toggleBoolean()
         }
         parking_fab.setOnClickListener {
             toggleLayer(polygonLayerID)
-            fab_menu.close(true)
+            toggleFabActive(parking_fab)
         }
-        ecs_fab.setOnClickListener { fab_menu.close(true) }
+        ecs_fab.setOnClickListener { toggleFabActive(ecs_fab) }
         locate_zone.setOnClickListener { moveCameraToLocation(selectedZoneViewModel.selectedZone.value?.geometry()?.getGeometryPoint(), duration = 3000, zoom = 16.0)  }
         startNavigationButton!!.setOnClickListener { findNavController().navigate(R.id.mapFragment_to_navigation) }
+    }
+
+    private fun toggleFabActive(button: FloatingActionButton) {
+        //is inactive
+        if(button.colorNormal == parseColor(colorAccentGrey)) {
+            button.colorNormal = parseColor(colorPrimary)
+        }
+        //is active
+        else {
+            button.colorNormal = parseColor(colorAccentGrey)
+        }
     }
 
 
@@ -313,7 +350,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
             moveCameraToLocation(it, animate = false)
             addMarkerOnMap(it, false)
             //get zones around the point cliked
-            zoneViewModel.getSpecificZones(latitude = it.latitude(), longitude = it.longitude(), radius = 1000)
+            zoneViewModel.getSpecificZones(latitude = it.latitude(), longitude = it.longitude(), radius = 1000, getAccessible = zonePreferences.showAccessibleZones.value!!)
         }
         return true
     }
@@ -380,7 +417,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
                 lineColor(Color.parseColor("#090cb0"))
         )
         val pointLayer = SymbolLayer(pointLayerID, pointSourceID).withProperties(iconImage(parkingImage), iconSize(0.35f))
-        val handicapLayer = SymbolLayer(accessibleLayerID, accessibleSourceID).withProperties(iconImage(accessibleImage), iconSize(0.385f))
+        val handicapLayer = SymbolLayer(accessibleLayerID, accessibleSourceID).withProperties(iconImage(accessibleImage), iconSize(0.385f), visibility(NONE))
         val selectedZoneLayer = FillLayer(selectedZoneLayerID, selectedZoneSourceID).withProperties(
                 fillColor(Color.parseColor("#ff0900")),
                 fillOpacity(0.85f))
@@ -531,7 +568,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
                 moveCameraToLocation(it, 15.0, 4000, zoom = 14.0)
                 addMarkerOnMap(it, false)
                 //get zones around the destination
-                zoneViewModel.getSpecificZones(latitude = it.latitude(), longitude = it.longitude(), radius = 1000)
+                zoneViewModel.getSpecificZones(latitude = it.latitude(), longitude = it.longitude(), radius = 1000, getAccessible = zonePreferences.showAccessibleZones.value!!)
             }
         }
     }
@@ -675,8 +712,8 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
     private fun toggleLayer(layerID: String) {
         val layerVisibility = getMapStyle()?.getLayer(layerID)?.visibility?.value
         val zones: List<Feature>? = when(layerID) {
-            polygonLayerID -> zoneViewModel.getStandardZones().value
-            else -> zoneViewModel.getAccessibleZones().value
+            polygonLayerID -> zoneViewModel.standardZones().value
+            else -> zoneViewModel.accessibleZones().value
         }
         if(!zones.isNullOrEmpty()) {
             if (layerVisibility == VISIBLE) {
@@ -692,7 +729,8 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
     }
 
     override fun onMoveBegin(detector: MoveGestureDetector) {
-        if (mapboxMap.cameraPosition.zoom < 13 && !zoneViewModel.getStandardZones().value.isNullOrEmpty()) {
+        fab_menu.close(true)
+        if (mapboxMap.cameraPosition.zoom < 13 && !zoneViewModel.standardZones().value.isNullOrEmpty()) {
             if(selectedZoneViewModel.selectedZone.value == null) Toast.makeText(requireContext(), "Zooma in mer för att se fler zoner", Toast.LENGTH_SHORT).show()
         }
     }
@@ -733,7 +771,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
 
     override fun onDestroyView() {
         super.onDestroyView()
-        mapboxMap?.removeOnMapClickListener(this)
+        mapboxMap.removeOnMapClickListener(this)
         mapView.onDestroy()
     }
 

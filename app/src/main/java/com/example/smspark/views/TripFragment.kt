@@ -162,7 +162,7 @@ class TripFragment : Fragment() {
     }
 
     private fun initObservables() {
-        zoneViewModel.getStandardZones().observe(this, Observer { zones ->
+        zoneViewModel.standardZones().observe(this, Observer { zones ->
             if(listeningForUpdates) {
                 if (zones.isNotEmpty() && !accessibleSwitch.isChecked) {
                     selectZone(zones)
@@ -170,7 +170,7 @@ class TripFragment : Fragment() {
             }
         })
 
-        zoneViewModel.getAccessibleZones().observe(this, Observer { zones ->
+        zoneViewModel.accessibleZones().observe(this, Observer { zones ->
             if(listeningForUpdates) {
                 if (zones.isNotEmpty() && accessibleSwitch.isChecked) {
                     selectZone(zones)
@@ -229,7 +229,7 @@ class TripFragment : Fragment() {
         if (checkInputs()) {
             progressBar.changeVisibility(View.VISIBLE)
             listeningForUpdates = true
-            zoneViewModel.getSpecificZones(toPoint.latitude(), toPoint.longitude(), distance, fetchAccessible = accessibleSwitch.isChecked)
+            zoneViewModel.getSpecificZones(toPoint.latitude(), toPoint.longitude(), distance)
         }
     }
 
@@ -338,8 +338,8 @@ class TripFragment : Fragment() {
 
     override fun onPause() {
         removeAutoCompleteFragment()
-        zoneViewModel.getStandardZones().removeObservers(this)
-        zoneViewModel.getAccessibleZones().removeObservers(this)
+        zoneViewModel.standardZones().removeObservers(this)
+        zoneViewModel.accessibleZones().removeObservers(this)
         super.onPause()
     }
 }

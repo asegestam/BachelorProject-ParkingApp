@@ -20,3 +20,9 @@ fun <T> LiveData<T>.observeOnce(lifecycleOwner: LifecycleOwner, observer: Observ
 fun <T> MutableLiveData<T>.changeValue(newValue: T) {
     this.value = newValue
 }
+
+fun MutableLiveData<Boolean>.toggleBoolean() {
+    this.value?.let {
+        this.value = !it
+    }
+}

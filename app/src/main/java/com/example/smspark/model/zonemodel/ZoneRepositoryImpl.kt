@@ -18,11 +18,11 @@ class ZoneRepositoryImpl: ZoneRepository, KoinComponent {
     private val TAG  = "ZoneRepositoryImpl"
     private val service: ZoneService by inject()
 
-    override fun getStandardZones(): LiveData<List<Feature>> {
+    override fun standardZones(): LiveData<List<Feature>> {
         return standardZones
     }
 
-    override fun getAccessibleZones(): LiveData<List<Feature>> {
+    override fun accessibleZones(): LiveData<List<Feature>> {
         return accessibleZones
     }
 
@@ -39,7 +39,7 @@ class ZoneRepositoryImpl: ZoneRepository, KoinComponent {
      * @param longitude longitude
      * @param radius radius from the LatLong to fetch zones
      * */
-    override fun getSpecificZones(latitude: Double, longitude: Double, radius: Int){
+    override fun getSpecificZones(latitude: Double, longitude: Double, radius: Int, getAccessible: Boolean){
 
         val call = service.getSpecificZones(latitude, longitude, radius)
         call.enqueue(object : retrofit2.Callback<Zone> {
@@ -55,8 +55,8 @@ class ZoneRepositoryImpl: ZoneRepository, KoinComponent {
                     //create a FeatureCollection of the given respone
                     val featureCollection = FeatureCollection.fromJson(featuresJson)
                     Log.d("onResponse", featureCollection.features().toString())
-                    getAccessibleZones(latitude, longitude, radius)
                     standardZones.changeValue(featureCollection.features()!!)
+                    if(getAccessible) getAccessibleZones(latitude, longitude, radius)
                 }
             }
         })
@@ -70,7 +70,6 @@ class ZoneRepositoryImpl: ZoneRepository, KoinComponent {
     override fun getAccessibleZones(latitude: Double, longitude: Double, radius: Int) {
         val call = service.getHandicapZones(latitude, longitude, radius)
         call.enqueue(object : retrofit2.Callback<List<Handicap>> {
-
             override fun onFailure(call: Call<List<Handicap>>, t: Throwable) {
                 Log.e(TAG, t.message)
             }
@@ -78,6 +77,7 @@ class ZoneRepositoryImpl: ZoneRepository, KoinComponent {
                 if(response.isSuccessful) {
                     val zones = response.body()!!
                     if (!zones.isNullOrEmpty()) {
+                        Log.d("onRespone", "Hanidcap respone")
                         val features = ArrayList<Feature>()
                         //for each Handicap object, create a feature and add it to a collection
                         zones.forEach {
@@ -104,5 +104,9 @@ class ZoneRepositoryImpl: ZoneRepository, KoinComponent {
                 }
             }
         })
+    }
+
+    override fun clearAccessibleZones() {
+        this.accessibleZones.value = emptyList()
     }
 }
