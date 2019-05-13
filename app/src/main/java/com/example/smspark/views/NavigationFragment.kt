@@ -2,13 +2,15 @@ package com.example.smspark.views
 
 import android.app.AlertDialog
 import android.location.Location
-import android.nfc.Tag
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.*
+import android.widget.ArrayAdapter
+import android.widget.Button
+import android.widget.Spinner
+import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
@@ -75,7 +77,7 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
                 startNavigation(it.get("driving-traffic")!!)
             }
         })
-        zoneViewModel.getStandardZones().value?.let { zones ->
+        zoneViewModel.standardZones().value?.let { zones ->
             parkingFeatures = zones.toCollection(ArrayList())
         }
 
@@ -149,11 +151,9 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
                 showNewParkingDialog()
             }
         }
-
-
         val dialog = builder.create()
+        dialog.setCanceledOnTouchOutside(false)
         dialog.show()
-
         //Get the neutral button and change the color
         val neutralButton = dialog.findViewById(android.R.id.button3) as Button
         neutralButton.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.colorPrimary))
@@ -187,6 +187,7 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
                     }
                 }
                 val dialog = builder.create()
+                dialog.setCanceledOnTouchOutside(false)
                 dialog.show()
 
                 //Get the positiv button and change the color
