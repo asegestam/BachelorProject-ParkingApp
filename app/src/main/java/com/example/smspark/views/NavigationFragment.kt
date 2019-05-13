@@ -8,6 +8,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
+import android.widget.Button
 import android.widget.Spinner
 import android.widget.TextView
 import androidx.core.content.ContextCompat
@@ -121,11 +122,23 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
             setNeutralButton("Full Parkering"){  _, _ ->
                 showNewParkingDialog()
             }
-            create()
-            show()
         }
+
+
+        val dialog = builder.create()
+        dialog.show()
+
+        //Get the neutral button and change the color
+        val neutralButton = dialog.findViewById(android.R.id.button3) as Button
+        neutralButton.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.colorPrimary))
+
+        //Get the positiv button and change the color
+        val positivButton = dialog.findViewById(android.R.id.button1) as Button
+        positivButton.setTextColor(ContextCompat.getColor(requireContext(), R.color.colorSuccess))
+
     }
 
+    /** Shows a dialog for the user and asks if they want help finding a new parking in the case the previous parking was full*/
     private fun showNewParkingDialog(){
         val builder = AlertDialog.Builder(requireContext(), R.style.AlertDialogCustom)
         val inflater = activity?.layoutInflater
