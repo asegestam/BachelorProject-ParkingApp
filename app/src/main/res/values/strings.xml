@@ -60,5 +60,7 @@
     <string name="fortsatt" tools:keep="@string/fortsatt">Fortsätt</string>
     <string name="searchHint">Address/Område/Plats</string>
 
+    <string name="failed_finding_new_parking">"Kunde inte hitta någon ny parkering tyvärr"</string>
+
 
 </resources>
