@@ -82,6 +82,7 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
     }
 
     override fun onNavigationRunning() {
+        showParkingDialog()
     }
 
     override fun onCancelNavigation() {
@@ -98,7 +99,7 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
         val builder = AlertDialog.Builder(requireContext(), R.style.AlertDialogCustom)
         val inflater = activity?.layoutInflater
         val dialogView = inflater?.inflate(R.layout.start_parking_dialog, null)
-        val zoneName = dialogView?.findViewById(R.id.zoneName) as TextView
+        val zoneName = dialogView?.findViewById(R.id.dialogZoneName) as TextView
         val zoneCode = dialogView.findViewById(R.id.dialogZoneCode) as TextView
         val spinner: Spinner = dialogView.findViewById(R.id.spinner) as Spinner
         val code = selectedZoneViewModel.selectedZone.value?.getNumberProperty("zonecode")?.toInt()
@@ -117,9 +118,31 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
                 startWalkingDirections()
             }
             setNegativeButton("AVBRYT") { _, _ -> showSnackBar(R.string.parking_cancel, R.color.colorPrimary, Snackbar.LENGTH_LONG) }
+            setNeutralButton("Full Parkering"){  _, _ ->
+                showNewParkingDialog()
+            }
             create()
             show()
         }
+    }
+
+    private fun showNewParkingDialog(){
+        val builder = AlertDialog.Builder(requireContext(), R.style.AlertDialogCustom)
+        val inflater = activity?.layoutInflater
+        val dialogView = inflater?.inflate(R.layout.full_parking_dialog, null)
+
+        builder.apply {
+            setView(dialogView)
+            setPositiveButton("JA") { _, _ ->
+                //TODO Handle happy path
+            }
+            setNegativeButton("AVBRYT") { _, _ ->
+                //TODO handle negative action and send user back to mapFragment
+            }
+            create()
+            show()
+        }
+
     }
 
     /** Starts an navigation from the parking zone to the destination as a walking route */
