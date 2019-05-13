@@ -40,8 +40,8 @@
             mapbox:layout_constraintEnd_toEndOf="parent"
             mapbox:layout_constraintStart_toStartOf="parent"
             mapbox:layout_constraintTop_toTopOf="parent"
-            android:elevation="8dp"
-            mapbox:cardCornerRadius="8dp"
+            android:elevation="24dp"
+            mapbox:cardCornerRadius="12dp"
             android:foreground="?android:attr/selectableItemBackground"
             android:clickable="true"
             android:focusable="true">

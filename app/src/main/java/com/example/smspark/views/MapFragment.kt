@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
 import android.graphics.BitmapFactory
-import android.graphics.Color
 import android.graphics.Color.parseColor
 import android.os.Bundle
 import android.os.Handler
@@ -131,7 +130,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
         mapView = view.findViewById(R.id.mapView)
         mapView.onCreate(savedInstanceState)
         mapView.getMapAsync { mapboxMap ->
-            mapboxMap.setStyle(getString(R.string.streets_parking)) { style ->
+            mapboxMap.setStyle(getString(R.string.minimalist_light)) { style ->
                 this.mapboxMap = mapboxMap.apply {
                     addOnMapClickListener(this@MapFragment)
                     addOnMapLongClickListener(this@MapFragment)
@@ -159,7 +158,6 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
                 addToRecyclerView(zones)
             } else Toast.makeText(requireContext(), "Inga zoner hittades nära din destination", Toast.LENGTH_SHORT).show()
             if(!zonePreferences.showAccessibleZones.value!!) {
-                Log.d("obsrvve", "removing zones from viewmodel and list")
                 zoneViewModel.clearAccessibleZones()
                 zoneAdapter.removeAccessibleZonesFromList()
             }
@@ -189,6 +187,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
                 }
             }
         })
+        zonePreferences.showAccessibleZones.changeValue(false)
         zonePreferences.showAccessibleZones.observe(this, Observer { show ->
             Log.d("ShowAcces", show.toString())
             routeViewModel.destination.value?.let {
@@ -274,6 +273,15 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
         zone?.let {
             addMarkerOnMap(it.geometry()?.getGeometryPoint()!!, true)
             addMarkerOnMap(routeViewModel.destination.value?.getGeometryPoint()!!, false)
+        }
+        zonePreferences.showAccessibleZones.value?.let {show ->
+            if(show) showLayer(accessibleLayerID)
+            else if(show && zoneViewModel.accessibleZones().value.isNullOrEmpty()) {
+                routeViewModel.destination.value?.let {destination ->
+                    zoneViewModel.getAccessibleZones(destination.latitude(), destination.longitude(), radius = 500)
+                    showLayer(accessibleLayerID)
+                }
+            }
         }
     }
 
@@ -408,24 +416,24 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
      * @param loadedMapStyle The style to add sources and layers to*/
     private fun setupZoneLayers(loadedMapStyle: Style) {
         val zoneLayer = FillLayer(polygonLayerID, polygonSourceID).withProperties(
-                fillColor(Color.parseColor("#0351ab")),
+                fillColor(parseColor("#0351ab")),
                 fillOpacity(0.65f))
         val highlightLayer = LineLayer(polygonHighlightID, polygonSourceID).withProperties(
                 lineCap(Property.LINE_CAP_ROUND),
                 lineJoin(Property.LINE_JOIN_ROUND),
                 lineWidth(2f),
-                lineColor(Color.parseColor("#090cb0"))
+                lineColor(parseColor("#090cb0"))
         )
         val pointLayer = SymbolLayer(pointLayerID, pointSourceID).withProperties(iconImage(parkingImage), iconSize(0.35f))
         val handicapLayer = SymbolLayer(accessibleLayerID, accessibleSourceID).withProperties(iconImage(accessibleImage), iconSize(0.385f), visibility(NONE))
         val selectedZoneLayer = FillLayer(selectedZoneLayerID, selectedZoneSourceID).withProperties(
-                fillColor(Color.parseColor("#ff0900")),
+                fillColor(parseColor("#ff0900")),
                 fillOpacity(0.85f))
         val selectedHighlightLayer = LineLayer(selectedZoneHighLightID, selectedZoneSourceID).withProperties(
                 lineCap(Property.LINE_CAP_ROUND),
                 lineJoin(Property.LINE_JOIN_ROUND),
                 lineWidth(5f),
-                lineColor(Color.parseColor("#ba170c"))
+                lineColor(parseColor("#ba170c"))
         )
         val layers = listOf(zoneLayer, highlightLayer, pointLayer, handicapLayer, selectedZoneLayer, selectedHighlightLayer)
         val sources =  listOf(GeoJsonSource(polygonSourceID),GeoJsonSource(pointSourceID), GeoJsonSource(accessibleSourceID), GeoJsonSource(selectedZoneSourceID))

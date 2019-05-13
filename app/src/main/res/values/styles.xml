@@ -60,10 +60,10 @@
         <item name="navigationViewBannerBackground">@color/colorPrimaryDark</item>
         <item name="navigationViewPrimaryText">@color/black</item>
         <item name="navigationViewSecondaryText">@color/black</item>
-        <item name="navigationViewAccent">@color/colorAccentGrey</item>
+        <item name="navigationViewAccent">@color/colorPrimaryDark</item>
         <item name="navigationViewSecondary">@color/black</item>
         <item name="navigationViewProgressBackground">@color/colorPrimaryDark</item>
         <item name="navigationViewProgress">@color/colorAccentGrey</item>
-        <item name="navigationViewMapStyle">@string/streets_parking</item>
+        <item name="navigationViewMapStyle">@string/navigation_day</item>
     </style>
 </resources>

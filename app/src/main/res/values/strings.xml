@@ -8,8 +8,10 @@
 
     //Buttons
     <string name="startNavigation">Start</string>
-    <string name="streets_parking">mapbox://styles/asegestam/cjtn640k420wp1fo9mu5fh2k3</string>
-    <string name="streets_parking_debug" tools:keep="@string/streets_parking_debug">mapbox://styles/asegestam/cjt048qko06vw1fmtf8t9rv4n</string>
+    <string name="streets_parking">mapbox://styles/asegestam/cjvmsns990nf41doblv9lfo8n</string>
+    <string name="minimalist_light">mapbox://styles/asegestam/cjvmsns990nf41doblv9lfo8n</string>
+    <string name="minimalist_dark">mapbox://styles/asegestam/cjvk2lah110uk1cmm5mr450cj</string>
+    <string name="navigation_day">mapbox://styles/asegestam/cjvmsurtn0lp41cn8c2uxb27z</string>
 
     //App_code
     <string name="app_code" tools:keep="@string/app_code">38cd95124d0c4c4045550a90664ec77a</string>

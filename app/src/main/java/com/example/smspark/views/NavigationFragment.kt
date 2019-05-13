@@ -8,7 +8,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
-import android.widget.Button
 import android.widget.Spinner
 import android.widget.TextView
 import androidx.core.content.ContextCompat
@@ -21,6 +20,7 @@ import com.example.smspark.model.extentionFunctions.getGeometryPoint
 import com.example.smspark.viewmodels.RouteViewModel
 import com.example.smspark.viewmodels.SelectedZoneViewModel
 import com.example.smspark.viewmodels.ZoneViewModel
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.snackbar.Snackbar
 import com.mapbox.api.directions.v5.models.DirectionsRoute
 import com.mapbox.geojson.Feature
@@ -35,7 +35,6 @@ import com.mapbox.services.android.navigation.v5.routeprogress.ProgressChangeLis
 import com.mapbox.services.android.navigation.v5.routeprogress.RouteProgress
 import kotlinx.android.synthetic.main.fragment_navigation.*
 import org.koin.android.viewmodel.ext.android.sharedViewModel
-import org.koin.android.viewmodel.ext.android.viewModel
 
 
 class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationListener, ProgressChangeListener, OffRouteListener, RouteListener {
@@ -46,8 +45,7 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
     private val routeViewModel: RouteViewModel by sharedViewModel()
     private val selectedZoneViewModel: SelectedZoneViewModel by sharedViewModel()
     private val zoneViewModel: ZoneViewModel by sharedViewModel()
-    private val privateRouteViewModel: RouteViewModel by viewModel()
-    lateinit var parkingFeatures: ArrayList<Feature>
+    private lateinit var parkingFeatures: ArrayList<Feature>
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View? {
@@ -62,28 +60,7 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
         navigationView = navigation_view_fragment
         navigationView.onCreate(savedInstanceState)
         navigationView.initialize(this)
-
-        privateRouteViewModel.routeMap.changeValue(hashMapOf())
-        privateRouteViewModel.routeMap.observe(this, Observer {
-            if (it.count() >= 2) {
-                it.forEach { entry ->
-                    when (entry.key) {
-                        "driving-traffic" -> routeViewModel.routeDestination.changeValue(entry.value)
-                        "walking" -> routeViewModel.routeWayPoint.changeValue(entry.value)
-                    }
-                }
-                routingToDestination = false
-                navigationView.retrieveNavigationMapboxMap()?.clearMarkers()
-                startNavigation(it.get("driving-traffic")!!)
-            }
-        })
-        zoneViewModel.standardZones().value?.let { zones ->
-            parkingFeatures = zones.toCollection(ArrayList())
-        }
-
-        Log.d("NavigationFragment", "" + parkingFeatures.size)
-        parkingFeatures.remove(selectedZoneViewModel.selectedZone.value)
-        Log.d("NavigationFragment", "" + parkingFeatures.size)
+        setupForNavigation()
     }
 
     override fun onNavigationReady(isRunning: Boolean) {
@@ -93,6 +70,24 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
         })
     }
 
+    private fun setupForNavigation() {
+        routeViewModel.navigationRouteMap.changeValue(hashMapOf())
+        zoneViewModel.standardZones().value?.let { zones ->
+            parkingFeatures = zones.toCollection(ArrayList())
+        }
+        parkingFeatures.remove(selectedZoneViewModel.selectedZone.value)
+        setupObserver()
+    }
+
+    private fun setupObserver() {
+        routeViewModel.navigationRouteMap.observe(this, Observer {
+            if (it.count() >= 2) {
+                routingToDestination = false
+                navigationView.retrieveNavigationMapboxMap()?.clearMarkers()
+                startNavigation(it["driving-traffic"]!!)
+            }
+        })
+    }
     /** Starts the navigation and sets up the correct Listeners */
     private fun startNavigation(route: DirectionsRoute) {
         val options: NavigationViewOptions = NavigationViewOptions.builder()
@@ -122,10 +117,57 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
     override fun onProgressChange(location: Location?, routeProgress: RouteProgress?) {
 
     }
-
     /** Shows a dialog to the user asking for confirmation to start a parking at the parking zone */
     private fun showParkingDialog() {
         val builder = AlertDialog.Builder(requireContext(), R.style.AlertDialogCustom)
+        val dialogView = createDialogView()
+        val positiveButton = dialogView.findViewById<MaterialButton>(R.id.positive_Button)
+        val negativeButton = dialogView.findViewById<MaterialButton>(R.id.negative_Button)
+        val fullButton = dialogView.findViewById<MaterialButton>(R.id.full_Button)
+        with(builder.create()) {
+            setView(dialogView)
+            setCanceledOnTouchOutside(false)
+            positiveButton.setOnClickListener {
+                dismiss()
+                showSnackBar(R.string.parking_success, R.color.colorSuccess)
+                startWalkingDirections()
+            }
+            negativeButton.setOnClickListener {
+                dismiss()
+                showSnackBar(R.string.parking_cancel, R.color.colorPrimary, Snackbar.LENGTH_LONG)
+            }
+            fullButton.setOnClickListener {
+                dismiss()
+                showNewParkingDialog()
+            }
+            show()
+        }
+    }
+
+    /** Shows a dialog for the user and asks if they want help finding a new parking in the case the previous parking was full */
+    private fun showNewParkingDialog(){
+        if(parkingFeatures.isNotEmpty()) {
+            val builder = AlertDialog.Builder(requireContext(), R.style.AlertDialogCustom)
+            val dialogView = createNewParkingDialog()
+            val positiveButton = dialogView.findViewById<MaterialButton>(R.id.newParking_positive)
+            val negativeButton = dialogView.findViewById<MaterialButton>(R.id.newParking_negative)
+            with(builder.create()) {
+                setView(dialogView)
+                setCanceledOnTouchOutside(false)
+                positiveButton.setOnClickListener {
+                    dismiss()
+                    calcNewTrip()
+                }
+                negativeButton.setOnClickListener { dismiss() }
+                show()
+            }
+        } else {
+            //TODO Handle the case where there was no other parkinglots nearby
+            showSnackBar(R.string.failed_finding_new_parking, R.color.colorFailure)
+        }
+    }
+
+    private fun createDialogView(): View {
         val inflater = activity?.layoutInflater
         val dialogView = inflater?.inflate(R.layout.start_parking_dialog, null)
         val zoneName = dialogView?.findViewById(R.id.dialogZoneName) as TextView
@@ -139,65 +181,18 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
             arrayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_item)
             spinner.adapter = arrayAdapter
         }
-
-        builder.apply {
-            setView(dialogView)
-            setPositiveButton("JA") { _, _ ->
-                showSnackBar(R.string.parking_success, R.color.colorSuccess)
-                startWalkingDirections()
-            }
-            setNegativeButton("AVBRYT") { _, _ -> showSnackBar(R.string.parking_cancel, R.color.colorPrimary, Snackbar.LENGTH_LONG) }
-            setNeutralButton("Full Parkering"){  _, _ ->
-                showNewParkingDialog()
-            }
-        }
-        val dialog = builder.create()
-        dialog.setCanceledOnTouchOutside(false)
-        dialog.show()
-        //Get the neutral button and change the color
-        val neutralButton = dialog.findViewById(android.R.id.button3) as Button
-        neutralButton.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.colorPrimary))
-
-        //Get the positiv button and change the color
-        val positivButton = dialog.findViewById(android.R.id.button1) as Button
-        positivButton.setTextColor(ContextCompat.getColor(requireContext(), R.color.colorSuccess))
-
+        return dialogView
     }
 
-    /** Shows a dialog for the user and asks if they want help finding a new parking in the case the previous parking was full */
-    private fun showNewParkingDialog(){
-            if(parkingFeatures.isNotEmpty()) {
-                val builder = AlertDialog.Builder(requireContext(), R.style.AlertDialogCustom)
-                val inflater = activity?.layoutInflater
-                val dialogView = inflater?.inflate(R.layout.full_parking_dialog, null)
-                val zoneName = dialogView?.findViewById(R.id.fullParkingZoneName) as TextView
-                val zoneCode = dialogView.findViewById(R.id.fullParkingZoneCode) as TextView
-                val code = parkingFeatures.first().getNumberProperty("zonecode")?.toInt()
-                zoneName.text = parkingFeatures.first().getStringProperty("zone_name")
-                zoneCode.text = code.toString()
-
-                builder.apply {
-                    setView(dialogView)
-                    setPositiveButton("Ja, tack") { _, _ ->
-                        //TODO Handle happy path
-                        calcNewTrip()
-                    }
-                    setNegativeButton("AVBRYT") { _, _ ->
-                        //TODO handle negative action and send user back to mapFragment
-                    }
-                }
-                val dialog = builder.create()
-                dialog.setCanceledOnTouchOutside(false)
-                dialog.show()
-
-                //Get the positiv button and change the color
-                val positivButton = dialog.findViewById(android.R.id.button1) as Button
-                positivButton.setTextColor(ContextCompat.getColor(requireContext(), R.color.colorSuccess))
-
-            } else {
-                //TODO Handle the case where there was no other parkinglots nearby
-                showSnackBar(R.string.failed_finding_new_parking, R.color.colorFailure)
-            }
+    private fun createNewParkingDialog(): View {
+        val inflater = activity?.layoutInflater
+        val dialogView = inflater?.inflate(R.layout.full_parking_dialog, null)
+        val zoneName = dialogView?.findViewById(R.id.fullParkingZoneName) as TextView
+        val zoneCode = dialogView.findViewById(R.id.fullParkingZoneCode) as TextView
+        val code = parkingFeatures.first().getNumberProperty("zonecode")?.toInt()
+        zoneName.text = parkingFeatures.first().getStringProperty("zone_name")
+        zoneCode.text = code.toString()
+        return dialogView
     }
 
 
@@ -207,18 +202,16 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
         val newParkingSpace = parkingFeatures.first().geometry()?.getGeometryPoint()
         selectedZoneViewModel.selectedZone.value?.let {
             val oldParkingSpot = it.geometry()?.getGeometryPoint()
-            privateRouteViewModel.routeMap.changeValue(hashMapOf())
-            privateRouteViewModel.getWayPointRoute(oldParkingSpot!!, newParkingSpace!!, destination!!)
+            routeViewModel.navigationRouteMap.changeValue(hashMapOf())
+            routeViewModel.getWayPointRoute(oldParkingSpot!!, newParkingSpace!!, destination!!)
             selectedZoneViewModel.selectedZone.changeValue(parkingFeatures.first())
         }
-
         Log.d("NavigationFragment", "Before removing in calNewTrip " + parkingFeatures.size)
         //Remove the last parking choice from the global parkingFeatures, it should not be able to be selected again
         parkingFeatures.remove(selectedZoneViewModel.selectedZone.value)
         Log.d("NavigationFragment", "After removing in calNewTrip " + parkingFeatures.size)
 
     }
-
 
     /** Starts an navigation from the parking zone to the destination as a walking route */
     private fun startWalkingDirections() {
