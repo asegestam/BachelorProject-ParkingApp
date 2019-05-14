@@ -130,7 +130,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
         mapView = view.findViewById(R.id.mapView)
         mapView.onCreate(savedInstanceState)
         mapView.getMapAsync { mapboxMap ->
-            mapboxMap.setStyle(getString(R.string.minimalist_light)) { style ->
+            mapboxMap.setStyle(getString(R.string.streets_parking)) { style ->
                 this.mapboxMap = mapboxMap.apply {
                     addOnMapClickListener(this@MapFragment)
                     addOnMapLongClickListener(this@MapFragment)

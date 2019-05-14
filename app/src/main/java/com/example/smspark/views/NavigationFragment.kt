@@ -21,6 +21,7 @@ import com.example.smspark.viewmodels.RouteViewModel
 import com.example.smspark.viewmodels.SelectedZoneViewModel
 import com.example.smspark.viewmodels.ZoneViewModel
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import com.mapbox.api.directions.v5.models.DirectionsRoute
 import com.mapbox.geojson.Feature
@@ -28,6 +29,7 @@ import com.mapbox.geojson.Point
 import com.mapbox.services.android.navigation.ui.v5.NavigationView
 import com.mapbox.services.android.navigation.ui.v5.NavigationViewOptions
 import com.mapbox.services.android.navigation.ui.v5.OnNavigationReadyCallback
+import com.mapbox.services.android.navigation.ui.v5.SoundButton
 import com.mapbox.services.android.navigation.ui.v5.listeners.NavigationListener
 import com.mapbox.services.android.navigation.ui.v5.listeners.RouteListener
 import com.mapbox.services.android.navigation.v5.offroute.OffRouteListener
@@ -60,7 +62,18 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
         navigationView = navigation_view_fragment
         navigationView.onCreate(savedInstanceState)
         navigationView.initialize(this)
+        initSoundButton()
         setupForNavigation()
+    }
+
+    private fun initSoundButton() {
+        val soundButton = (navigationView.retrieveSoundButton() as SoundButton)
+        val soundFab =
+                soundButton.findViewById<FloatingActionButton>(com.mapbox.services.android.navigation.ui.v5.R.id.soundFab)
+        val clickListener = soundButton.javaClass.getDeclaredField("multiOnClickListener").also {
+            it.isAccessible = true
+        }.get(soundButton) as View.OnClickListener
+        soundFab.setOnClickListener(clickListener)
     }
 
     override fun onNavigationReady(isRunning: Boolean) {
