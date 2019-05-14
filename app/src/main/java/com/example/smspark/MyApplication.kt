@@ -1,10 +1,7 @@
 package com.example.smspark
 
 import android.app.Application
-import com.example.smspark.dimodules.routeModule
-import com.example.smspark.dimodules.travelModule
-import com.example.smspark.dimodules.webserviceModule
-import com.example.smspark.dimodules.zoneModule
+import com.example.smspark.dimodules.*
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
@@ -18,7 +15,7 @@ class MyApplication : Application() {
         startKoin{
             androidLogger()
             androidContext(this@MyApplication)
-            modules(listOf(webserviceModule, zoneModule, routeModule, travelModule))
+            modules(listOf(webserviceModule, zoneModule, routeModule, travelModule, ticketModule))
         }
     }
 }

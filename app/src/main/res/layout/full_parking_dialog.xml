@@ -11,7 +11,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:layout_marginTop="24dp"
-        android:text="Vill du navigerad till ny parkering?"
+        android:text="Vill du bli navigerad till en ny parkering?"
         android:textAppearance="@style/TextAppearance.AppCompat.Large"
         android:textSize="18sp"
         app:layout_constraintEnd_toEndOf="parent"

@@ -12,7 +12,9 @@
         tools:layout="@layout/fragment_map" >
         <action
             android:id="@+id/mapFragment_to_navigation"
-            app:destination="@id/navigationFragment" />
+            app:destination="@id/navigationFragment"
+            app:exitAnim="@anim/slide_out_right"
+            app:launchSingleTop="false" />
         <action
             android:id="@+id/action_mapFragment_to_tripFragment2"
             app:destination="@id/tripFragment" />
@@ -36,7 +38,8 @@
             app:destination="@id/mapFragment" />
         <action
             android:id="@+id/action_navigationFragment_to_ticketsFragment"
-            app:destination="@id/ticketsFragment" />
+            app:destination="@id/ticketsFragment"
+            app:exitAnim="@anim/slide_out_right" />
     </fragment>
     <argument
             android:name="fromArg"
