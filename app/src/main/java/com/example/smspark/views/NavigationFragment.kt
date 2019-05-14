@@ -49,10 +49,12 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
     private val routeViewModel: RouteViewModel by sharedViewModel()
     private val selectedZoneViewModel: SelectedZoneViewModel by sharedViewModel()
     private val zoneViewModel: ZoneViewModel by sharedViewModel()
-    private val privateRouteViewModel: RouteViewModel by viewModel()
+    private val ticketViewModel: TicketViewModel by sharedViewModel()
     lateinit var parkingFeatures: ArrayList<Feature>
     private val handler: Handler = Handler()
-    private val ticketViewModel: TicketViewModel by sharedViewModel()
+    private lateinit var destinationRoute: DirectionsRoute
+    private lateinit var waypointRoute: DirectionsRoute
+    private var observingForUpdate = false
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View? {
@@ -68,6 +70,7 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
         navigationView.onCreate(savedInstanceState)
         navigationView.initialize(this)
         initSoundButton()
+        setupObserver()
         setupForNavigation()
     }
 
@@ -89,20 +92,24 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
     }
 
     private fun setupForNavigation() {
-        routeViewModel.navigationRouteMap.changeValue(hashMapOf())
-        zoneViewModel.standardZones().value?.let { zones ->
-            parkingFeatures = zones.toCollection(ArrayList())
-        }
+        routeViewModel.routeDestination.value?.let {route -> destinationRoute = route }
+        routeViewModel.routeWayPoint.value?.let {route -> waypointRoute = route }
+        zoneViewModel.standardZones().value?.let { zones -> parkingFeatures = zones.toCollection(ArrayList()) }
         parkingFeatures.remove(selectedZoneViewModel.selectedZone.value)
-        setupObserver()
     }
 
     private fun setupObserver() {
-        routeViewModel.navigationRouteMap.observe(this, Observer {
-            if (it.count() >= 2) {
+        routeViewModel.navigationRouteMap.observe(this, Observer { hashMap ->
+            if (hashMap.count() >= 2 && observingForUpdate) {
                 routingToDestination = false
+                //clear markers
                 navigationView.retrieveNavigationMapboxMap()?.clearMarkers()
-                startNavigation(it["driving-traffic"]!!)
+                //start driving navigation from full parking lot to suggested parking lot
+                hashMap["driving-traffic"]?.let { route ->
+                    waypointRoute = route
+                    startNavigation(route)
+                }
+                hashMap["walking"]?.let { route -> destinationRoute = route }
             }
         })
     }
@@ -119,22 +126,6 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
                 .build()
         navigationView.startNavigation(options)
     }
-
-    override fun onNavigationFinished() {
-        Log.d("NavigationFragment", "Route FINISHED!!")
-    }
-
-    override fun onNavigationRunning() {
-    }
-
-    override fun onCancelNavigation() {
-        findNavController().navigate(R.id.navigation_to_map)
-    }
-
-    /** Handles Progress Change along the route */
-    override fun onProgressChange(location: Location?, routeProgress: RouteProgress?) {
-
-    }
     /** Shows a dialog to the user asking for confirmation to start a parking at the parking zone */
     private fun showParkingDialog() {
         val builder = AlertDialog.Builder(requireContext(), R.style.AlertDialogCustom)
@@ -149,6 +140,7 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
                 dismiss()
                 showSnackBar(R.string.parking_success, R.color.colorSuccess)
                 startWalkingDirections()
+                ticketViewModel.activeParking.value = Pair(true, selectedZoneViewModel.selectedZone.value!!)
             }
             negativeButton.setOnClickListener {
                 dismiss()
@@ -220,7 +212,8 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
         val newParkingSpace = parkingFeatures.first().geometry()?.getGeometryPoint()
         selectedZoneViewModel.selectedZone.value?.let {
             val oldParkingSpot = it.geometry()?.getGeometryPoint()
-            routeViewModel.navigationRouteMap.changeValue(hashMapOf())
+            // get route between current parking lot, new parking lot and the destination
+            observingForUpdate = true
             routeViewModel.getWayPointRoute(oldParkingSpot!!, newParkingSpace!!, destination!!)
             selectedZoneViewModel.selectedZone.changeValue(parkingFeatures.first())
         }
@@ -234,9 +227,8 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
     /** Starts an navigation from the parking zone to the destination as a walking route */
     private fun startWalkingDirections() {
         routingToDestination = true
-        val route = routeViewModel.routeWayPoint.value!!
-        navigationView.drawRoute(route)
-        startNavigation(route)
+        navigationView.drawRoute(waypointRoute)
+        startNavigation(waypointRoute)
     }
 
     /** Shows a SnackBar with the given parameters */
@@ -248,6 +240,21 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
             snackbar.setAction("OK") { findNavController().navigate(R.id.action_navigationFragment_to_ticketsFragment) }
         }
         snackbar.show()
+    }
+    override fun onNavigationFinished() {
+        Log.d("NavigationFragment", "Route FINISHED!!")
+    }
+
+    override fun onNavigationRunning() {
+    }
+
+    override fun onCancelNavigation() {
+        findNavController().navigate(R.id.navigation_to_map)
+    }
+
+    /** Handles Progress Change along the route */
+    override fun onProgressChange(location: Location?, routeProgress: RouteProgress?) {
+
     }
 
     override fun onFailedReroute(errorMessage: String?) {
