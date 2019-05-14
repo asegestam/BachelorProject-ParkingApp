@@ -4,6 +4,7 @@ import android.app.AlertDialog
 import android.location.Location
 import android.nfc.Tag
 import android.os.Bundle
+import android.os.Handler
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -18,6 +19,7 @@ import com.example.smspark.model.extentionFunctions.changeValue
 import com.example.smspark.model.extentionFunctions.getGeometryPoint
 import com.example.smspark.viewmodels.RouteViewModel
 import com.example.smspark.viewmodels.SelectedZoneViewModel
+import com.example.smspark.viewmodels.TicketViewModel
 import com.example.smspark.viewmodels.ZoneViewModel
 import com.google.android.material.snackbar.Snackbar
 import com.mapbox.api.directions.v5.models.DirectionsRoute
@@ -46,6 +48,8 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
     private val zoneViewModel: ZoneViewModel by sharedViewModel()
     private val privateRouteViewModel: RouteViewModel by viewModel()
     lateinit var parkingFeatures: ArrayList<Feature>
+    private val handler: Handler = Handler()
+    private val ticketViewModel: TicketViewModel by sharedViewModel()
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View? {
@@ -142,6 +146,10 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
             setView(dialogView)
             setPositiveButton("JA") { _, _ ->
                 showSnackBar(R.string.parking_success, R.color.colorSuccess)
+
+                //TODO activate the parking so it can be seen in the ticketsFragment
+                ticketViewModel.activeParking.value = Pair(true, selectedZoneViewModel.selectedZone.value!!)
+
                 startWalkingDirections()
             }
             setNegativeButton("AVBRYT") { _, _ -> showSnackBar(R.string.parking_cancel, R.color.colorPrimary, Snackbar.LENGTH_LONG) }
@@ -233,7 +241,7 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
         val snackbarView = snackbar.view
         snackbarView.setBackgroundColor(ContextCompat.getColor(requireContext(), color))
         if (hasButton) {
-            snackbar.setAction("OK") { findNavController().navigate(R.id.navigation_to_map) }
+            snackbar.setAction("OK") { findNavController().navigate(R.id.action_navigationFragment_to_ticketsFragment) }
         }
         snackbar.show()
     }
@@ -258,6 +266,11 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
         } else {
             navigationView.stopNavigation()
             showSnackBar(R.string.destination_arrival, R.color.colorAccentLight, Snackbar.LENGTH_INDEFINITE, true)
+
+            //After some time we want to send the user to the tickets fragment where the visualization of the ongoing parking is showed
+            handler.postDelayed({
+                findNavController().navigate(R.id.action_navigationFragment_to_ticketsFragment)
+            }, 4000)
         }
         Log.d("NavigationFragment", "Arrived")
     }
