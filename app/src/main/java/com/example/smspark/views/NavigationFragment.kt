@@ -36,6 +36,8 @@ import com.mapbox.services.android.navigation.v5.routeprogress.RouteProgress
 import kotlinx.android.synthetic.main.fragment_navigation.*
 import org.koin.android.viewmodel.ext.android.sharedViewModel
 import org.koin.android.viewmodel.ext.android.viewModel
+import java.text.SimpleDateFormat
+import java.time.LocalTime
 
 
 class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationListener, ProgressChangeListener, OffRouteListener, RouteListener {
@@ -148,6 +150,7 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
                 showSnackBar(R.string.parking_success, R.color.colorSuccess)
 
                 //TODO activate the parking so it can be seen in the ticketsFragment
+                selectedZoneViewModel.selectedZone.value!!.addStringProperty("parking_time_started", LocalTime.now().toString())
                 ticketViewModel.activeParking.value = Pair(true, selectedZoneViewModel.selectedZone.value!!)
 
                 startWalkingDirections()
