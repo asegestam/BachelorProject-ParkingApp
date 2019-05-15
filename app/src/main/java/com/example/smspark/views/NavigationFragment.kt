@@ -39,8 +39,6 @@ import com.mapbox.services.android.navigation.v5.routeprogress.ProgressChangeLis
 import com.mapbox.services.android.navigation.v5.routeprogress.RouteProgress
 import kotlinx.android.synthetic.main.fragment_navigation.*
 import org.koin.android.viewmodel.ext.android.sharedViewModel
-import org.koin.android.viewmodel.ext.android.viewModel
-import java.text.SimpleDateFormat
 import java.time.LocalTime
 
 
@@ -53,7 +51,7 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
     private val selectedZoneViewModel: SelectedZoneViewModel by sharedViewModel()
     private val zoneViewModel: ZoneViewModel by sharedViewModel()
     private val ticketViewModel: TicketViewModel by sharedViewModel()
-    lateinit var parkingFeatures: ArrayList<Feature>
+    private lateinit var parkingFeatures: ArrayList<Feature>
     private val handler: Handler = Handler()
     private lateinit var destinationRoute: DirectionsRoute
     private lateinit var waypointRoute: DirectionsRoute

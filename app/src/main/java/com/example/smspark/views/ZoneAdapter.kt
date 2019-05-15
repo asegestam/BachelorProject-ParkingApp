@@ -37,7 +37,9 @@ class ZoneAdapter(private val listener: (Feature) -> Unit): RecyclerView.Adapter
 
     fun setAccessibleData(zonesData: List<Feature>) {
         accessibleFeatureList.clear()
-        zonesData.forEach { accessibleFeatureList.add(it) }
+        zonesData.forEach {
+            if(!accessibleFeatureList.contains(it)) accessibleFeatureList.add(it)
+        }
         combineAndNotify()
     }
 
@@ -62,17 +64,15 @@ class ZoneAdapter(private val listener: (Feature) -> Unit): RecyclerView.Adapter
     }
 
     /** Changes the data set to all features that is a regular zone */
-    fun removeStandardZonesFromList() {
-        val accessibleZones = allFeatures.filter { it.hasProperty("wkt") }.toCollection(ArrayList())
-        allFeatures = accessibleZones
+    private fun removeStandardZonesFromList() {
+        allFeatures.removeAll{!it.hasProperty("wkt")}
         zones = allFeatures
         notifyDataSetChanged()
     }
 
     /** Changes the data set to all features that is not a Göteborg stad zone */
     fun removeAccessibleZonesFromList() {
-        val standardZones = allFeatures.filter { !it.hasProperty("wkt") }.toCollection(ArrayList())
-        allFeatures = standardZones
+        allFeatures.removeAll { it.hasProperty("wkt") }
         zones = allFeatures
         notifyDataSetChanged()
     }
@@ -90,6 +90,14 @@ class ZoneAdapter(private val listener: (Feature) -> Unit): RecyclerView.Adapter
         zones = allFeatures
         notifyDataSetChanged()
     }
+
+    fun clearAccessibleZones() {
+        accessibleFeatureList.clear()
+        allFeatures.removeAll { it.hasProperty("wkt") }
+        notifyDataSetChanged()
+    }
+
+    fun isAccessibleZonesEmpty(): Boolean = accessibleFeatureList.isEmpty()
 
     class ZoneViewHolder(private val cardView: View) : RecyclerView.ViewHolder(cardView), View.OnClickListener {
 

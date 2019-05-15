@@ -11,7 +11,5 @@ interface ZoneRepository {
 
     suspend fun getSpecificZones(latitude: Double, longitude: Double, radius: Int, getAccessible: Boolean)
 
-    suspend fun getAccessibleZones(latitude: Double, longitude: Double, radius: Int)
-
     fun clearAccessibleZones()
 }

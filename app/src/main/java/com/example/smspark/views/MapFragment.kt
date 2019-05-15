@@ -7,7 +7,6 @@ import android.graphics.BitmapFactory
 import android.graphics.Color.parseColor
 import android.os.Bundle
 import android.os.Handler
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -54,7 +53,10 @@ import kotlinx.android.synthetic.main.fragment_map.*
 import kotlinx.android.synthetic.main.search_bar.*
 import kotlinx.android.synthetic.main.selected_zone.*
 import kotlinx.android.synthetic.main.selected_zone.view.*
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.koin.android.viewmodel.ext.android.sharedViewModel
 import org.koin.android.viewmodel.ext.android.viewModel
 import timber.log.Timber
@@ -152,7 +154,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
     /** Initiates ViewModel observers */
     private fun setupObservers() {
         mainActivity.locationPermissionGranted.observeOnce(this, Observer { granted -> if(granted) enableLocationComponent(getMapStyle()!!) })
-        //Observe parking zones, if changed, add them to the map and to the recyclerview.
+        //Observe parking zones, if changed, add them to the map and to the RecyclerView.
         zoneViewModel.standardZones().observe(this, Observer { zones ->
             if (zones.isNotEmpty()) {
                 addZonesToMap(zones)
@@ -161,13 +163,34 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
             if(!zonePreferences.showAccessibleZones.value!!) {
                 zoneViewModel.clearAccessibleZones()
                 zoneAdapter.removeAccessibleZonesFromList()
+                zoneAdapter.clearAccessibleZones()
             }
         })
+
         zoneViewModel.accessibleZones().observe(this, Observer { zones ->
             addMarkersToMap(FeatureCollection.fromFeatures(zones), true)
-            if (zones.isNotEmpty()) {
+            if (zones.isNotEmpty() && zonePreferences.showAccessibleZones.value!!) {
                 addToRecyclerView(zones)
-            } else zoneAdapter.removeAccessibleZonesFromList()
+            } else {
+                zoneAdapter.removeAccessibleZonesFromList()
+                zoneAdapter.clearAccessibleZones()
+            }
+        })
+
+        zonePreferences.showAccessibleZones.observe(this, Observer { show ->
+            if(show) {
+                if(zoneAdapter.isAccessibleZonesEmpty() ){
+                    zoneViewModel.accessibleZones().value?.let {
+                        if(!it.isNullOrEmpty()) addToRecyclerView(it) }
+                }
+                showLayer(accessibleLayerID)
+                zoneAdapter.addZonesToList(accessibleLayerID)
+            }
+            else {
+                hideLayer(accessibleLayerID)
+                zoneAdapter.removeAccessibleZonesFromList()
+            }
+
         })
         //Observe the selected zone, can be one from the map or the list and moves the camera to it
         selectedZoneViewModel.selectedZone.observe(this, Observer {
@@ -185,24 +208,6 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
                         "driving-traffic" -> routeViewModel.routeDestination.changeValue(entry.value)
                         "walking" -> routeViewModel.routeWayPoint.changeValue(entry.value)
                     }
-                }
-            }
-        })
-        zonePreferences.showAccessibleZones.changeValue(false)
-        zonePreferences.showAccessibleZones.observe(this, Observer { show ->
-            Log.d("ShowAcces", show.toString())
-            routeViewModel.destination.value?.let {
-                if(show && zoneViewModel.accessibleZones().value.isNullOrEmpty()){
-                    zoneViewModel.getAccessibleZones(it.latitude(), it.longitude(), radius = 500)
-                    showLayer(accessibleLayerID)
-                }
-                else if(show) {
-                    showLayer(accessibleLayerID)
-                    zoneAdapter.addZonesToList(accessibleLayerID)
-                }
-                else {
-                    hideLayer(accessibleLayerID)
-                    zoneAdapter.removeAccessibleZonesFromList()
                 }
             }
         })
@@ -279,7 +284,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
             if(show) showLayer(accessibleLayerID)
             else if(show && zoneViewModel.accessibleZones().value.isNullOrEmpty()) {
                 routeViewModel.destination.value?.let {destination ->
-                    zoneViewModel.getAccessibleZones(destination.latitude(), destination.longitude(), radius = 500)
+                    zoneViewModel.getSpecificZones(destination.latitude(), destination.longitude(), radius = 1000)
                     showLayer(accessibleLayerID)
                 }
             }

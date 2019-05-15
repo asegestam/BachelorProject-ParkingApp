@@ -16,9 +16,6 @@ class ZoneViewModel(private val repo: ZoneRepository): ViewModel(){
     fun getSpecificZones(latitude: Double = 57.7089, longitude: Double = 11.9746, radius: Int = 500, getAccessible: Boolean = false){
         viewModelScope.launch { repo.getSpecificZones(latitude, longitude, radius, getAccessible) }
     }
-    fun getAccessibleZones(latitude: Double = 57.7089, longitude: Double = 11.9746, radius: Int = 500){
-        viewModelScope.launch { repo.getAccessibleZones(latitude, longitude, radius) }
-    }
 
     fun clearAccessibleZones(){ repo.clearAccessibleZones() }
 

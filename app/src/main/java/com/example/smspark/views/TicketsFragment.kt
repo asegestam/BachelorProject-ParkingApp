@@ -10,7 +10,6 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.smspark.R
-import com.example.smspark.viewmodels.SelectedZoneViewModel
 import com.example.smspark.viewmodels.TicketViewModel
 import com.google.android.material.snackbar.Snackbar
 import com.mapbox.geojson.Feature
@@ -18,7 +17,6 @@ import com.mapbox.geojson.FeatureCollection
 import kotlinx.android.synthetic.main.active_ticket_cardview.*
 import kotlinx.android.synthetic.main.fragment_tickets.*
 import org.koin.android.viewmodel.ext.android.sharedViewModel
-import java.util.*
 
 class TicketsFragment : Fragment() {
 
