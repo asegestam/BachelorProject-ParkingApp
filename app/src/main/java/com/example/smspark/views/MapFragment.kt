@@ -592,6 +592,8 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
                 //get zones around the destination
                 zoneViewModel.getSpecificZones(latitude = it.latitude(), longitude = it.longitude(), radius = 1000, getAccessible = zonePreferences.showAccessibleZones.value!!)
             }
+            parking_fab.colorNormal = parseColor(colorPrimary)
+            showLayer(polygonLayerID)
         }
     }
 

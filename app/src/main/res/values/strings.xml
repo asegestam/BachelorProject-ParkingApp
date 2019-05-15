@@ -1,5 +1,5 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <string name="app_name">My Application</string>
+    <string name="app_name">ParKing Ultimate</string>
     <string name="title_activity_maps" tools:keep="@string/title_activity_maps">Map</string>
     <string name="title_activity_main" tools:keep="@string/title_activity_main">MainActivity</string>
     <string name="access_token">pk.eyJ1IjoiYXNlZ2VzdGFtIiwiYSI6ImNqc214azFsbjA1c280M3BlZHk3emVwMmQifQ.-3503vKfLt3L0dhTSol2ew</string>

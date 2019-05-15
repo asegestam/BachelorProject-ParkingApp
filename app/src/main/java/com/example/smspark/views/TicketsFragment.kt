@@ -10,6 +10,7 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.smspark.R
+import com.example.smspark.model.extentionFunctions.changeVisibility
 import com.example.smspark.viewmodels.TicketViewModel
 import com.google.android.material.snackbar.Snackbar
 import com.mapbox.geojson.Feature
@@ -76,6 +77,7 @@ class TicketsFragment : Fragment() {
         activeTicketZoneName.text = feature.getStringProperty("zone_name")
         activeTicketZoneCode.text = feature.getStringProperty("zonecode").replace("\\..*".toRegex(), "")
         ticketStartingTime.text = feature.getStringProperty("parking_time_started").replace(":(?<=:)[^:]*\$".toRegex(), "")
+        parkingCardView.changeVisibility(View.VISIBLE)
 
     }
 
