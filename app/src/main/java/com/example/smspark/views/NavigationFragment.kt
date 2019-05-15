@@ -143,8 +143,10 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
                 dismiss()
                 showSnackBar(R.string.parking_success, R.color.colorSuccess)
                 startWalkingDirections()
-                selectedZoneViewModel.selectedZone.value!!.addStringProperty("parking_time_started", LocalTime.now().toString())
-                ticketViewModel.activeParking.value = Pair(true, selectedZoneViewModel.selectedZone.value!!)
+                selectedZoneViewModel.selectedZone.value?.let {feature ->
+                    feature.addStringProperty("parking_time_started", LocalTime.now().toString())
+                    ticketViewModel.activeParking.value = Pair(true, feature)
+                }
             }
             negativeButton.setOnClickListener {
                 dismiss()
