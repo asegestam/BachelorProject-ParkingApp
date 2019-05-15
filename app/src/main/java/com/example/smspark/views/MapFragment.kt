@@ -54,6 +54,7 @@ import kotlinx.android.synthetic.main.fragment_map.*
 import kotlinx.android.synthetic.main.search_bar.*
 import kotlinx.android.synthetic.main.selected_zone.*
 import kotlinx.android.synthetic.main.selected_zone.view.*
+import kotlinx.coroutines.*
 import org.koin.android.viewmodel.ext.android.sharedViewModel
 import org.koin.android.viewmodel.ext.android.viewModel
 import timber.log.Timber
@@ -172,7 +173,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
         selectedZoneViewModel.selectedZone.observe(this, Observer {
             val zonePoint = it.geometry()?.getGeometryPoint()
             addSelectedZoneToMap(it)
-            moveCameraToLocation(zonePoint)
+            GlobalScope.launch(Dispatchers.Main) { moveCameraToLocation(zonePoint) }
         })
         //Observe an requested route, if changed this will add the route to the map and update BottomSheet
         routeViewModel.routeMap.observe(this, Observer {
@@ -289,17 +290,19 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
     private fun setupCamera() {
         selectedZoneViewModel.selectedZone.value?.let {
             val zonePoint = it.geometry()?.getGeometryPoint()
-            handler.postDelayed({
+            GlobalScope.launch(Dispatchers.Main){
+                delay(500)
                 moveCameraToLocation(zonePoint, zoom = 14.0, duration = 4000)
                 progressBar.changeVisibility(View.GONE)
-            }, 500)
+            }
             return
         }
-        handler.postDelayed({
+        GlobalScope.launch(Dispatchers.Main) {
+            delay(500)
             moveCameraToLocation(zoom = 14.0, duration = 4000)
             // zoneViewModel.getSpecificZones(getUserLocation()!!.latitude(), getUserLocation()!!.longitude(), 1000)
             progressBar.changeVisibility(View.GONE)
-        }, 500)
+        }
     }
 
     /** Initiates the BottomSheet with the view, BottomSheetBehaviour to control its state
@@ -490,20 +493,24 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
     /** Adds a FillLayer representation of a given JSON String
      * @param featureCollection Valid FeatureCollection containing Polygon Features */
     private fun addPolygonsToMap(featureCollection: FeatureCollection) {
-        val source = getMapStyle()?.getSourceAs<GeoJsonSource>(polygonSourceID)
-        source?.setGeoJson(featureCollection)
+        GlobalScope.launch(Dispatchers.Main) {
+            val source = getMapStyle()?.getSourceAs<GeoJsonSource>(polygonSourceID)
+            source?.setGeoJson(featureCollection)
+        }
     }
 
     /** Adds a SymbolLayer representation of a given JSON String, where the icon is a Parking Icon
      * @param featureCollection Valid JSON string containing Point Features
      * @param isHandicap indicates if the given JSON is handicap zones, used to change marker icon*/
     private fun addMarkersToMap(featureCollection: FeatureCollection, isHandicap: Boolean) {
-        if (isHandicap) {
-            val handicapSource = getMapStyle()?.getSourceAs<GeoJsonSource>(accessibleSourceID)
-            handicapSource?.setGeoJson(featureCollection)
-        } else {
-            val pointSource = getMapStyle()?.getSourceAs<GeoJsonSource>(pointSourceID)
-            pointSource?.setGeoJson(featureCollection)
+        GlobalScope.launch(Dispatchers.Main) {
+            if (isHandicap) {
+                val handicapSource = getMapStyle()?.getSourceAs<GeoJsonSource>(accessibleSourceID)
+                handicapSource?.setGeoJson(featureCollection)
+            } else {
+                val pointSource = getMapStyle()?.getSourceAs<GeoJsonSource>(pointSourceID)
+                pointSource?.setGeoJson(featureCollection)
+            }
         }
     }
 
@@ -517,10 +524,12 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
     /** Adds given route to the HashMap, if the HashMap contains 2 Routes
      * add them to the Map. */
     private fun addRoutesToMap(routes: HashMap<String, DirectionsRoute>) {
-        navigationMapRoute.addRoutes(ArrayList<DirectionsRoute>(routes.values))
-        navigationMapRoute.updateRouteVisibilityTo(true)
-        progressBar.changeVisibility(View.GONE)
-        startNavigationButton.changeVisibility(View.VISIBLE)
+        GlobalScope.launch(Dispatchers.Main) {
+            navigationMapRoute.addRoutes(ArrayList<DirectionsRoute>(routes.values))
+            navigationMapRoute.updateRouteVisibilityTo(true)
+            progressBar.changeVisibility(View.GONE)
+            startNavigationButton.changeVisibility(View.VISIBLE)
+        }
     }
 
     /** Starts a Search AutoComplete activity for searching locations */
