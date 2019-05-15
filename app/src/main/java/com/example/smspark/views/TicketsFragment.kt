@@ -15,7 +15,7 @@ import com.example.smspark.viewmodels.TicketViewModel
 import com.google.android.material.snackbar.Snackbar
 import com.mapbox.geojson.Feature
 import com.mapbox.geojson.FeatureCollection
-import kotlinx.android.synthetic.main.current_ticket.*
+import kotlinx.android.synthetic.main.active_ticket_cardview.*
 import kotlinx.android.synthetic.main.fragment_tickets.*
 import org.koin.android.viewmodel.ext.android.sharedViewModel
 import java.util.*
@@ -42,8 +42,6 @@ class TicketsFragment : Fragment() {
         initRecyclerView()
         initObservables()
         initClicklisteners()
-
-
     }
 
     private fun showNavbar(){
@@ -65,12 +63,10 @@ class TicketsFragment : Fragment() {
             if(parkingIsActive){
                 parkingCardView.setCardBackgroundColor(ContextCompat.getColor(context!!, R.color.colorPrimaryLight))
                 parkingIsActive = false
-                parkingText.text = "Inga Aktiva Parkeringar"
                 Toast.makeText(context, "Parkering är ej aktiv", Toast.LENGTH_SHORT).show()
             }else{
                 parkingCardView.setCardBackgroundColor(ContextCompat.getColor(context!!, R.color.colorSuccess))
                 parkingIsActive = true
-                parkingText.text = "Parkering Aktiv"
                 Toast.makeText(context, "Parkering är aktiv", Toast.LENGTH_SHORT).show()
             }
         }
@@ -79,6 +75,10 @@ class TicketsFragment : Fragment() {
     private fun activateParkingCard(feature: Feature){
         //TODO make a new layout for the cardview and update it here for the user
         parkingCardView.setCardBackgroundColor(ContextCompat.getColor(context!!, R.color.colorSuccess))
+        activeTicketZoneName.text = feature.getStringProperty("zone_name")
+        activeTicketZoneCode.text = feature.getStringProperty("zonecode").replace("\\..*".toRegex(), "")
+        ticketStartingTime.text = feature.getStringProperty("parking_time_started").replace(":(?<=:)[^:]*\$".toRegex(), "")
+
     }
 
     private fun deactivateParkingCard(){
