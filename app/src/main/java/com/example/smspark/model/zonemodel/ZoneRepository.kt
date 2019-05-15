@@ -9,9 +9,9 @@ interface ZoneRepository {
 
     fun accessibleZones() : LiveData<List<Feature>>
 
-    fun getSpecificZones(latitude: Double, longitude: Double, radius: Int, getAccessible: Boolean)
+    suspend fun getSpecificZones(latitude: Double, longitude: Double, radius: Int, getAccessible: Boolean)
 
-    fun getAccessibleZones(latitude: Double, longitude: Double, radius: Int)
+    suspend fun getAccessibleZones(latitude: Double, longitude: Double, radius: Int)
 
     fun clearAccessibleZones()
 }
