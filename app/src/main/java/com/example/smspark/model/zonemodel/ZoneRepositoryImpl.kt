@@ -66,23 +66,22 @@ class ZoneRepositoryImpl: ZoneRepository, KoinComponent {
 
     private fun createAccessibleZoneFeatures(responseBody: List<Handicap>?): ArrayList<Feature> {
         if (!responseBody.isNullOrEmpty()) {
-            Log.d("onRespone", "Hanidcap respone")
             val features = ArrayList<Feature>()
             //for each Handicap object, create a feature and add it to a collection
-            responseBody.forEach {
-                val feature = Feature.fromGeometry(Point.fromLngLat(it.long, it.lat))
+            responseBody.forEach {zone ->
+                val feature = Feature.fromGeometry(Point.fromLngLat(zone.long, zone.lat))
                 feature.apply {
-                    addStringProperty("id", it.id)
-                    addStringProperty("zone_name", it.name)
-                    addStringProperty("zone_owner", it.owner)
-                    addNumberProperty("parking_spaces", it.parkingSpaces)
-                    addStringProperty("max_parking_time", it.maxParkingTime)
-                    addStringProperty("max-parking_time_limitation", it.maxParkingTimeLimitation)
-                    addStringProperty("extra_info", it.extraInfo)
-                    addNumberProperty("distance", it.distance)
-                    addNumberProperty("lat", it.lat)
-                    addNumberProperty("long", it.long)
-                    addStringProperty("wkt", it.WKT)
+                    addStringProperty("id", zone.id)
+                    addStringProperty("zone_name", zone.name)
+                    addStringProperty("zone_owner", zone.owner)
+                    addNumberProperty("parking_spaces", zone.parkingSpaces)
+                    addStringProperty("max_parking_time", zone.maxParkingTime)
+                    addStringProperty("max-parking_time_limitation", zone.maxParkingTimeLimitation)
+                    addStringProperty("extra_info", zone.extraInfo)
+                    addNumberProperty("distance", zone.distance)
+                    addNumberProperty("lat", zone.lat)
+                    addNumberProperty("long", zone.long)
+                    addStringProperty("wkt", zone.WKT)
                 }
                 features.add(feature)
             }

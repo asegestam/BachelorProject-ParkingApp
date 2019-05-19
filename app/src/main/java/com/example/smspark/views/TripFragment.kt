@@ -164,22 +164,24 @@ class TripFragment : Fragment() {
     private fun initObservables() {
         zoneViewModel.standardZones().observe(this, Observer { zones ->
             if(listeningForUpdates) {
-                if (zones.isNotEmpty() && !accessibleSwitch.isChecked) {
-                    selectZone(zones)
+                if (zones.isNotEmpty()) {
+                   if(!accessibleSwitch.isChecked) selectZone(zones)
                 } else showNoZoneFound()
             }
         })
 
         zoneViewModel.accessibleZones().observe(this, Observer { zones ->
             if(listeningForUpdates) {
-                if (zones.isNotEmpty() && accessibleSwitch.isChecked) {
-                    selectZone(zones)
+                if (zones.isNotEmpty()) {
+                    if(accessibleSwitch.isChecked) selectZone(zones)
                 } else showNoZoneFound()
             }
         })
         routeViewModel.routeMap.observe(this, Observer {
             if (it.count() >= 2 && checkInputs()) {
-                findNavController().navigate(R.id.action_tripFragment_to_mapFragment)
+                val bundle = Bundle()
+                bundle.putBoolean("showAccessible", accessibleSwitch.isChecked)
+                findNavController().navigate(R.id.action_tripFragment_to_mapFragment, bundle)
             }
         })
         zonePreferencesViewModel.showAccessibleZones.observe(this, Observer { showAccessibleZones ->
@@ -216,9 +218,7 @@ class TripFragment : Fragment() {
     }
 
     private fun selectZoneGetRoute(zone: Feature?) {
-        zone?.let {
-            selectedZoneViewModel.selectedZone.changeValue(zone)
-        }
+        zone?.let { selectedZoneViewModel.selectedZone.changeValue(zone)}
         routeViewModel.destination.changeValue(toPoint)
         val point = zone?.geometry() as Geometry
         routeViewModel.getWayPointRoute(origin = fromPoint, wayPoint = point.getGeometryPoint(), destination = toPoint)
@@ -321,12 +321,8 @@ class TripFragment : Fragment() {
     /** Swaps the content of the textviews
      * fromLocation text becomes toLocation text and vice versa*/
     private fun swapLocations() {
-        val tempText = fromLocation.text
-        val tempPoint = fromPoint
-        fromLocation.text = toLocation.text
-        toLocation.text = tempText
-        fromPoint = toPoint
-        toPoint = tempPoint
+        fromLocation.text = toLocation.text.also { toLocation.text = fromLocation.text }
+        fromPoint = toPoint.also { toPoint = fromPoint }
     }
 
     /** Checks if the TextViews has inputs */

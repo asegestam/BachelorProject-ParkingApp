@@ -112,7 +112,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
     private val selectedZoneViewModel: SelectedZoneViewModel by sharedViewModel()
     private val routeViewModel: RouteViewModel by sharedViewModel()
     private val travelViewModel: TravelViewModel by viewModel()
-    private val zonePreferences: ZonePreferencesViewModel by viewModel()
+    private val zonePreferences: ZonePreferencesViewModel by sharedViewModel()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -146,6 +146,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
                 setupRecyclerView()
                 setupObservers()
                 setupSelectedZone()
+                checkArguments()
             }
         }
         setupButtons()
@@ -179,12 +180,10 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
 
         zonePreferences.showAccessibleZones.observe(this, Observer { show ->
             if(show) {
-                if(zoneAdapter.isAccessibleZonesEmpty() ){
-                    zoneViewModel.accessibleZones().value?.let {
-                        if(!it.isNullOrEmpty()) addToRecyclerView(it) }
+               zoneViewModel.accessibleZones().value?.let {
+                   if(!it.isNullOrEmpty()) addToRecyclerView(it)
                 }
                 showLayer(accessibleLayerID)
-                zoneAdapter.addZonesToList(accessibleLayerID)
             }
             else {
                 hideLayer(accessibleLayerID)
@@ -319,6 +318,18 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
         bottomSheetBehavior.apply {
             state = hidden
             setBottomSheetCallback(bottomSheetCallback)
+        }
+    }
+
+    /** Checks if the arguments bundle is null or not, if it's not then check if the showAccessible is set
+     * if it is, show that layer and set the filter button to active
+     */
+    private fun checkArguments() {
+        arguments?.let {
+            if(it["showAccessible"] as Boolean) {
+                showLayer(accessibleLayerID)
+                toggleFabActive(accessible_fab)
+            }
         }
     }
 

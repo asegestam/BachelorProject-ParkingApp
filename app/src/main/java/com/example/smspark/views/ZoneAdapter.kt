@@ -85,6 +85,7 @@ class ZoneAdapter(private val listener: (Feature) -> Unit): RecyclerView.Adapter
     }
 
     private fun addAccessibleZonesToList() {
+        allFeatures.removeAll { it.hasProperty("wkt") }
         allFeatures.addAll(accessibleFeatureList)
         allFeatures.sortBy { it.getNumberProperty("distance").toInt() }
         zones = allFeatures
