@@ -326,6 +326,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
      */
     private fun checkArguments() {
         arguments?.let {
+            searchText.text = it["destination"] as String
             if(it["showAccessible"] as Boolean) {
                 showLayer(accessibleLayerID)
                 toggleFabActive(accessible_fab)

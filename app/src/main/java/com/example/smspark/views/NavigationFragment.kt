@@ -54,6 +54,9 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
     private lateinit var destinationRoute: DirectionsRoute
     private lateinit var waypointRoute: DirectionsRoute
     private var observingForUpdate = false
+    private var startdialog = true
+
+
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View? {
@@ -246,6 +249,10 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
     /** Handles Progress Change along the route */
     override fun onProgressChange(location: Location?, routeProgress: RouteProgress?) {
 
+        if(routeProgress?.fractionTraveled()!! >= 0.98f && routeProgress.fractionTraveled() <= 0.999f && startdialog) {
+            showParkingDialog()
+            startdialog = false
+        }
     }
 
     override fun onFailedReroute(errorMessage: String?) {

@@ -25,7 +25,7 @@
     <string name="zon_kod" tools:keep="@string/zon_kod">Zonkod&#160;</string>
     <string name="list_of_zones" tools:keep="@string/list_of_zones">List of Zones</string>
 
-    <string name="search">Search</string>
+    <string name="search">Sök</string>
     <string name="list" tools:keep="@string/list">List of Zones</string>
     <string name="trip">Trip</string>
     <string name="profile">Profile</string>

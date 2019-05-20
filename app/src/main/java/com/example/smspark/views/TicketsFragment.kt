@@ -74,8 +74,9 @@ class TicketsFragment : Fragment() {
     private fun activateParkingCard(feature: Feature){
         //TODO make a new layout for the cardview and update it here for the user
         parkingCardView.setCardBackgroundColor(ContextCompat.getColor(context!!, R.color.colorSuccess))
+        val zoneCode = feature.getStringProperty("zonecode")?.toInt() ?: 999
         activeTicketZoneName.text = feature.getStringProperty("zone_name")
-        activeTicketZoneCode.text = feature.getStringProperty("zonecode").replace("\\..*".toRegex(), "")
+        activeTicketZoneCode.text = zoneCode.toString()
         ticketStartingTime.text = feature.getStringProperty("parking_time_started").replace(":(?<=:)[^:]*\$".toRegex(), "")
         parkingCardView.changeVisibility(View.VISIBLE)
 

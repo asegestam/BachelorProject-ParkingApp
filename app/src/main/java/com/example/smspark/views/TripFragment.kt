@@ -52,6 +52,8 @@ class TripFragment : Fragment() {
     private val routeViewModel: RouteViewModel by sharedViewModel()
     private val selectedZoneViewModel: SelectedZoneViewModel by sharedViewModel()
     private val zonePreferencesViewModel: ZonePreferencesViewModel by sharedViewModel()
+    private val bundle = Bundle()
+
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View? {
@@ -158,6 +160,7 @@ class TripFragment : Fragment() {
     private fun handleToLocation(carmenFeature: CarmenFeature) {
         toPoint = carmenFeature.geometry() as Point
         toLocation.text = carmenFeature.text()
+        bundle.putString("destination" , carmenFeature.text())
         if (checkInputs()) next_btn.changeVisibility(View.VISIBLE)
     }
 
@@ -179,7 +182,6 @@ class TripFragment : Fragment() {
         })
         routeViewModel.routeMap.observe(this, Observer {
             if (it.count() >= 2 && checkInputs()) {
-                val bundle = Bundle()
                 bundle.putBoolean("showAccessible", accessibleSwitch.isChecked)
                 findNavController().navigate(R.id.action_tripFragment_to_mapFragment, bundle)
             }
