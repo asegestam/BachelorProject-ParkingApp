@@ -6,7 +6,6 @@ import android.content.Intent
 import android.graphics.BitmapFactory
 import android.graphics.Color.parseColor
 import android.os.Bundle
-import android.os.Handler
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -70,9 +69,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
     private lateinit var mapboxMap: MapboxMap
     private val requestCodeAutoComplete = 1
     // variables for calculating and drawing a route
-    private val navigationMapRoute by lazy {
-        NavigationMapRoute(null, mapView, mapboxMap, R.style.NavigationMapRoute)
-    }
+    private val navigationMapRoute by lazy { NavigationMapRoute(null, mapView, mapboxMap, R.style.NavigationMapRoute) }
     //RecyclerView fields
     private lateinit var recyclerView: RecyclerView
     private lateinit var zoneAdapter: ZoneAdapter
@@ -85,13 +82,10 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
     private val selectedZoneLayerID = "selected-zone-layer"
     private val selectedZoneSourceID = "selected-zone-source"
     private val selectedZoneHighLightID = "highlight-zone-layer"
-    //Point
     private val pointLayerID = "zone-point-layer"
     private val pointSourceID = "point-source"
-    //Handicap
     private val accessibleLayerID = "handicap-layer"
     private val accessibleSourceID = "handicap-source"
-    //Marker
     private val wayPointMarkerLayer = "waypoint-marker-layer"
     private val destinationMarkerLayer = "destination-marker-layer"
     private val zoneLayerIDs = listOf(polygonLayerID, polygonHighlightID, pointLayerID, selectedZoneLayerID, selectedZoneHighLightID)
@@ -100,11 +94,11 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
     private val parkingMarker = "parking-marker-image"
     private val parkingImage = "parking-image"
     private val accessibleImage = "handicap-image"
+    //BottomSheet
     private lateinit var bottomSheetBehavior: BottomSheetBehavior<View>
     private val collapsed = BottomSheetBehavior.STATE_COLLAPSED
     private val hidden = BottomSheetBehavior.STATE_HIDDEN
     private val expanded = BottomSheetBehavior.STATE_EXPANDED
-    private val handler: Handler = Handler()
     private val colorPrimary = "#42A5F5"
     private val colorAccentGrey = "#E2DEDE"
     //lazy inject ViewModel
@@ -244,16 +238,13 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
     }
 
     private fun toggleFabActive(button: FloatingActionButton) {
-        //is inactive
-        if(button.colorNormal == parseColor(colorAccentGrey)) {
-            button.colorNormal = parseColor(colorPrimary)
-        }
-        //is active
-        else {
-            button.colorNormal = parseColor(colorAccentGrey)
+        when(button.colorNormal) {
+            //is inactive
+            parseColor(colorAccentGrey) -> button.colorNormal = parseColor(colorPrimary)
+            //is active
+            parseColor(colorPrimary) -> button.colorNormal = parseColor(colorAccentGrey)
         }
     }
-
 
     /**Initiates the RecyclerView with a adapter, clickListener, LayoutManager, Animator, SnapHelper*/
     private fun setupRecyclerView() {
@@ -261,7 +252,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
         zoneAdapter = ZoneAdapter { zone: Feature -> zoneListItemClicked(zone)}
         val snapHelper = LinearSnapHelper()
         snapHelper.attachToRecyclerView(recyclerView)
-        with(recyclerView) {
+        recyclerView.apply {
             setHasFixedSize(true)
             layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
             itemAnimator = DefaultItemAnimator()
@@ -292,20 +283,11 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
 
     /** Moves camera to either the user's location or to a selected zone, if it exists */
     private fun setupCamera() {
-        selectedZoneViewModel.selectedZone.value?.let {
-            val zonePoint = it.geometry()?.getGeometryPoint()
-            GlobalScope.launch(Dispatchers.Main){
-                delay(500)
-                moveCameraToLocation(zonePoint, zoom = 14.0, duration = 4000)
-                progressBar.changeVisibility(View.GONE)
-            }
-            return
-        }
         GlobalScope.launch(Dispatchers.Main) {
             delay(500)
-            moveCameraToLocation(zoom = 14.0, duration = 4000)
-            // zoneViewModel.getSpecificZones(getUserLocation()!!.latitude(), getUserLocation()!!.longitude(), 1000)
-            progressBar.changeVisibility(View.GONE)
+            val cameraPoint = selectedZoneViewModel.selectedZone.value?.geometry()?.getGeometryPoint() ?: getUserLocation()
+            moveCameraToLocation(cameraPoint, zoom = 14.0, duration = 4000)
+            progressBar?.changeVisibility(View.GONE)
         }
     }
 
@@ -675,13 +657,9 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
     private fun getBottomSheetCallback(): BottomSheetBehavior.BottomSheetCallback {
         return object : BottomSheetBehavior.BottomSheetCallback() {
             override fun onStateChanged(bottomSheet: View, newState: Int) {
-                if (newState == expanded) {
-                    bottomSheet.expand.setImageResource(R.drawable.expand_more)
-                } else if (newState == collapsed) {
-                    bottomSheet.expand.setImageResource(R.drawable.expand_less)
-                }
+                if (newState == expanded) { bottomSheet.expand.setImageResource(R.drawable.expand_more) }
+                else if (newState == collapsed) { bottomSheet.expand.setImageResource(R.drawable.expand_less) }
             }
-
             override fun onSlide(bottomSheet: View, slideOffset: Float) {
             }
         }
@@ -691,17 +669,17 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
      * and zone in the ViewModel */
     private fun updateBottomSheet(routes: HashMap<String, DirectionsRoute>) {
         val selectedZone = selectedZoneViewModel.selectedZone.value
-        selectedZone?.let {
+        selectedZone?.let { feature ->
             val drivingRouteDistance = routes["driving-traffic"]?.distance()
             val drivingDuration = routes["driving-traffic"]?.duration()
             val walkingRouteDistance = routes["walking"]?.distance()
             val walkingDuration = routes["walking"]?.duration()
             bottom_sheet.apply {
-                if(it.hasProperty("zonecode")){
+                if(feature.hasProperty("zonecode")){
                     zoneId.text = selectedZone.getNumberProperty("zonecode").toInt().toString()
                     attr_accessible.changeVisibility(View.GONE)
-                    if(it.getBooleanProperty("has_evc")) attr_ecs.changeVisibility(View.VISIBLE) else attr_ecs.changeVisibility(View.GONE)
-                } else if(it.hasProperty("wkt")) {
+                    if(feature.getBooleanProperty("has_evc")) attr_ecs.changeVisibility(View.VISIBLE) else attr_ecs.changeVisibility(View.GONE)
+                } else if(feature.hasProperty("wkt")) {
                     zoneId.text = 999.toString()
                     attr_accessible.changeVisibility(View.VISIBLE)
                     attr_ecs.changeVisibility(View.GONE)
@@ -791,7 +769,6 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
 
     override fun onPause() {
         super.onPause()
-        handler.removeCallbacksAndMessages(null)
         mapView.onPause()
     }
 
