@@ -12,7 +12,8 @@ import androidx.navigation.NavController
 import androidx.navigation.findNavController
 import androidx.navigation.ui.setupWithNavController
 import com.example.smspark.R
-import com.example.smspark.model.changeValue
+import com.example.smspark.model.extentionFunctions.changeValue
+import com.example.smspark.model.extentionFunctions.changeVisibility
 import com.mapbox.android.core.permissions.PermissionsListener
 import com.mapbox.android.core.permissions.PermissionsManager
 import kotlinx.android.synthetic.main.activity_main.*
@@ -41,8 +42,8 @@ class MainActivity : AppCompatActivity(), PermissionsListener {
 
     fun changeNavBarVisibility(visible: Boolean) {
         when(visible) {
-            true -> navigationView.visibility = View.VISIBLE
-            false -> navigationView.visibility = View.GONE
+            true -> navigationView.changeVisibility(View.VISIBLE)
+            false -> navigationView.changeVisibility(View.GONE)
         }
     }
 

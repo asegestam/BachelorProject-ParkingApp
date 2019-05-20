@@ -22,7 +22,7 @@
             android:layout_width="35dp"
             android:layout_height="35dp"
             android:layout_centerVertical="true"
-            android:layout_marginStart="8dp"
+            android:layout_marginStart="4dp"
             android:layout_marginTop="8dp"
             android:layout_marginBottom="8dp"
             app:layout_constraintBottom_toBottomOf="parent"
@@ -30,79 +30,39 @@
             app:layout_constraintTop_toTopOf="parent"
             app:srcCompat="@drawable/park_blue" />
 
+
         <TextView
-            android:id="@+id/dialogZoneName"
+            android:id="@+id/zoneName"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginTop="8dp"
+            android:layout_marginStart="4dp"
             android:layout_marginEnd="8dp"
             android:ellipsize="end"
             android:maxLines="1"
             android:padding="1dp"
             android:text="Centralstationen (långtid)"
             android:textAppearance="@style/TextAppearance.MaterialComponents.Headline6"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/zoneDistance"
+            app:layout_constraintHorizontal_bias="0.25"
             app:layout_constraintStart_toEndOf="@+id/icon"
             app:layout_constraintTop_toTopOf="parent" />
-
-        <TextView
-            android:id="@+id/zoneType"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="5dp"
-            android:padding="1dp"
-            android:text="Zonkod: 3071"
-            app:layout_constraintStart_toStartOf="@+id/dialogZoneName"
-            app:layout_constraintTop_toBottomOf="@+id/dialogZoneName" />
-
-        <TextView
-            android:id="@+id/zoneOwner"
-            android:layout_width="wrap_content"
-            android:layout_height="22dp"
-            android:layout_marginTop="4dp"
-            android:layout_marginBottom="8dp"
-            android:padding="1dp"
-            android:text="EuroPark Svenska AB EPS"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="@+id/zoneType"
-            app:layout_constraintTop_toBottomOf="@+id/zoneType"
-            app:layout_constraintVertical_bias="1.0" />
-
 
         <TextView
             android:id="@+id/zoneDistance"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="8dp"
             android:layout_marginEnd="8dp"
+            android:layout_marginBottom="8dp"
             android:text="500 m"
             android:textAppearance="@style/NotificationTime"
             android:textColor="@color/mapbox_blue"
-            android:textSize="14sp"
+            android:textSize="12sp"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/hide_list_button"
-            style="@style/Widget.MaterialComponents.Button.UnelevatedButton.Icon"
-            android:layout_width="45dp"
-            android:layout_height="0dp"
-            android:layout_marginTop="20dp"
-            android:layout_marginBottom="8dp"
-            android:backgroundTint="@color/colorPrimaryLight"
-            android:textAlignment="textEnd"
-            android:textAllCaps="false"
-            android:textColor="@color/colorPrimary"
-            android:textSize="12sp"
-            app:icon="@drawable/close"
-            app:iconGravity="textStart"
-            app:iconTint="@color/colorPrimaryDark"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/zoneDistance"
-            app:layout_constraintVertical_bias="1.0" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

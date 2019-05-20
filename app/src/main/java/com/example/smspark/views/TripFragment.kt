@@ -13,9 +13,9 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
 import com.example.smspark.R
-import com.example.smspark.model.GeometryUtils
-import com.example.smspark.model.changeValue
-import com.example.smspark.model.observeOnce
+import com.example.smspark.model.extentionFunctions.changeValue
+import com.example.smspark.model.extentionFunctions.changeVisibility
+import com.example.smspark.model.extentionFunctions.getGeometryPoint
 import com.example.smspark.viewmodels.RouteViewModel
 import com.example.smspark.viewmodels.SelectedZoneViewModel
 import com.example.smspark.viewmodels.ZonePreferencesViewModel
@@ -27,6 +27,7 @@ import com.jaygoo.widget.OnRangeChangedListener
 import com.jaygoo.widget.RangeSeekBar
 import com.mapbox.api.geocoding.v5.models.CarmenFeature
 import com.mapbox.geojson.Feature
+import com.mapbox.geojson.Geometry
 import com.mapbox.geojson.Point
 import com.mapbox.mapboxsdk.plugins.places.autocomplete.model.PlaceOptions
 import com.mapbox.mapboxsdk.plugins.places.autocomplete.ui.PlaceAutocompleteFragment
@@ -51,6 +52,8 @@ class TripFragment : Fragment() {
     private val routeViewModel: RouteViewModel by sharedViewModel()
     private val selectedZoneViewModel: SelectedZoneViewModel by sharedViewModel()
     private val zonePreferencesViewModel: ZonePreferencesViewModel by sharedViewModel()
+    private val bundle = Bundle()
+
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View? {
@@ -147,8 +150,8 @@ class TripFragment : Fragment() {
         fromPoint = carmenFeature.geometry() as Point
         fromLocation.text = carmenFeature.text()
         myLocation.visibility = View.INVISIBLE
-        clearText.visibility = View.VISIBLE
-        if (checkInputs()) next_btn.visibility = View.VISIBLE
+        clearText.changeVisibility(View.VISIBLE)
+        if (checkInputs()) next_btn.changeVisibility(View.VISIBLE)
     }
 
     /** Handles the to location part of the search
@@ -157,28 +160,30 @@ class TripFragment : Fragment() {
     private fun handleToLocation(carmenFeature: CarmenFeature) {
         toPoint = carmenFeature.geometry() as Point
         toLocation.text = carmenFeature.text()
-        if (checkInputs()) next_btn.visibility = View.VISIBLE
+        bundle.putString("destination" , carmenFeature.text())
+        if (checkInputs()) next_btn.changeVisibility(View.VISIBLE)
     }
 
     private fun initObservables() {
-        zoneViewModel.getStandardZones().observe(this, Observer { zones ->
+        zoneViewModel.standardZones().observe(this, Observer { zones ->
             if(listeningForUpdates) {
-                if (zones.isNotEmpty() && !accessibleSwitch.isChecked) {
-                    selectZone(zones)
+                if (zones.isNotEmpty()) {
+                   if(!accessibleSwitch.isChecked) selectZone(zones)
                 } else showNoZoneFound()
             }
         })
 
-        zoneViewModel.getAccessibleZones().observe(this, Observer { zones ->
+        zoneViewModel.accessibleZones().observe(this, Observer { zones ->
             if(listeningForUpdates) {
-                if (zones.isNotEmpty() && accessibleSwitch.isChecked) {
-                    selectZone(zones)
+                if (zones.isNotEmpty()) {
+                    if(accessibleSwitch.isChecked) selectZone(zones)
                 } else showNoZoneFound()
             }
         })
         routeViewModel.routeMap.observe(this, Observer {
             if (it.count() >= 2 && checkInputs()) {
-                findNavController().navigate(R.id.action_tripFragment_to_mapFragment)
+                bundle.putBoolean("showAccessible", accessibleSwitch.isChecked)
+                findNavController().navigate(R.id.action_tripFragment_to_mapFragment, bundle)
             }
         })
         zonePreferencesViewModel.showAccessibleZones.observe(this, Observer { showAccessibleZones ->
@@ -210,24 +215,23 @@ class TripFragment : Fragment() {
                 snackBar.dismiss()
             }
             show()
-            progressBar.visibility = View.GONE
+            progressBar.changeVisibility(View.GONE)
         }
     }
 
     private fun selectZoneGetRoute(zone: Feature?) {
-        zone?.let {
-            selectedZoneViewModel.selectedZone.changeValue(zone)
-        }
+        zone?.let { selectedZoneViewModel.selectedZone.changeValue(zone)}
         routeViewModel.destination.changeValue(toPoint)
-        routeViewModel.getWayPointRoute(origin = fromPoint, wayPoint = geometryUtils.getGeometryPoint(zone?.geometry()), destination = toPoint)
-        progressBar.visibility = View.VISIBLE
+        val point = zone?.geometry() as Geometry
+        routeViewModel.getWayPointRoute(origin = fromPoint, wayPoint = point.getGeometryPoint(), destination = toPoint)
+        progressBar.changeVisibility(View.VISIBLE)
     }
 
     private fun getZones() {
         if (checkInputs()) {
-            progressBar.visibility = View.VISIBLE
+            progressBar.changeVisibility(View.VISIBLE)
             listeningForUpdates = true
-            zoneViewModel.getSpecificZones(toPoint.latitude(), toPoint.longitude(), distance, fetchAccessible = accessibleSwitch.isChecked)
+            zoneViewModel.getSpecificZones(toPoint.latitude(), toPoint.longitude(), distance)
         }
     }
 
@@ -258,9 +262,9 @@ class TripFragment : Fragment() {
         }
         clearText.setOnClickListener {
             fromLocation.text = ""
-            clearText.visibility = View.GONE
-            myLocation.visibility = View.VISIBLE
-            next_btn.visibility = View.GONE
+            clearText.changeVisibility(View.GONE)
+            myLocation.changeVisibility(View.VISIBLE)
+            next_btn.changeVisibility(View.GONE)
         }
     }
 
@@ -271,8 +275,8 @@ class TripFragment : Fragment() {
                         fromLocation.text = getString(R.string.nuvarande_plats)
                         fromPoint = Point.fromLngLat(location.longitude, location.latitude)
                         myLocation.visibility = View.INVISIBLE
-                        clearText.visibility = View.VISIBLE
-                        if (checkInputs()) next_btn.visibility = View.VISIBLE
+                        clearText.changeVisibility(View.VISIBLE)
+                        if (checkInputs()) next_btn.changeVisibility(View.VISIBLE)
                     }
                 }
     }
@@ -285,12 +289,12 @@ class TripFragment : Fragment() {
             }
 
             override fun onStartTrackingTouch(view: RangeSeekBar, isLeft: Boolean) {
-                distanceText.visibility = View.GONE
+                distanceText.changeVisibility(View.GONE)
             }
 
             override fun onStopTrackingTouch(view: RangeSeekBar, isLeft: Boolean) {
                 distanceText.text = "$distance m"
-                distanceText.visibility = View.VISIBLE
+                distanceText.changeVisibility(View.VISIBLE)
             }
         })
     }
@@ -319,12 +323,8 @@ class TripFragment : Fragment() {
     /** Swaps the content of the textviews
      * fromLocation text becomes toLocation text and vice versa*/
     private fun swapLocations() {
-        val tempText = fromLocation.text
-        val tempPoint = fromPoint
-        fromLocation.text = toLocation.text
-        toLocation.text = tempText
-        fromPoint = toPoint
-        toPoint = tempPoint
+        fromLocation.text = toLocation.text.also { toLocation.text = fromLocation.text }
+        fromPoint = toPoint.also { toPoint = fromPoint }
     }
 
     /** Checks if the TextViews has inputs */
@@ -332,13 +332,12 @@ class TripFragment : Fragment() {
 
     companion object {
         const val TAG: String = "TripFragment"
-        val geometryUtils = GeometryUtils()
     }
 
     override fun onPause() {
         removeAutoCompleteFragment()
-        zoneViewModel.getStandardZones().removeObservers(this)
-        zoneViewModel.getAccessibleZones().removeObservers(this)
+        zoneViewModel.standardZones().removeObservers(this)
+        zoneViewModel.accessibleZones().removeObservers(this)
         super.onPause()
     }
 }

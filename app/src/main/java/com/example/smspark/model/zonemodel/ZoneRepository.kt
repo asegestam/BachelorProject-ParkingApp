@@ -5,11 +5,11 @@ import com.mapbox.geojson.Feature
 
 interface ZoneRepository {
 
-    fun getStandardZones() : LiveData<List<Feature>>
+    fun standardZones() : LiveData<List<Feature>>
 
-    fun getAccessibleZones() : LiveData<List<Feature>>
+    fun accessibleZones() : LiveData<List<Feature>>
 
-    fun getSpecificZones(latitude: Double, longitude: Double, radius: Int, fetchAccessible: Boolean = false)
+    suspend fun getSpecificZones(latitude: Double, longitude: Double, radius: Int, getAccessible: Boolean)
 
-    fun getAccessibleZones(latitude: Double, longitude: Double, radius: Int)
+    fun clearAccessibleZones()
 }

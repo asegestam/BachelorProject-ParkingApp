@@ -3,10 +3,9 @@ package com.example.smspark.model.routemodel
 import android.content.Context
 import android.util.Log
 import androidx.lifecycle.MutableLiveData
-import com.example.smspark.model.changeValue
+import com.example.smspark.model.extentionFunctions.changeValue
 import com.mapbox.api.directions.v5.models.DirectionsResponse
 import com.mapbox.api.directions.v5.models.DirectionsRoute
-import com.mapbox.geojson.Feature
 import com.mapbox.geojson.Point
 import com.mapbox.mapboxsdk.Mapbox
 import com.mapbox.services.android.navigation.v5.navigation.NavigationRoute
@@ -29,7 +28,7 @@ class RouteRepository(val context: Context): KoinComponent {
      * @param start Start location of the route, usually the user location
      * @param parking A stop point in the route between start and destination
      * @param destination Final destination of the route*/
-    fun getRoutes(start: Point, parking: Point, destination: Point, profile: String = "driving") {
+    fun getRoutes(start: Point, parking: Point, destination: Point, profile: String = "driving-traffic") {
         getRouteBuilder(start, parking, destination, profile).build().getRoute(object : Callback<DirectionsResponse> {
             override fun onResponse(call: Call<DirectionsResponse>, response: Response<DirectionsResponse>) {
                 if (response.body() == null) {

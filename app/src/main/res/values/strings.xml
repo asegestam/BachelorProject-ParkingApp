@@ -1,5 +1,5 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <string name="app_name">My Application</string>
+    <string name="app_name">ParKing Ultimate</string>
     <string name="title_activity_maps" tools:keep="@string/title_activity_maps">Map</string>
     <string name="title_activity_main" tools:keep="@string/title_activity_main">MainActivity</string>
     <string name="access_token">pk.eyJ1IjoiYXNlZ2VzdGFtIiwiYSI6ImNqc214azFsbjA1c280M3BlZHk3emVwMmQifQ.-3503vKfLt3L0dhTSol2ew</string>
@@ -9,7 +9,9 @@
     //Buttons
     <string name="startNavigation">Start</string>
     <string name="streets_parking">mapbox://styles/asegestam/cjtn640k420wp1fo9mu5fh2k3</string>
-    <string name="streets_parking_debug" tools:keep="@string/streets_parking_debug">mapbox://styles/asegestam/cjt048qko06vw1fmtf8t9rv4n</string>
+    <string name="minimalist_light">mapbox://styles/asegestam/cjvmsns990nf41doblv9lfo8n</string>
+    <string name="minimalist_dark">mapbox://styles/asegestam/cjvk2lah110uk1cmm5mr450cj</string>
+    <string name="navigation_day">mapbox://styles/asegestam/cjvmsurtn0lp41cn8c2uxb27z</string>
 
     //App_code
     <string name="app_code" tools:keep="@string/app_code">38cd95124d0c4c4045550a90664ec77a</string>
@@ -23,7 +25,7 @@
     <string name="zon_kod" tools:keep="@string/zon_kod">Zonkod&#160;</string>
     <string name="list_of_zones" tools:keep="@string/list_of_zones">List of Zones</string>
 
-    <string name="search">Search</string>
+    <string name="search">Sök</string>
     <string name="list" tools:keep="@string/list">List of Zones</string>
     <string name="trip">Trip</string>
     <string name="profile">Profile</string>
@@ -58,6 +60,9 @@
     <string name="alternativ">Alternativ</string>
     <string name="s_k_resa">Sök resa</string>
     <string name="fortsatt" tools:keep="@string/fortsatt">Fortsätt</string>
+    <string name="searchHint">Address/Område/Plats</string>
+
+    <string name="failed_finding_new_parking">"Kunde inte hitta någon ny parkering tyvärr"</string>
 
 
 </resources>

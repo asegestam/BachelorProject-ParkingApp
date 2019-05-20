@@ -10,7 +10,7 @@
     >
 
     <androidx.constraintlayout.widget.ConstraintLayout
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="match_parent">
         <com.mapbox.mapboxsdk.maps.MapView
             android:id="@+id/mapView"
@@ -30,16 +30,35 @@
             mapbox:mapbox_uiAttribution="false"
             />
 
+        <androidx.cardview.widget.CardView
+            android:id="@+id/searchBar"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="16dp"
+            mapbox:layout_constraintEnd_toEndOf="parent"
+            mapbox:layout_constraintStart_toStartOf="parent"
+            mapbox:layout_constraintTop_toTopOf="parent"
+            android:elevation="24dp"
+            mapbox:cardCornerRadius="12dp"
+            android:foreground="?android:attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true">
+            <include layout="@layout/search_bar"/>
+        </androidx.cardview.widget.CardView>
+
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recycler_view"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="top"
+            android:layout_marginStart="10dp"
             android:layout_marginTop="8dp"
             android:clickable="true"
             android:visibility="gone"
             android:focusable="true"
-            mapbox:layout_constraintTop_toTopOf="@id/mapView"
+            mapbox:layout_constraintTop_toBottomOf="@+id/searchBar"
             tools:listitem="@layout/list_item" />
 
         <ProgressBar
@@ -71,32 +90,65 @@
             android:id="@+id/my_locationFab"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginEnd="24dp"
+            android:layout_marginEnd="16dp"
             android:layout_marginBottom="16dp"
             android:elevation="8dp"
             android:src="@drawable/my_location"
             mapbox:backgroundTint="@color/colorPrimaryLight"
-            mapbox:fabSize="mini"
-            mapbox:layout_constraintBottom_toTopOf="@+id/fab_search"
-            mapbox:layout_constraintEnd_toEndOf="parent"
-            mapbox:layout_constraintStart_toStartOf="@+id/fab_search"
-            mapbox:layout_dodgeInsetEdges="all"
-            mapbox:rippleColor="@color/colorPrimaryDark" />
-
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/fab_search"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="16dp"
-            android:layout_marginBottom="12dp"
-            android:elevation="8dp"
-            android:src="@drawable/ic_search_black_24dp"
-            mapbox:backgroundTint="@color/colorPrimaryLight"
+            mapbox:fabSize="normal"
             mapbox:layout_constraintBottom_toBottomOf="parent"
             mapbox:layout_constraintEnd_toEndOf="parent"
             mapbox:layout_dodgeInsetEdges="all"
             mapbox:rippleColor="@color/colorPrimaryDark" />
+
+
+        <com.github.clans.fab.FloatingActionMenu
+            android:id="@+id/fab_menu"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="20dp"
+            android:layout_marginBottom="8dp"
+            mapbox:layout_constraintBottom_toTopOf="@+id/my_locationFab"
+            mapbox:layout_constraintEnd_toEndOf="parent"
+            mapbox:layout_dodgeInsetEdges="all"
+            mapbox:menu_colorNormal="@color/colorPrimaryLight"
+            mapbox:menu_colorRipple="@color/colorPrimary"
+            mapbox:menu_colorPressed="@color/colorPrimary"
+            mapbox:menu_fab_size="mini"
+            mapbox:menu_icon="@drawable/add_icon">
+
+            <com.github.clans.fab.FloatingActionButton
+                android:id="@+id/ecs_fab"
+                style="@style/MenuButtonInactive"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ecs_icon_white"
+                mapbox:fab_label="Laddningstationer"/>
+
+            <com.github.clans.fab.FloatingActionButton
+                android:id="@+id/accessible_fab"
+                style="@style/MenuButtonInactive"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                mapbox:fab_label="För funktionshindrade"/>
+
+            <com.github.clans.fab.FloatingActionButton
+                android:id="@+id/parking_fab"
+                style="@style/MenuButtonsSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/parking_icon"
+                mapbox:fab_label="Parkeringar"/>
+
+            <com.github.clans.fab.FloatingActionButton
+                android:id="@+id/list_fab"
+                style="@style/MenuButtonsSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/view_list_icon"
+                mapbox:fab_label="Lista"/>
+
+        </com.github.clans.fab.FloatingActionMenu>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/startNavigationButton"
@@ -105,15 +157,15 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
             android:layout_marginBottom="12dp"
-            mapbox:layout_constraintBottom_toBottomOf="parent"
-            mapbox:layout_constraintStart_toStartOf="parent"
-            mapbox:rippleColor="@color/colorPrimaryDark"
-            mapbox:elevation="8dp"
-            mapbox:cornerRadius="20dp"
             android:backgroundTint="@color/colorAccentLight"
             android:text="@string/startNavigation"
+            android:visibility="gone"
+            mapbox:cornerRadius="20dp"
+            mapbox:elevation="8dp"
             mapbox:icon="@drawable/navigation_icon"
-            android:visibility="gone"/>
+            mapbox:layout_constraintBottom_toBottomOf="parent"
+            mapbox:layout_constraintStart_toStartOf="parent"
+            mapbox:rippleColor="@color/colorPrimaryDark" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <include

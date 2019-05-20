@@ -20,6 +20,8 @@ class RouteViewModel(private val repo: RouteRepository) : ViewModel() {
 
     val routeMap: MutableLiveData<HashMap<String, DirectionsRoute>> = repo.routeMap
 
+    val navigationRouteMap: MutableLiveData<HashMap<String, DirectionsRoute>> = repo.routeMap
+
     fun getWayPointRoute(origin: Point, wayPoint: Point, destination: Point) {
         return repo.getRoutes(origin, wayPoint, destination)
     }

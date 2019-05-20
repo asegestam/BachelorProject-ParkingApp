@@ -10,16 +10,21 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.smspark.R
+import com.example.smspark.model.extentionFunctions.changeVisibility
+import com.example.smspark.viewmodels.TicketViewModel
 import com.google.android.material.snackbar.Snackbar
+import com.mapbox.geojson.Feature
 import com.mapbox.geojson.FeatureCollection
-import kotlinx.android.synthetic.main.current_ticket.*
+import kotlinx.android.synthetic.main.active_ticket_cardview.*
 import kotlinx.android.synthetic.main.fragment_tickets.*
+import org.koin.android.viewmodel.ext.android.sharedViewModel
 
 class TicketsFragment : Fragment() {
 
     //RecyclerView fields
     private lateinit var recyclerView: RecyclerView
     private lateinit var ticketAdapter: TicketAdapter
+    private val ticketViewModel: TicketViewModel by sharedViewModel()
 
     //Used to mimic if a parking is active or not
     private var parkingIsActive : Boolean = false
@@ -32,21 +37,54 @@ class TicketsFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        showNavbar()
         initRecyclerView()
+        initObservables()
+        initClicklisteners()
+    }
+
+    private fun showNavbar(){
+        val activity = activity as MainActivity
+        activity.changeNavBarVisibility(true)
+    }
+
+    private fun initObservables(){
+        ticketViewModel.activeParking.observe(this, androidx.lifecycle.Observer {
+            if (it.first)
+                activateParkingCard(it.second)
+            else
+                deactivateParkingCard()
+        })
+    }
+
+    private fun initClicklisteners(){
         parkingCardView.setOnClickListener {
             if(parkingIsActive){
                 parkingCardView.setCardBackgroundColor(ContextCompat.getColor(context!!, R.color.colorPrimaryLight))
                 parkingIsActive = false
-                parkingText.text = "Inga Aktiva Parkeringar"
                 Toast.makeText(context, "Parkering är ej aktiv", Toast.LENGTH_SHORT).show()
             }else{
                 parkingCardView.setCardBackgroundColor(ContextCompat.getColor(context!!, R.color.colorSuccess))
                 parkingIsActive = true
-                parkingText.text = "Parkering Aktiv"
                 Toast.makeText(context, "Parkering är aktiv", Toast.LENGTH_SHORT).show()
             }
         }
+    }
 
+    private fun activateParkingCard(feature: Feature){
+        //TODO make a new layout for the cardview and update it here for the user
+        parkingCardView.setCardBackgroundColor(ContextCompat.getColor(context!!, R.color.colorSuccess))
+        val zoneCode = feature.getStringProperty("zonecode")?.toInt() ?: 999
+        activeTicketZoneName.text = feature.getStringProperty("zone_name")
+        activeTicketZoneCode.text = zoneCode.toString()
+        ticketStartingTime.text = feature.getStringProperty("parking_time_started").replace(":(?<=:)[^:]*\$".toRegex(), "")
+        parkingCardView.changeVisibility(View.VISIBLE)
+
+    }
+
+    private fun deactivateParkingCard(){
+        //TODO when the new layout is made create a view which says "Ingen parkering Aktiv" and add the old parking to the recyclerview for old parking tickets
+        parkingCardView.setCardBackgroundColor(ContextCompat.getColor(context!!, R.color.colorPrimaryLight))
     }
 
     private fun returnFeatureCollection() : FeatureCollection {
