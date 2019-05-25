@@ -43,6 +43,7 @@ dependencies {
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.2.1'
 
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle_version"
+    implementation "androidx.lifecycle:lifecycle-livedata-ktx:$lifecycle_version"
     //Mapbox
     implementation 'com.mapbox.mapboxsdk:mapbox-android-sdk:7.5.0-beta.1'
     implementation 'com.mapbox.mapboxsdk:mapbox-android-plugin-localization-v7:0.9.0'

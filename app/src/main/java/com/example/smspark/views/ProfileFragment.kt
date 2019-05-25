@@ -3,12 +3,12 @@ package com.example.smspark.views
 
 import android.content.Context
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
+import androidx.fragment.app.Fragment
 import com.example.smspark.R
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.snackbar.Snackbar
@@ -17,7 +17,6 @@ import kotlinx.android.synthetic.main.user_info_edit.view.*
 
 
 class ProfileFragment : Fragment() {
-
 
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
@@ -57,18 +56,14 @@ class ProfileFragment : Fragment() {
     }
 
     private fun initButtons(){
-
         infoImageViewIcon.setOnClickListener {
-            //TODO create popup dialog stating the cost of "pappersfaktura"
             showSnackBar("Pris för pappersfaktura är 25kr.")
         }
 
         paymentChangeButton.setOnClickListener {
-            //TODO create UI för chaning or handling payment methods
         }
 
         userInfoChangeButton.setOnClickListener {
-            //TODO craete UI and handle change to user information
             showPopupDialog()
         }
     }
@@ -108,10 +103,4 @@ class ProfileFragment : Fragment() {
         setUserInfo(view.phoneNrEditText.text.toString(), view.emailEditText.text.toString(), view.addressEditText.text.toString())
     }
 
-
-
-//TODO Lägg till en knapp för att rensa sök historiken
-    companion object {
-        const val TAG : String = "ProfileFragment"
-    }
 }

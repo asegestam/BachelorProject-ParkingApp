@@ -68,9 +68,4 @@ class MainActivity : AppCompatActivity(), PermissionsListener {
             permissionsManager.requestLocationPermissions(this)
         }
     }
-
-
-    companion object {
-        private const val TAG = "MainActivity"
-    }
 }

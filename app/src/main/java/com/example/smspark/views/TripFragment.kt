@@ -10,7 +10,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.Observer
+import androidx.lifecycle.observe
 import androidx.navigation.fragment.findNavController
 import com.example.smspark.R
 import com.example.smspark.model.extentionFunctions.changeValue
@@ -121,7 +121,6 @@ class TripFragment : Fragment() {
         activity?.supportFragmentManager?.let {
             val fragment = getActiveAutoCompleteFragment()
             if (fragment != null) {
-                Log.d(TAG, "removing fragment$fragment")
                 val transaction = it.beginTransaction()
                 transaction.remove(fragment)
                 transaction.commit()
@@ -137,7 +136,6 @@ class TripFragment : Fragment() {
         return toFragment ?: fromFragment
     }
 
-    @SuppressLint("MissingPermission")
     private fun initComponents() {
         initButtons()
         initObservables()
@@ -165,34 +163,32 @@ class TripFragment : Fragment() {
     }
 
     private fun initObservables() {
-        zoneViewModel.standardZones().observe(this, Observer { zones ->
+        zoneViewModel.standardZones().observe(this){ zones ->
             if(listeningForUpdates) {
                 if (zones.isNotEmpty()) {
                    if(!accessibleSwitch.isChecked) selectZone(zones)
                 } else showNoZoneFound()
             }
-        })
-
-        zoneViewModel.accessibleZones().observe(this, Observer { zones ->
+        }
+        zoneViewModel.accessibleZones().observe(this) { zones ->
             if(listeningForUpdates) {
                 if (zones.isNotEmpty()) {
                     if(accessibleSwitch.isChecked) selectZone(zones)
                 } else showNoZoneFound()
             }
-        })
-        routeViewModel.routeMap.observe(this, Observer {
+        }
+        routeViewModel.routeMap.observe(this) {
             if (it.count() >= 2 && checkInputs()) {
                 bundle.putBoolean("showAccessible", accessibleSwitch.isChecked)
                 findNavController().navigate(R.id.action_tripFragment_to_mapFragment, bundle)
             }
-        })
-        zonePreferencesViewModel.showAccessibleZones.observe(this, Observer { showAccessibleZones ->
+        }
+        zonePreferencesViewModel.showAccessibleZones.observe(this){ showAccessibleZones ->
             if(showAccessibleZones) accessibleSwitch.isChecked = true
-        })
-        zonePreferencesViewModel.showEcsZones.observe(this, Observer { showEcsZones ->
+        }
+        zonePreferencesViewModel.showEcsZones.observe(this){ showEcsZones ->
             if(showEcsZones) ecsSwitch.isChecked = true
-        })
-
+        }
     }
 
     /** Selects first zone in the list of features given
@@ -312,12 +308,6 @@ class TripFragment : Fragment() {
                 false -> zonePreferencesViewModel.showEcsZones.changeValue(false)
             }
         }
-        priceSwitch.setOnCheckedChangeListener { _, isChecked ->
-            when(isChecked){
-                //TODO sätt nån variabel i en viewmodel
-            }
-        }
-
     }
 
     /** Swaps the content of the textviews
@@ -330,14 +320,15 @@ class TripFragment : Fragment() {
     /** Checks if the TextViews has inputs */
     private fun checkInputs(): Boolean = !toLocation.text.isNullOrEmpty() && !fromLocation.text.isNullOrEmpty()
 
-    companion object {
-        const val TAG: String = "TripFragment"
-    }
-
     override fun onPause() {
         removeAutoCompleteFragment()
         zoneViewModel.standardZones().removeObservers(this)
         zoneViewModel.accessibleZones().removeObservers(this)
         super.onPause()
     }
+
+    companion object {
+        const val TAG: String = "TripFragment"
+    }
+
 }

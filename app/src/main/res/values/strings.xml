@@ -9,8 +9,6 @@
     //Buttons
     <string name="startNavigation">Start</string>
     <string name="streets_parking">mapbox://styles/asegestam/cjtn640k420wp1fo9mu5fh2k3</string>
-    <string name="minimalist_light">mapbox://styles/asegestam/cjvmsns990nf41doblv9lfo8n</string>
-    <string name="minimalist_dark">mapbox://styles/asegestam/cjvk2lah110uk1cmm5mr450cj</string>
     <string name="navigation_day">mapbox://styles/asegestam/cjvmsurtn0lp41cn8c2uxb27z</string>
 
     //App_code
@@ -19,7 +17,6 @@
     <string name="selected_place_info" tools:keep="@string/selected_place_info">Selected location information:\n%1$s</string>
     <string name="geojson_string" tools:keep="@string/geojson_string">{ \"type\": \"FeatureCollection\", \"features\":</string>
 
-    <string name="select_zone">Välj en Zon!</string>
     <string name="vald_zon" tools:keep="@string/vald_zon">Vald Zon</string>
     <string name="start_navigation" tools:keep="@string/start_navigation">START NAVIGATION</string>
     <string name="zon_kod" tools:keep="@string/zon_kod">Zonkod&#160;</string>

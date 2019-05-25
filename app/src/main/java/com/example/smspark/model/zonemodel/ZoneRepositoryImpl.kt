@@ -15,23 +15,25 @@ import org.koin.core.inject
 @SuppressLint("LogNotTimber")
 class ZoneRepositoryImpl: ZoneRepository, KoinComponent {
 
-    private val TAG  = "ZoneRepositoryImpl"
+    // Lazy inject on the WebService
     private val service: ZoneService by inject()
 
-    override fun standardZones(): LiveData<List<Feature>> {
-        return standardZones
-    }
-
-    override fun accessibleZones(): LiveData<List<Feature>> {
-        return accessibleZones
-    }
-
+    /** Used to store parking zones from SMSPark API */
     private val standardZones: MutableLiveData<List<Feature>> by lazy {
         MutableLiveData<List<Feature>>()
     }
-
+    /** Used to store parking zones from Göteborg API */
     private val accessibleZones: MutableLiveData<List<Feature>> by lazy {
         MutableLiveData<List<Feature>>()
+    }
+
+    /** Used to return stored parking zones from SMSPark API */
+    override fun standardZones(): LiveData<List<Feature>> {
+        return standardZones
+    }
+    /** Used to return stored parking zones from Göteborg API */
+    override fun accessibleZones(): LiveData<List<Feature>> {
+        return accessibleZones
     }
 
     /** Fetches zones from an REST API around a specific LatLong with a fixes radius
@@ -44,6 +46,7 @@ class ZoneRepositoryImpl: ZoneRepository, KoinComponent {
         val standardZoneResult = service.getSpecificZonesAsync(latitude, longitude, radius).await()
         val accessibleZoneResult = service.getHandicapZonesAsync(latitude, longitude, radius).await()
         if(standardZoneResult.isSuccessful && accessibleZoneResult.isSuccessful ) {
+            //results is successful, get the result bodies and create list of Features
             val standardZonesBody = standardZoneResult.body()
             val accessibleZonesBody = accessibleZoneResult.body()
             val standardFeatures = createStandardZoneFeatures(standardZonesBody)
@@ -53,6 +56,7 @@ class ZoneRepositoryImpl: ZoneRepository, KoinComponent {
         }  else Log.e("ZoneRepository", "Exception ${standardZoneResult.code()}")
     }
 
+    /** Creates a list of Features of given Zone Object */
     private fun createStandardZoneFeatures(responseBody: Zone?): ArrayList<Feature> {
         val gson = GsonBuilder().setLenient().create()
         val featuresJson = gson.toJson(responseBody)
@@ -64,6 +68,7 @@ class ZoneRepositoryImpl: ZoneRepository, KoinComponent {
         return arrayListOf()
     }
 
+    /** Creates a list of Features of given list of Handicap Objects */
     private fun createAccessibleZoneFeatures(responseBody: List<Handicap>?): ArrayList<Feature> {
         if (!responseBody.isNullOrEmpty()) {
             val features = ArrayList<Feature>()

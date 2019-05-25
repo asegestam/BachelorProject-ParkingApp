@@ -3,7 +3,6 @@ package com.example.smspark.views
 import android.app.AlertDialog
 import android.location.Location
 import android.os.Bundle
-import android.os.Handler
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -13,7 +12,7 @@ import android.widget.Spinner
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.Observer
+import androidx.lifecycle.observe
 import androidx.navigation.fragment.findNavController
 import com.example.smspark.R
 import com.example.smspark.model.extentionFunctions.changeValue
@@ -36,6 +35,9 @@ import com.mapbox.services.android.navigation.v5.offroute.OffRouteListener
 import com.mapbox.services.android.navigation.v5.routeprogress.ProgressChangeListener
 import com.mapbox.services.android.navigation.v5.routeprogress.RouteProgress
 import kotlinx.android.synthetic.main.fragment_navigation.*
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.koin.android.viewmodel.ext.android.sharedViewModel
 import java.time.LocalTime
 
@@ -50,13 +52,9 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
     private val zoneViewModel: ZoneViewModel by sharedViewModel()
     private val ticketViewModel: TicketViewModel by sharedViewModel()
     private lateinit var parkingFeatures: ArrayList<Feature>
-    private val handler: Handler = Handler()
     private lateinit var destinationRoute: DirectionsRoute
     private lateinit var waypointRoute: DirectionsRoute
     private var observingForUpdate = false
-    private var startdialog = true
-
-
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View? {
@@ -75,13 +73,16 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
         setupForNavigation()
     }
 
+    /** Called when NavigationView is ready */
     override fun onNavigationReady(isRunning: Boolean) {
-        routeViewModel.routeDestination.observe(this, Observer {
+        routeViewModel.routeDestination.observe(this) {
             navigationView.drawRoute(it)
             startNavigation(it)
-        })
+        }
     }
 
+    /** Store wanted variables from ViewModel into local variables
+     * Remove the selected zone from the parking list, so that the reroute does not reroute to the same zone */
     private fun setupForNavigation() {
         routeViewModel.routeDestination.value?.let {route -> destinationRoute = route }
         routeViewModel.routeWayPoint.value?.let {route -> waypointRoute = route }
@@ -90,7 +91,7 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
     }
 
     private fun setupObserver() {
-        routeViewModel.navigationRouteMap.observe(this, Observer { hashMap ->
+        routeViewModel.navigationRouteMap.observe(this) { hashMap ->
             if (hashMap.count() >= 2 && observingForUpdate) {
                 routingToDestination = false
                 //clear markers
@@ -102,7 +103,7 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
                 }
                 hashMap["walking"]?.let { route -> destinationRoute = route }
             }
-        })
+        }
     }
     /** Starts the navigation and sets up the correct Listeners */
     private fun startNavigation(route: DirectionsRoute) {
@@ -171,6 +172,7 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
         }
     }
 
+    /** Creates the dialog view from a custom XML and sets the correct information */
     private fun createDialogView(): View {
         val inflater = activity?.layoutInflater
         val dialogView = inflater?.inflate(R.layout.start_parking_dialog, null)
@@ -188,6 +190,7 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
         return dialogView
     }
 
+    /** Creates the dialog view from a custom XML and sets the correct information */
     private fun createNewParkingDialog(): View {
         val inflater = activity?.layoutInflater
         val dialogView = inflater?.inflate(R.layout.full_parking_dialog, null)
@@ -235,8 +238,26 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
         }
         snackbar.show()
     }
+
+    /** Called when the user is arriving to a destination, if destination is a parking spot, then show parking dialog
+     *  if it is the final destination, show a arrived message and navigate to the TicketFragment
+     */
+    override fun onArrival() {
+        if(!routingToDestination) {
+            navigationView.stopNavigation()
+            showParkingDialog()
+        } else {
+            navigationView.stopNavigation()
+            showSnackBar(R.string.destination_arrival, R.color.colorAccentLight, Snackbar.LENGTH_INDEFINITE, true)
+            //After some time we want to send the user to the tickets fragment where the visualization of the ongoing parking is showed
+            GlobalScope.launch {
+                delay(3000)
+                findNavController().navigate(R.id.action_navigationFragment_to_ticketsFragment)
+            }
+        }
+        Log.d("NavigationFragment", "Arrived")
+    }
     override fun onNavigationFinished() {
-        Log.d("NavigationFragment", "Route FINISHED!!")
     }
 
     override fun onNavigationRunning() {
@@ -246,7 +267,6 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
         findNavController().navigate(R.id.navigation_to_map)
     }
 
-    /** Handles Progress Change along the route */
     override fun onProgressChange(location: Location?, routeProgress: RouteProgress?) {
 
     }
@@ -262,22 +282,6 @@ class NavigationFragment : Fragment(), OnNavigationReadyCallback, NavigationList
     }
 
     override fun onOffRoute(offRoutePoint: Point?) {
-    }
-
-    override fun onArrival() {
-        if(!routingToDestination) {
-            navigationView.stopNavigation()
-            showParkingDialog()
-        } else {
-            navigationView.stopNavigation()
-            showSnackBar(R.string.destination_arrival, R.color.colorAccentLight, Snackbar.LENGTH_INDEFINITE, true)
-
-            //After some time we want to send the user to the tickets fragment where the visualization of the ongoing parking is showed
-            handler.postDelayed({
-                findNavController().navigate(R.id.action_navigationFragment_to_ticketsFragment)
-            }, 4000)
-        }
-        Log.d("NavigationFragment", "Arrived")
     }
 
     override fun userOffRoute(location: Location?) {

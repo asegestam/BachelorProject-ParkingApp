@@ -26,7 +26,6 @@ class TravelCalcImpl: TravelCalc, KoinComponent {
     private fun formatTime(duration: Double): String {
         return when {
             duration > 60 -> TimeUnit.SECONDS.toMinutes(duration.toLong()).toInt().toString() + " min"
-           // duration > 3600 -> TimeUnit.SECONDS.toHours(duration.toLong()).toString() + " h" + TimeUnit.SECONDS.toMinutes(duration.toLong()).toInt().toString() + " min"
             else -> "$duration s"
         }
     }

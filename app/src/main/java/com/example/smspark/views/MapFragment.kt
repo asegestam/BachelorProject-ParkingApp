@@ -12,6 +12,7 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
+import androidx.lifecycle.observe
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -150,7 +151,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
     private fun setupObservers() {
         mainActivity.locationPermissionGranted.observeOnce(this, Observer { granted -> if(granted) enableLocationComponent(getMapStyle()!!) })
         //Observe parking zones, if changed, add them to the map and to the RecyclerView.
-        zoneViewModel.standardZones().observe(this, Observer { zones ->
+        zoneViewModel.standardZones().observe(this) { zones ->
             if (zones.isNotEmpty()) {
                 addZonesToMap(zones)
                 addToRecyclerView(zones)
@@ -160,9 +161,8 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
                 zoneAdapter.removeAccessibleZonesFromList()
                 zoneAdapter.clearAccessibleZones()
             }
-        })
-
-        zoneViewModel.accessibleZones().observe(this, Observer { zones ->
+        }
+        zoneViewModel.accessibleZones().observe(this){ zones ->
             addMarkersToMap(FeatureCollection.fromFeatures(zones), true)
             if (zones.isNotEmpty() && zonePreferences.showAccessibleZones.value!!) {
                 addToRecyclerView(zones)
@@ -170,9 +170,9 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
                 zoneAdapter.removeAccessibleZonesFromList()
                 zoneAdapter.clearAccessibleZones()
             }
-        })
+        }
 
-        zonePreferences.showAccessibleZones.observe(this, Observer { show ->
+        zonePreferences.showAccessibleZones.observe(this) { show ->
             if(show) {
                zoneViewModel.accessibleZones().value?.let {
                    if(!it.isNullOrEmpty()) addToRecyclerView(it)
@@ -183,16 +183,15 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
                 hideLayer(accessibleLayerID)
                 zoneAdapter.removeAccessibleZonesFromList()
             }
-
-        })
+        }
         //Observe the selected zone, can be one from the map or the list and moves the camera to it
-        selectedZoneViewModel.selectedZone.observe(this, Observer {
+        selectedZoneViewModel.selectedZone.observe(this){
             val zonePoint = it.geometry()?.getGeometryPoint()
             addSelectedZoneToMap(it)
             GlobalScope.launch(Dispatchers.Main) { moveCameraToLocation(zonePoint) }
-        })
+        }
         //Observe an requested route, if changed this will add the route to the map and update BottomSheet
-        routeViewModel.routeMap.observe(this, Observer {
+        routeViewModel.routeMap.observe(this) {
             if (it.count() >= 2) {
                 addRoutesToMap(it)
                 updateBottomSheet(it)
@@ -203,7 +202,7 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
                     }
                 }
             }
-        })
+        }
     }
 
     /** Initiates button clickListeners */
@@ -354,19 +353,19 @@ class MapFragment : Fragment(), MapboxMap.OnMapClickListener, MapboxMap.OnMapLon
         return true
     }
 
+    /** On MapLongClick set the destination to @param point, add a marker there and fetch zones around it */
     override fun onMapLongClick(point: LatLng): Boolean {
         routeViewModel.destination.changeValue(Point.fromLngLat(point.longitude, point.latitude))
         routeViewModel.destination.value?.let {
             moveCameraToLocation(it, animate = false)
             addMarkerOnMap(it, false)
-            //get zones around the point cliked
+            //get zones around the point clicked
             zoneViewModel.getSpecificZones(latitude = it.latitude(), longitude = it.longitude(), radius = 1000, getAccessible = zonePreferences.showAccessibleZones.value!!)
         }
         return true
     }
 
-    /** Queryes the map for zone features on the point clicked
-     *
+    /** Queries the map for zone features on the point clicked
      * @param point Location to query
      * */
     private fun queryMapClick(point: LatLng): Boolean {

@@ -37,18 +37,18 @@ class TicketsFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        showNavbar()
+        showNavigationBar()
         initRecyclerView()
-        initObservables()
-        initClicklisteners()
+        setupObservers()
+        setupClickListeners()
     }
 
-    private fun showNavbar(){
+    private fun showNavigationBar(){
         val activity = activity as MainActivity
         activity.changeNavBarVisibility(true)
     }
 
-    private fun initObservables(){
+    private fun setupObservers(){
         ticketViewModel.activeParking.observe(this, androidx.lifecycle.Observer {
             if (it.first)
                 activateParkingCard(it.second)
@@ -57,7 +57,7 @@ class TicketsFragment : Fragment() {
         })
     }
 
-    private fun initClicklisteners(){
+    private fun setupClickListeners(){
         parkingCardView.setOnClickListener {
             if(parkingIsActive){
                 parkingCardView.setCardBackgroundColor(ContextCompat.getColor(context!!, R.color.colorPrimaryLight))
@@ -72,7 +72,6 @@ class TicketsFragment : Fragment() {
     }
 
     private fun activateParkingCard(feature: Feature){
-        //TODO make a new layout for the cardview and update it here for the user
         parkingCardView.setCardBackgroundColor(ContextCompat.getColor(context!!, R.color.colorSuccess))
         val zoneCode = feature.getStringProperty("zonecode")?.toInt() ?: 999
         activeTicketZoneName.text = feature.getStringProperty("zone_name")
@@ -104,10 +103,5 @@ class TicketsFragment : Fragment() {
             show()
             setAction("OK") { snackbar.dismiss() }
         }
-    }
-
-
-    companion object {
-        const val TAG : String = "TicketsFragment"
     }
 }
